@@ -1,14 +1,14 @@
 import Link from "next/link"
 
 const policyLinks = [
-  { href: "#", label: "Terms of Service" },
-  { href: "#", label: "Privacy Policy" },
-  { href: "#", label: "Security Compliance" },
+  { href: "/terms", label: "Terms of Service" },
+  { href: "/privacy", label: "Privacy Policy" },
+  { href: "/security", label: "Security Compliance" },
 ]
 
 const companyLinks = [
-  { href: "#", label: "Contact" },
-  { href: "#", label: "Documentation" },
+  { href: "/contact", label: "Contact" },
+  { href: "/docs", label: "Documentation" },
 ]
 
 export function Footer() {
