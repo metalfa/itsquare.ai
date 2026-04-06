@@ -217,14 +217,16 @@ export function DashboardContent({ user, profile, scans, integrations }: Dashboa
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">Recent Scans</CardTitle>
-                  <Button 
-                    size="sm" 
-                    className="bg-primary-container hover:bg-primary-container/90 text-white"
-                    disabled={!hasIntegrations}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    New Scan
-                  </Button>
+                  <Link href="/dashboard/scans">
+                    <Button 
+                      size="sm" 
+                      className="bg-primary-container hover:bg-primary-container/90 text-white"
+                      disabled={!hasIntegrations}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      New Scan
+                    </Button>
+                  </Link>
                 </div>
               </CardHeader>
               <CardContent>
@@ -239,8 +241,8 @@ export function DashboardContent({ user, profile, scans, integrations }: Dashboa
                 ) : (
                   <div className="space-y-3">
                     {scans.map((scan) => (
+                      <Link href={`/dashboard/scans/${scan.id}`} key={scan.id}>
                       <div
-                        key={scan.id}
                         className="flex items-center justify-between p-3 bg-surface-container-low ghost-border hover:bg-surface-container-high transition-colors cursor-pointer"
                       >
                         <div className="flex items-center gap-3">
@@ -273,6 +275,7 @@ export function DashboardContent({ user, profile, scans, integrations }: Dashboa
                           <p className="text-xs text-muted-foreground">Score</p>
                         </div>
                       </div>
+                      </Link>
                     ))}
                   </div>
                 )}
@@ -288,14 +291,16 @@ export function DashboardContent({ user, profile, scans, integrations }: Dashboa
                 <CardTitle className="text-lg">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button 
-                  variant="ghost" 
-                  className="w-full justify-start text-foreground-variant hover:text-foreground hover:bg-surface-container-high"
-                  disabled={!latestScan}
-                >
-                  <FileText className="h-4 w-4 mr-3" />
-                  View Latest Report
-                </Button>
+                <Link href={latestScan ? `/dashboard/scans/${latestScan.id}` : '#'}>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start text-foreground-variant hover:text-foreground hover:bg-surface-container-high"
+                    disabled={!latestScan}
+                  >
+                    <FileText className="h-4 w-4 mr-3" />
+                    View Latest Report
+                  </Button>
+                </Link>
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start text-foreground-variant hover:text-foreground hover:bg-surface-container-high"
