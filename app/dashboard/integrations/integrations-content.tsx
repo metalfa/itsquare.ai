@@ -65,39 +65,23 @@ export function IntegrationsContent({ user, profile, integrations }: Integration
     setOktaError(null)
     
     try {
-      // Test the API token by making a simple API call
-      const testResponse = await fetch(`https://${oktaDomain}/api/v1/users?limit=1`, {
+      // Call server-side API to validate and store the token
+      const response = await fetch('/api/connect/okta/token', {
+        method: 'POST',
         headers: {
-          'Authorization': `SSWS ${oktaApiToken}`,
-          'Accept': 'application/json',
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          domain: oktaDomain,
+          apiToken: oktaApiToken,
+        }),
       })
       
-      if (!testResponse.ok) {
-        const error = await testResponse.text()
-        throw new Error(`Invalid API token or domain: ${testResponse.status}`)
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to connect to Okta')
       }
-      
-      // Store the integration
-      const orgId = profile?.org_id
-      if (!orgId) throw new Error('No organization found')
-      
-      // Encrypt the token (simple base64 for now)
-      const encryptedToken = btoa(oktaApiToken)
-      
-      const { error } = await supabase.from('integrations').upsert({
-        org_id: orgId,
-        provider: 'okta',
-        domain: oktaDomain,
-        access_token_encrypted: encryptedToken,
-        scopes: ['okta.users.read', 'okta.groups.read', 'okta.apps.read'],
-        status: 'active',
-        connected_at: new Date().toISOString(),
-      }, {
-        onConflict: 'org_id,provider'
-      })
-      
-      if (error) throw error
       
       router.push('/dashboard/integrations?success=okta_connected')
       router.refresh()
