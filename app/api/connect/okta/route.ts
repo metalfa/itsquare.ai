@@ -5,14 +5,12 @@ import crypto from 'crypto'
 // Okta OAuth 2.0 with PKCE
 // Required env vars: OKTA_CLIENT_ID, OKTA_CLIENT_SECRET
 
+// For Okta OAuth, we use basic OIDC scopes for authentication
+// The actual user/group data will be fetched using Okta Admin API with an API token
 const OKTA_SCOPES = [
   'openid',
   'profile',
   'email',
-  'okta.users.read',
-  'okta.apps.read', 
-  'okta.groups.read',
-  'okta.logs.read',
 ].join(' ')
 
 // Generate PKCE code verifier and challenge
