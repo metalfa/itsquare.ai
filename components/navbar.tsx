@@ -38,15 +38,21 @@ export function Navbar() {
           ))}
         </div>
 
-        {/* CTA Button */}
-        <Link
-          href="https://calendly.com/bensassi-faysel/discovery-call"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hidden md:block bg-primary-container text-white px-5 py-2 text-sm font-semibold hover:scale-[0.98] transition-transform duration-300"
-        >
-          Book Discovery Call
-        </Link>
+        {/* Auth Buttons */}
+        <div className="hidden md:flex items-center gap-4">
+          <Link
+            href="/auth/login"
+            className="text-sm font-medium text-[#C3C6D7] hover:text-[#E4E1E9] transition-colors"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/auth/sign-up"
+            className="bg-primary-container text-white px-5 py-2 text-sm font-semibold hover:scale-[0.98] transition-transform duration-300"
+          >
+            Start Free Scan
+          </Link>
+        </div>
 
         {/* Mobile Menu Button */}
         <button
@@ -75,12 +81,18 @@ export function Navbar() {
               </Link>
             ))}
             <Link
-              href="https://calendly.com/bensassi-faysel/discovery-call"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-primary-container text-white px-5 py-3 text-sm font-semibold text-center mt-4"
+              href="/auth/login"
+              className="text-sm font-medium text-[#C3C6D7] mt-4 text-center"
+              onClick={() => setMobileMenuOpen(false)}
             >
-              Book Discovery Call
+              Sign in
+            </Link>
+            <Link
+              href="/auth/sign-up"
+              className="bg-primary-container text-white px-5 py-3 text-sm font-semibold text-center mt-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Start Free Scan
             </Link>
           </div>
         </div>
