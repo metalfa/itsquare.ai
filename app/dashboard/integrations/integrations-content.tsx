@@ -38,9 +38,11 @@ export function IntegrationsContent({ user, profile, integrations }: Integration
   const supabase = createClient()
   
   const [oktaDomain, setOktaDomain] = useState('')
+  const [oktaApiToken, setOktaApiToken] = useState('')
   const [isConnectingOkta, setIsConnectingOkta] = useState(false)
   const [isConnectingGoogle, setIsConnectingGoogle] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [oktaError, setOktaError] = useState<string | null>(null)
 
   const success = searchParams.get('success')
   const error = searchParams.get('error')
@@ -53,11 +55,58 @@ export function IntegrationsContent({ user, profile, integrations }: Integration
     router.push('/')
   }
 
-  const handleConnectOkta = () => {
-    if (!oktaDomain) return
+  const handleConnectOkta = async () => {
+    if (!oktaDomain || !oktaApiToken) {
+      setOktaError('Please enter both your Okta domain and API token.')
+      return
+    }
+    
     setIsConnectingOkta(true)
-    // Redirect to OAuth flow
-    window.location.href = `/api/connect/okta?action=connect&domain=${encodeURIComponent(oktaDomain)}`
+    setOktaError(null)
+    
+    try {
+      // Test the API token by making a simple API call
+      const testResponse = await fetch(`https://${oktaDomain}/api/v1/users?limit=1`, {
+        headers: {
+          'Authorization': `SSWS ${oktaApiToken}`,
+          'Accept': 'application/json',
+        },
+      })
+      
+      if (!testResponse.ok) {
+        const error = await testResponse.text()
+        throw new Error(`Invalid API token or domain: ${testResponse.status}`)
+      }
+      
+      // Store the integration
+      const orgId = profile?.org_id
+      if (!orgId) throw new Error('No organization found')
+      
+      // Encrypt the token (simple base64 for now)
+      const encryptedToken = btoa(oktaApiToken)
+      
+      const { error } = await supabase.from('integrations').upsert({
+        org_id: orgId,
+        provider: 'okta',
+        domain: oktaDomain,
+        access_token_encrypted: encryptedToken,
+        scopes: ['okta.users.read', 'okta.groups.read', 'okta.apps.read'],
+        status: 'active',
+        connected_at: new Date().toISOString(),
+      }, {
+        onConflict: 'org_id,provider'
+      })
+      
+      if (error) throw error
+      
+      router.push('/dashboard/integrations?success=okta_connected')
+      router.refresh()
+    } catch (err) {
+      console.error('[v0] Okta connection error:', err)
+      setOktaError(err instanceof Error ? err.message : 'Failed to connect to Okta')
+    } finally {
+      setIsConnectingOkta(false)
+    }
   }
 
   const handleConnectGoogle = () => {
@@ -239,32 +288,60 @@ export function IntegrationsContent({ user, profile, integrations }: Integration
                 </div>
               ) : (
                 <div className="space-y-4">
+                  {oktaError && (
+                    <div className="p-3 bg-destructive/10 border border-destructive/20 text-sm text-destructive">
+                      {oktaError}
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label htmlFor="okta-domain">Okta Domain</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="okta-domain"
-                        placeholder="company.okta.com"
-                        value={oktaDomain}
-                        onChange={(e) => setOktaDomain(e.target.value)}
-                        className="flex-1 bg-surface-container-low border-outline-variant/30"
-                      />
-                      <Button
-                        onClick={handleConnectOkta}
-                        disabled={!oktaDomain || isConnectingOkta}
-                        className="bg-primary-container hover:bg-primary-container/90 text-white"
-                      >
-                        {isConnectingOkta ? (
-                          <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-                        ) : (
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                        )}
-                        Connect
-                      </Button>
-                    </div>
+                    <Input
+                      id="okta-domain"
+                      placeholder="company.okta.com"
+                      value={oktaDomain}
+                      onChange={(e) => setOktaDomain(e.target.value)}
+                      className="bg-surface-container-low border-outline-variant/30"
+                    />
                     <p className="text-xs text-muted-foreground">
-                      Enter your Okta domain (e.g., company.okta.com)
+                      Your Okta domain (e.g., company.okta.com or company.oktapreview.com)
                     </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="okta-token">API Token</Label>
+                    <Input
+                      id="okta-token"
+                      type="password"
+                      placeholder="00abc123..."
+                      value={oktaApiToken}
+                      onChange={(e) => setOktaApiToken(e.target.value)}
+                      className="bg-surface-container-low border-outline-variant/30"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Create an API token in Okta Admin Console: Security → API → Tokens → Create Token
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleConnectOkta}
+                    disabled={!oktaDomain || !oktaApiToken || isConnectingOkta}
+                    className="bg-primary-container hover:bg-primary-container/90 text-white w-full"
+                  >
+                    {isConnectingOkta ? (
+                      <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                    )}
+                    {isConnectingOkta ? 'Connecting...' : 'Connect Okta'}
+                  </Button>
+                  <div className="p-3 bg-surface-container-low ghost-border">
+                    <p className="text-xs text-muted-foreground">
+                      <strong>How to create an Okta API Token:</strong>
+                    </p>
+                    <ol className="text-xs text-muted-foreground mt-2 space-y-1 list-decimal list-inside">
+                      <li>Log in to your Okta Admin Console</li>
+                      <li>Go to Security → API → Tokens</li>
+                      <li>Click &quot;Create Token&quot;</li>
+                      <li>Name it &quot;ITSquare.AI&quot; and copy the token</li>
+                    </ol>
                   </div>
                 </div>
               )}

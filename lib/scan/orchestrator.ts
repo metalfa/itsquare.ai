@@ -98,9 +98,12 @@ export async function runScan(
     for (const integration of integrations as Integration[]) {
       try {
         const decryptedToken = decrypt(integration.access_token_encrypted)
+        console.log(`[v0] Fetching users from ${integration.provider}, domain: ${integration.domain}`)
         
         if (integration.provider === 'okta' && integration.domain) {
+          console.log(`[v0] Calling Okta API for domain: ${integration.domain}`)
           const oktaUsers = await fetchOktaUsers(integration.domain, decryptedToken)
+          console.log(`[v0] Okta returned ${oktaUsers.length} users`)
           allUsers.push(...oktaUsers)
         } else if (integration.provider === 'google_workspace') {
           // Check if token needs refresh
