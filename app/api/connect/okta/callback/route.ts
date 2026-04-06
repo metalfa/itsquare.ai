@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
         refresh_token_encrypted: refresh_token ? encryptToken(refresh_token) : null,
         token_expires_at: expiresAt,
         domain,
-        scopes: ['okta.users.read', 'okta.apps.read', 'okta.groups.read', 'okta.logs.read'],
+        scopes: ['openid', 'profile', 'email'],
         status: 'active',
         connected_at: new Date().toISOString(),
       }, {
