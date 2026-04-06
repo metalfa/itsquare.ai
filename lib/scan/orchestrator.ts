@@ -11,12 +11,15 @@ import { fetchGoogleUsers, refreshGoogleToken } from './google-client'
 // Encryption utilities
 function decrypt(encryptedData: string): string {
   // Simple base64 decode for MVP - in production use proper encryption
-  const key = process.env.ENCRYPTION_KEY
-  if (!key) {
-    throw new Error('ENCRYPTION_KEY not configured')
-  }
+  const key = process.env.ENCRYPTION_KEY || 'default-key-change-in-production'
   try {
-    return Buffer.from(encryptedData, 'base64').toString('utf8')
+    const decoded = Buffer.from(encryptedData, 'base64').toString('utf8')
+    // Check if the decoded string contains the key prefix
+    if (decoded.startsWith(`${key}:`)) {
+      return decoded.substring(key.length + 1)
+    }
+    // Fallback for tokens stored without key prefix
+    return decoded
   } catch {
     return encryptedData
   }
