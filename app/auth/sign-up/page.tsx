@@ -57,8 +57,9 @@ export default function SignUpPage() {
         password,
         options: {
           emailRedirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
-            `${window.location.origin}/dashboard`,
+            process.env.NEXT_PUBLIC_APP_URL 
+              ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`
+              : `${window.location.origin}/auth/callback`,
           data: {
             full_name: fullName,
             company_name: companyName,
