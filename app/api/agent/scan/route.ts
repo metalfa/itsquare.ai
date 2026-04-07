@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { hashToken, decryptToken } from '@/lib/slack/encryption'
-import { generateScanSummary } from '@/lib/slack/ai-analysis'
 
 // Device scan data structure from CLI agent
 interface DeviceScanPayload {
@@ -353,27 +352,6 @@ export async function POST(request: Request) {
       if (workspace && slackUser && workspace.bot_token_encrypted) {
         const botToken = decryptToken(workspace.bot_token_encrypted)
         
-        // Generate AI summary
-        const fullScanData = {
-          ...scanData,
-          security_score: securityScore,
-          compliance_score: complianceScore,
-          overall_health_score: overallHealthScore,
-          issues,
-          issue_count_critical: issueCounts.critical,
-          issue_count_high: issueCounts.high,
-          issue_count_medium: issueCounts.medium,
-          issue_count_low: issueCounts.low,
-          created_at: new Date().toISOString(),
-        }
-        
-        let aiSummary = ''
-        try {
-          aiSummary = await generateScanSummary(fullScanData as any)
-        } catch {
-          // AI summary is optional, continue without it
-        }
-        
         // Build Slack message blocks
         const healthEmoji = overallHealthScore >= 75 ? '🟢' : overallHealthScore >= 50 ? '🟡' : '🔴'
         const totalIssues = issues.length
@@ -397,13 +375,6 @@ export async function POST(request: Request) {
             ],
           },
         ]
-        
-        if (aiSummary) {
-          blocks.push({
-            type: 'section',
-            text: { type: 'mrkdwn', text: `💡 *AI Analysis:* ${aiSummary}` },
-          } as any)
-        }
         
         if (totalIssues > 0) {
           const issueText = [
