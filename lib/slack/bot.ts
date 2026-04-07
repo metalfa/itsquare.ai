@@ -17,6 +17,19 @@ export const bot = new Chat({
   state: createRedisState({ url: process.env.REDIS_URL || '' }),
 })
 
+// Helper to send ephemeral message via Slack API
+async function sendEphemeral(channel: string, user: string, text: string) {
+  const response = await fetch('https://slack.com/api/chat.postEphemeral', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ channel, user, text }),
+  })
+  return response.json()
+}
+
 // Helper to get or create a Slack user in our database
 async function getOrCreateSlackUser(
   workspaceId: string,
@@ -93,7 +106,6 @@ bot.onNewMention(async (thread) => {
   const message = thread.lastMessage
   const text = message?.text?.toLowerCase() || ''
   
-  // Handle help command
   if (text.includes('help')) {
     await thread.post(`*ITSquare.AI Help*
 
@@ -102,36 +114,29 @@ I'm your AI IT assistant. Here's what I can help with:
 *Device Health*
 - "What's my device status?" - Quick health check
 - "Show detailed report" - Full device analysis
-- "What issues do I have?" - List security issues
 
-*Slash Commands* (in channels only):
+*Slash Commands* (in channels):
 - \`/itsquare status\` - View device health
 - \`/itsquare token\` - Generate scan token
-- \`/itsquare help\` - Show commands
-
-*In threads or DMs*, just @mention me!`)
+- \`/itsquare help\` - Show commands`)
     return
   }
   
-  // Handle status queries
   if (text.includes('status') || text.includes('health') || text.includes('scan')) {
-    await thread.post(`To check your device health, run:
+    await thread.post(`To check your device health, use \`/itsquare status\` in a channel.
 
+Or scan your device first:
 \`\`\`
 npx @itsquare/agent scan
-\`\`\`
-
-Or use \`/itsquare status\` in a channel to see your latest scan results.`)
+\`\`\``)
     return
   }
   
-  // Default response
   await thread.post(`Hi! I'm ITSquare.AI, your IT assistant. 
 
-Try asking:
-- "What's my device status?"
-- "Help" for all commands
-- Or use \`/itsquare\` slash commands`)
+Try:
+- "help" for all commands
+- \`/itsquare\` slash commands in channels`)
 })
 
 // Handle messages in subscribed threads
@@ -141,24 +146,26 @@ bot.onSubscribedMessage(async (thread, message) => {
   const text = message.text?.toLowerCase() || ''
   
   if (text.match(/^(thanks?|thank you|thx|ty)$/i)) {
-    await thread.post("You're welcome! Let me know if you need anything else.")
+    await thread.post("You're welcome!")
     return
   }
   
-  await thread.post("I'm here to help! Ask me about your device health or say 'help' for options.")
+  await thread.post("Say 'help' for options, or use \`/itsquare\` commands.")
 })
 
 // Handle slash command /itsquare
 bot.onSlashCommand('/itsquare', async (event) => {
   const args = event.text?.trim().toLowerCase() || ''
   const command = args.split(' ')[0]
+  const channelId = (event as any).channelId || (event as any).channel_id || ''
+  const userId = event.user?.id || ''
   
   // Get workspace
   const teamId = (event as any).teamId || (event as any).team_id || ''
   const workspace = await getWorkspaceByTeamId(teamId)
   
   if (!workspace) {
-    await event.channel.postEphemeral(event.user, `*Setup Required*
+    await sendEphemeral(channelId, userId, `*Setup Required*
 
 I don't recognize this workspace. Please reinstall the ITSquare.AI app.
 
@@ -168,36 +175,34 @@ Visit: https://itsquare.ai/dashboard/integrations`)
   
   const slackUser = await getOrCreateSlackUser(
     workspace.id,
-    event.user?.id || '',
+    userId,
     { name: event.user?.fullName }
   )
   
   // /itsquare status
   if (command === 'status' || command === 'health' || command === 'scan') {
     if (!slackUser) {
-      await event.channel.postEphemeral(event.user, "I couldn't identify your user account. Please try again.")
+      await sendEphemeral(channelId, userId, "I couldn't identify your user account. Please try again.")
       return
     }
     
     const latestScan = await getLatestDeviceScan(slackUser.id)
     
     if (!latestScan) {
-      await event.channel.postEphemeral(event.user, `*No Device Scan Found*
+      await sendEphemeral(channelId, userId, `*No Device Scan Found*
 
-You haven't scanned your device yet. Run the ITSquare agent:
+You haven't scanned your device yet.
 
-\`\`\`
-npx @itsquare/agent scan
-\`\`\`
-
-Use \`/itsquare token\` to generate a scan token first.`)
+1. Run \`/itsquare token\` to get a token
+2. Run: \`ITSQUARE_TOKEN=<token> npx @itsquare/agent scan\`
+3. Run \`/itsquare status\` to see results`)
       return
     }
     
     const healthEmoji = (latestScan.overall_health_score || 0) >= 75 ? '🟢' : 
                         (latestScan.overall_health_score || 0) >= 50 ? '🟡' : '🔴'
     
-    await event.channel.postEphemeral(event.user, `${healthEmoji} *Device Health Report*
+    await sendEphemeral(channelId, userId, `${healthEmoji} *Device Health Report*
 
 *Device:* ${latestScan.hostname || 'Unknown'}
 *OS:* ${latestScan.os_type || 'Unknown'} ${latestScan.os_version || ''}
@@ -205,17 +210,12 @@ Use \`/itsquare token\` to generate a scan token first.`)
 *Security Score:* ${latestScan.security_score || 0}/100
 
 *Security Status:*
-- Firewall: ${latestScan.firewall_enabled ? 'Enabled' : 'Disabled'}
-- Disk Encryption: ${latestScan.filevault_enabled || latestScan.bitlocker_enabled ? 'Enabled' : 'Disabled'}
-- Antivirus: ${latestScan.antivirus_installed ? 'Installed' : 'Not detected'}
-- OS Updates: ${latestScan.os_up_to_date ? 'Up to date' : 'Updates available'}
+• Firewall: ${latestScan.firewall_enabled ? 'Enabled' : 'Disabled'}
+• Disk Encryption: ${latestScan.filevault_enabled || latestScan.bitlocker_enabled ? 'Enabled' : 'Disabled'}
+• Antivirus: ${latestScan.antivirus_installed ? 'Installed' : 'Not detected'}
+• OS Updates: ${latestScan.os_up_to_date ? 'Up to date' : 'Updates available'}
 
-*Issues Found:* ${(latestScan.issue_count_critical || 0) + (latestScan.issue_count_high || 0) + (latestScan.issue_count_medium || 0) + (latestScan.issue_count_low || 0)}
-- Critical: ${latestScan.issue_count_critical || 0}
-- High: ${latestScan.issue_count_high || 0}
-- Medium: ${latestScan.issue_count_medium || 0}
-- Low: ${latestScan.issue_count_low || 0}
-
+*Issues:* ${(latestScan.issue_count_critical || 0) + (latestScan.issue_count_high || 0) + (latestScan.issue_count_medium || 0) + (latestScan.issue_count_low || 0)} total
 _Last scanned: ${new Date(latestScan.created_at).toLocaleString()}_`)
     return
   }
@@ -223,7 +223,7 @@ _Last scanned: ${new Date(latestScan.created_at).toLocaleString()}_`)
   // /itsquare token
   if (command === 'token') {
     if (!slackUser) {
-      await event.channel.postEphemeral(event.user, "I couldn't identify your user account.")
+      await sendEphemeral(channelId, userId, "I couldn't identify your user account.")
       return
     }
     
@@ -245,36 +245,32 @@ _Last scanned: ${new Date(latestScan.created_at).toLocaleString()}_`)
           expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
         })
       
-      await event.channel.postEphemeral(event.user, `*Your Scan Token*
+      await sendEphemeral(channelId, userId, `*Your Scan Token*
 
-Save this token securely - it won't be shown again!
+Save this token - it won't be shown again!
 
-\`\`\`
-${token}
-\`\`\`
+\`${token}\`
 
-*To scan your device, run:*
+*To scan your device:*
 \`\`\`
 ITSQUARE_TOKEN=${token} npx @itsquare/agent scan
 \`\`\``)
     } catch (err) {
       console.error('Token generation error:', err)
-      await event.channel.postEphemeral(event.user, "Failed to generate token. Please try again.")
+      await sendEphemeral(channelId, userId, "Failed to generate token. Please try again.")
     }
     return
   }
   
   // /itsquare help (default)
-  await event.channel.postEphemeral(event.user, `*ITSquare.AI Commands*
+  await sendEphemeral(channelId, userId, `*ITSquare.AI Commands*
 
-\`/itsquare status\` - View your device health report
+\`/itsquare status\` - View your device health
 \`/itsquare token\` - Generate a scan token
 \`/itsquare help\` - Show this message
 
 *Quick Start:*
-1. Run \`/itsquare token\` to get a scan token
-2. Run \`npx @itsquare/agent scan\` on your device
-3. Run \`/itsquare status\` to see results
-
-*Need help?* Just @mention me in any thread!`)
+1. \`/itsquare token\` - Get a token
+2. Run the agent on your device
+3. \`/itsquare status\` - See results`)
 })
