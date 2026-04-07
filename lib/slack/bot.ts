@@ -158,7 +158,7 @@ bot.onSlashCommand('/itsquare', async (event) => {
   const workspace = await getWorkspaceByTeamId(teamId)
   
   if (!workspace) {
-    await event.channel.post(`*Setup Required*
+    await event.channel.postEphemeral(event.user, `*Setup Required*
 
 I don't recognize this workspace. Please reinstall the ITSquare.AI app.
 
@@ -175,14 +175,14 @@ Visit: https://itsquare.ai/dashboard/integrations`)
   // /itsquare status
   if (command === 'status' || command === 'health' || command === 'scan') {
     if (!slackUser) {
-      await event.channel.post("I couldn't identify your user account. Please try again.")
+      await event.channel.postEphemeral(event.user, "I couldn't identify your user account. Please try again.")
       return
     }
     
     const latestScan = await getLatestDeviceScan(slackUser.id)
     
     if (!latestScan) {
-      await event.channel.post(`*No Device Scan Found*
+      await event.channel.postEphemeral(event.user, `*No Device Scan Found*
 
 You haven't scanned your device yet. Run the ITSquare agent:
 
@@ -197,7 +197,7 @@ Use \`/itsquare token\` to generate a scan token first.`)
     const healthEmoji = (latestScan.overall_health_score || 0) >= 75 ? '🟢' : 
                         (latestScan.overall_health_score || 0) >= 50 ? '🟡' : '🔴'
     
-    await event.channel.post(`${healthEmoji} *Device Health Report*
+    await event.channel.postEphemeral(event.user, `${healthEmoji} *Device Health Report*
 
 *Device:* ${latestScan.hostname || 'Unknown'}
 *OS:* ${latestScan.os_type || 'Unknown'} ${latestScan.os_version || ''}
@@ -223,7 +223,7 @@ _Last scanned: ${new Date(latestScan.created_at).toLocaleString()}_`)
   // /itsquare token
   if (command === 'token') {
     if (!slackUser) {
-      await event.channel.post("I couldn't identify your user account.")
+      await event.channel.postEphemeral(event.user, "I couldn't identify your user account.")
       return
     }
     
@@ -245,7 +245,7 @@ _Last scanned: ${new Date(latestScan.created_at).toLocaleString()}_`)
           expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
         })
       
-      await event.channel.post(`*Your Scan Token*
+      await event.channel.postEphemeral(event.user, `*Your Scan Token*
 
 Save this token securely - it won't be shown again!
 
@@ -259,13 +259,13 @@ ITSQUARE_TOKEN=${token} npx @itsquare/agent scan
 \`\`\``)
     } catch (err) {
       console.error('Token generation error:', err)
-      await event.channel.post("Failed to generate token. Please try again.")
+      await event.channel.postEphemeral(event.user, "Failed to generate token. Please try again.")
     }
     return
   }
   
   // /itsquare help (default)
-  await event.channel.post(`*ITSquare.AI Commands*
+  await event.channel.postEphemeral(event.user, `*ITSquare.AI Commands*
 
 \`/itsquare status\` - View your device health report
 \`/itsquare token\` - Generate a scan token
