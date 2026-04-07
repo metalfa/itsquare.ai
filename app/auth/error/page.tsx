@@ -22,6 +22,16 @@ export default async function AuthErrorPage({
     'temporarily_unavailable': 'The service is temporarily unavailable. Please try again later.',
     'invalid_credentials': 'Invalid email or password. Please check your credentials.',
     'email_not_confirmed': 'Please confirm your email before signing in.',
+    'verification_failed': 'The verification link is invalid or has expired. Please try signing in again.',
+    'slack_oauth_denied': 'Slack authorization was cancelled. Please try again.',
+    'invalid_state': 'The authentication session expired. Please try signing in again.',
+    'no_code': 'No authorization code received from Slack. Please try again.',
+    'token_exchange_failed': 'Failed to complete Slack authentication. Please try again.',
+    'no_user_token': 'Could not get your Slack user information. Please try again.',
+    'identity_failed': 'Could not verify your Slack identity. Please ensure you grant email access.',
+    'org_creation_failed': 'Failed to create your organization. Please try again.',
+    'user_creation_failed': 'Failed to create your account. Please try again.',
+    'profile_creation_failed': 'Failed to set up your profile. Please try again.',
   }
 
   const errorMessage = params?.error 
