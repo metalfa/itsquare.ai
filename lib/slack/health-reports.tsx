@@ -1,3 +1,4 @@
+/** @jsxImportSource chat */
 import { Card, CardText, Actions, Button, Divider, Fields, Field, Section } from 'chat'
 import type { DeviceScan } from './types'
 
