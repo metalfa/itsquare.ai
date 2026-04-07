@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/card'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import { Shield, CheckCircle2, Zap, MessageSquare, Laptop, ShieldCheck } from 'lucide-react'
 
 const benefits = [
@@ -46,7 +47,7 @@ function SlackLogo({ className }: { className?: string }) {
   )
 }
 
-export default function SignUpPage() {
+function SignUpForm() {
   const searchParams = useSearchParams()
   const message = searchParams.get('message')
 
@@ -180,5 +181,17 @@ export default function SignUpPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={
+      <div className="grid-bg min-h-screen flex items-center justify-center p-6">
+        <div className="h-8 w-8 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    }>
+      <SignUpForm />
+    </Suspense>
   )
 }
