@@ -9,6 +9,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@chat-adapter/slack": "^4.24.0",
+    "@chat-adapter/state-redis": "^4.24.0",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "1.2.12",
     "@radix-ui/react-alert-dialog": "1.1.15",
@@ -41,6 +43,7 @@
     "@supabase/supabase-js": "^2.49.1",
     "@vercel/analytics": "1.6.1",
     "autoprefixer": "^10.4.20",
+    "chat": "^4.24.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.1.1",
