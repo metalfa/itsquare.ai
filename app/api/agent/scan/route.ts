@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { hashToken } from '@/lib/slack/encryption'
+import { hashToken, decryptToken } from '@/lib/slack/encryption'
+import { generateScanSummary } from '@/lib/slack/ai-analysis'
 
 // Device scan data structure from CLI agent
 interface DeviceScanPayload {
@@ -332,6 +333,126 @@ export async function POST(request: Request) {
         { error: 'Failed to store scan results' },
         { status: 500 }
       )
+    }
+    
+    // Send Slack notification with scan results
+    try {
+      // Get workspace bot token and user's Slack ID
+      const { data: workspace } = await supabase
+        .from('slack_workspaces')
+        .select('bot_token_encrypted, team_id')
+        .eq('id', agentToken.workspace_id)
+        .single()
+      
+      const { data: slackUser } = await supabase
+        .from('slack_users')
+        .select('slack_user_id')
+        .eq('id', agentToken.slack_user_id)
+        .single()
+      
+      if (workspace && slackUser && workspace.bot_token_encrypted) {
+        const botToken = decryptToken(workspace.bot_token_encrypted)
+        
+        // Generate AI summary
+        const fullScanData = {
+          ...scanData,
+          security_score: securityScore,
+          compliance_score: complianceScore,
+          overall_health_score: overallHealthScore,
+          issues,
+          issue_count_critical: issueCounts.critical,
+          issue_count_high: issueCounts.high,
+          issue_count_medium: issueCounts.medium,
+          issue_count_low: issueCounts.low,
+          created_at: new Date().toISOString(),
+        }
+        
+        let aiSummary = ''
+        try {
+          aiSummary = await generateScanSummary(fullScanData as any)
+        } catch {
+          // AI summary is optional, continue without it
+        }
+        
+        // Build Slack message blocks
+        const healthEmoji = overallHealthScore >= 75 ? '🟢' : overallHealthScore >= 50 ? '🟡' : '🔴'
+        const totalIssues = issues.length
+        
+        const blocks = [
+          {
+            type: 'header',
+            text: {
+              type: 'plain_text',
+              text: `${healthEmoji} Scan Complete: ${scanData.hostname || 'Your Device'}`,
+              emoji: true,
+            },
+          },
+          {
+            type: 'section',
+            fields: [
+              { type: 'mrkdwn', text: `*Health Score:*\n${overallHealthScore}/100` },
+              { type: 'mrkdwn', text: `*Security Score:*\n${securityScore}/100` },
+              { type: 'mrkdwn', text: `*Issues Found:*\n${totalIssues === 0 ? '✅ None' : `${totalIssues} issue${totalIssues > 1 ? 's' : ''}`}` },
+              { type: 'mrkdwn', text: `*OS:*\n${scanData.os_type || 'Unknown'} ${scanData.os_version || ''}` },
+            ],
+          },
+        ]
+        
+        if (aiSummary) {
+          blocks.push({
+            type: 'section',
+            text: { type: 'mrkdwn', text: `💡 *AI Analysis:* ${aiSummary}` },
+          } as any)
+        }
+        
+        if (totalIssues > 0) {
+          const issueText = [
+            issueCounts.critical > 0 ? `🔴 ${issueCounts.critical} Critical` : '',
+            issueCounts.high > 0 ? `🟠 ${issueCounts.high} High` : '',
+            issueCounts.medium > 0 ? `🟡 ${issueCounts.medium} Medium` : '',
+            issueCounts.low > 0 ? `⚪ ${issueCounts.low} Low` : '',
+          ].filter(Boolean).join(' • ')
+          
+          blocks.push({
+            type: 'section',
+            text: { type: 'mrkdwn', text: issueText },
+          } as any)
+        }
+        
+        blocks.push({
+          type: 'actions',
+          elements: [
+            {
+              type: 'button',
+              text: { type: 'plain_text', text: 'View Full Report', emoji: true },
+              action_id: 'view_full_report',
+              style: 'primary',
+            },
+            ...(totalIssues > 0 ? [{
+              type: 'button',
+              text: { type: 'plain_text', text: 'Fix Issues', emoji: true },
+              action_id: 'view_issues',
+            }] : []),
+          ],
+        } as any)
+        
+        // Send DM to user
+        await fetch('https://slack.com/api/chat.postMessage', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${botToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            channel: slackUser.slack_user_id,
+            blocks,
+            text: `Scan complete for ${scanData.hostname || 'your device'}. Health score: ${overallHealthScore}/100`,
+          }),
+        })
+      }
+    } catch (notifyError) {
+      // Don't fail the scan if notification fails
+      console.error('Failed to send Slack notification:', notifyError)
     }
     
     return NextResponse.json({
