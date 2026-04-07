@@ -33,11 +33,20 @@ export default async function IntegrationsPage() {
     .eq('org_id', profile?.org_id)
     .order('connected_at', { ascending: false })
 
+  // Get Slack workspace for this org (if any)
+  const { data: slackWorkspace } = await supabase
+    .from('slack_workspaces')
+    .select('*')
+    .eq('org_id', profile?.org_id)
+    .eq('status', 'active')
+    .single()
+
   return (
     <IntegrationsContent 
       user={user} 
       profile={profile}
       integrations={integrations || []}
+      slackWorkspace={slackWorkspace}
     />
   )
 }
