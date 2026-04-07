@@ -18,6 +18,7 @@ import {
   ExternalLink,
   Trash2,
   RefreshCw,
+  MessageSquare,
 } from 'lucide-react'
 import type { Database } from '@/lib/types/database'
 
@@ -26,13 +27,23 @@ type UserProfile = Database['public']['Tables']['users']['Row'] & {
 }
 type Integration = Database['public']['Tables']['integrations']['Row']
 
+interface SlackWorkspace {
+  id: string
+  team_id: string
+  team_name: string
+  team_domain: string | null
+  status: 'active' | 'revoked' | 'error'
+  installed_at: string
+}
+
 interface IntegrationsContentProps {
   user: User
   profile: UserProfile | null
   integrations: Integration[]
+  slackWorkspace: SlackWorkspace | null
 }
 
-export function IntegrationsContent({ user, profile, integrations }: IntegrationsContentProps) {
+export function IntegrationsContent({ user, profile, integrations, slackWorkspace }: IntegrationsContentProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
@@ -195,6 +206,7 @@ export function IntegrationsContent({ user, profile, integrations }: Integration
               <p className="text-sm font-medium text-foreground">
                 {success === 'okta_connected' && 'Okta connected successfully!'}
                 {success === 'google_connected' && 'Google Workspace connected successfully!'}
+                {(success === 'slack_installed' || success === 'slack_updated') && 'Slack connected successfully!'}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 You can now run security scans on your organization.
@@ -406,6 +418,82 @@ export function IntegrationsContent({ user, profile, integrations }: Integration
                   <p className="text-xs text-muted-foreground">
                     You must be a Google Workspace admin to connect your organization.
                   </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Slack Integration */}
+          <Card className="bg-surface-container ghost-border">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-[#4A154B]/10 border border-[#4A154B]/20">
+                    <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none">
+                      <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zm1.271 0a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313z" fill="#E01E5A"/>
+                      <path d="M8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zm0 1.271a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312z" fill="#36C5F0"/>
+                      <path d="M18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zm-1.27 0a2.528 2.528 0 0 1-2.522 2.521 2.528 2.528 0 0 1-2.521-2.521V2.522A2.528 2.528 0 0 1 15.165 0a2.528 2.528 0 0 1 2.521 2.522v6.312z" fill="#2EB67D"/>
+                      <path d="M15.165 18.956a2.528 2.528 0 0 1 2.521 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.521-2.522v-2.522h2.521zm0-1.27a2.527 2.527 0 0 1-2.521-2.522 2.527 2.527 0 0 1 2.521-2.521h6.313A2.528 2.528 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.521h-6.313z" fill="#ECB22E"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Slack</CardTitle>
+                    <CardDescription>
+                      Connect Slack to enable AI IT support and device health monitoring.
+                    </CardDescription>
+                  </div>
+                </div>
+                {slackWorkspace && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium bg-secondary/10 text-secondary border border-secondary/20">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Connected
+                  </span>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {slackWorkspace ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-surface-container-low ghost-border">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{slackWorkspace.team_name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {slackWorkspace.team_domain && `${slackWorkspace.team_domain}.slack.com • `}
+                        Connected {new Date(slackWorkspace.installed_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-surface-container-low ghost-border">
+                    <p className="text-xs text-muted-foreground">
+                      <strong>How to use:</strong>
+                    </p>
+                    <ul className="text-xs text-muted-foreground mt-2 space-y-1 list-disc list-inside">
+                      <li>DM @ITSquare for AI IT support</li>
+                      <li>Use <code className="bg-muted px-1 py-0.5">/itsquare scan</code> to scan your device</li>
+                      <li>Use <code className="bg-muted px-1 py-0.5">/itsquare status</code> to see your device health</li>
+                    </ul>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <Button
+                    asChild
+                    className="bg-[#4A154B] hover:bg-[#4A154B]/90 text-white"
+                  >
+                    <a href="/api/slack/install">
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Add to Slack
+                    </a>
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Install ITSquare.AI in your Slack workspace to enable:
+                  </p>
+                  <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+                    <li>AI-powered IT support via DM</li>
+                    <li>Device health scanning with <code className="bg-muted px-1 py-0.5">/itsquare scan</code></li>
+                    <li>Real-time security alerts in Slack</li>
+                    <li>Access request workflows</li>
+                  </ul>
                 </div>
               )}
             </CardContent>

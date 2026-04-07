@@ -108,7 +108,7 @@ export async function GET(request: Request) {
     }
     
     // Create new workspace record
-    const { error: insertError } = await supabase
+    const { data: newWorkspace, error: insertError } = await supabase
       .from('slack_workspaces')
       .insert({
         team_id: tokenData.team.id,
@@ -121,8 +121,10 @@ export async function GET(request: Request) {
         enterprise_id: tokenData.enterprise?.id || null,
         org_id: orgId || null,
       })
+      .select('id')
+      .single()
     
-    if (insertError) {
+    if (insertError || !newWorkspace) {
       console.error('Failed to save workspace:', insertError)
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/integrations?error=save_failed`
@@ -133,12 +135,10 @@ export async function GET(request: Request) {
     await supabase
       .from('slack_users')
       .insert({
-        workspace_id: tokenData.team.id,
+        workspace_id: newWorkspace.id,
         slack_user_id: tokenData.authed_user.id,
         is_admin: true, // Installer is typically an admin
       })
-      .select()
-      .single()
     
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/integrations?success=slack_installed`
