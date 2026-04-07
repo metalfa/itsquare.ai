@@ -100,14 +100,14 @@ bot.onNewMention(async (thread) => {
 I'm your AI IT assistant. Here's what I can help with:
 
 *Device Health*
-• "What's my device status?" - Quick health check
-• "Show detailed report" - Full device analysis
-• "What issues do I have?" - List security issues
+- "What's my device status?" - Quick health check
+- "Show detailed report" - Full device analysis
+- "What issues do I have?" - List security issues
 
 *Slash Commands* (in channels only):
-• \`/itsquare status\` - View device health
-• \`/itsquare token\` - Generate scan token
-• \`/itsquare help\` - Show commands
+- \`/itsquare status\` - View device health
+- \`/itsquare token\` - Generate scan token
+- \`/itsquare help\` - Show commands
 
 *In threads or DMs*, just @mention me!`)
     return
@@ -129,9 +129,9 @@ Or use \`/itsquare status\` in a channel to see your latest scan results.`)
   await thread.post(`Hi! I'm ITSquare.AI, your IT assistant. 
 
 Try asking:
-• "What's my device status?"
-• "Help" for all commands
-• Or use \`/itsquare\` slash commands`)
+- "What's my device status?"
+- "Help" for all commands
+- Or use \`/itsquare\` slash commands`)
 })
 
 // Handle messages in subscribed threads
@@ -158,7 +158,7 @@ bot.onSlashCommand('/itsquare', async (event) => {
   const workspace = await getWorkspaceByTeamId(teamId)
   
   if (!workspace) {
-    await event.respond(`*Setup Required*
+    await event.channel.post(`*Setup Required*
 
 I don't recognize this workspace. Please reinstall the ITSquare.AI app.
 
@@ -175,14 +175,14 @@ Visit: https://itsquare.ai/dashboard/integrations`)
   // /itsquare status
   if (command === 'status' || command === 'health' || command === 'scan') {
     if (!slackUser) {
-      await event.respond("I couldn't identify your user account. Please try again.")
+      await event.channel.post("I couldn't identify your user account. Please try again.")
       return
     }
     
     const latestScan = await getLatestDeviceScan(slackUser.id)
     
     if (!latestScan) {
-      await event.respond(`*No Device Scan Found*
+      await event.channel.post(`*No Device Scan Found*
 
 You haven't scanned your device yet. Run the ITSquare agent:
 
@@ -197,7 +197,7 @@ Use \`/itsquare token\` to generate a scan token first.`)
     const healthEmoji = (latestScan.overall_health_score || 0) >= 75 ? '🟢' : 
                         (latestScan.overall_health_score || 0) >= 50 ? '🟡' : '🔴'
     
-    await event.respond(`${healthEmoji} *Device Health Report*
+    await event.channel.post(`${healthEmoji} *Device Health Report*
 
 *Device:* ${latestScan.hostname || 'Unknown'}
 *OS:* ${latestScan.os_type || 'Unknown'} ${latestScan.os_version || ''}
@@ -205,16 +205,16 @@ Use \`/itsquare token\` to generate a scan token first.`)
 *Security Score:* ${latestScan.security_score || 0}/100
 
 *Security Status:*
-• Firewall: ${latestScan.firewall_enabled ? '✅ Enabled' : '❌ Disabled'}
-• Disk Encryption: ${latestScan.filevault_enabled || latestScan.bitlocker_enabled ? '✅ Enabled' : '❌ Disabled'}
-• Antivirus: ${latestScan.antivirus_installed ? '✅ Installed' : '⚠️ Not detected'}
-• OS Updates: ${latestScan.os_up_to_date ? '✅ Up to date' : '⚠️ Updates available'}
+- Firewall: ${latestScan.firewall_enabled ? 'Enabled' : 'Disabled'}
+- Disk Encryption: ${latestScan.filevault_enabled || latestScan.bitlocker_enabled ? 'Enabled' : 'Disabled'}
+- Antivirus: ${latestScan.antivirus_installed ? 'Installed' : 'Not detected'}
+- OS Updates: ${latestScan.os_up_to_date ? 'Up to date' : 'Updates available'}
 
 *Issues Found:* ${(latestScan.issue_count_critical || 0) + (latestScan.issue_count_high || 0) + (latestScan.issue_count_medium || 0) + (latestScan.issue_count_low || 0)}
-• 🔴 Critical: ${latestScan.issue_count_critical || 0}
-• 🟠 High: ${latestScan.issue_count_high || 0}
-• 🟡 Medium: ${latestScan.issue_count_medium || 0}
-• ⚪ Low: ${latestScan.issue_count_low || 0}
+- Critical: ${latestScan.issue_count_critical || 0}
+- High: ${latestScan.issue_count_high || 0}
+- Medium: ${latestScan.issue_count_medium || 0}
+- Low: ${latestScan.issue_count_low || 0}
 
 _Last scanned: ${new Date(latestScan.created_at).toLocaleString()}_`)
     return
@@ -223,7 +223,7 @@ _Last scanned: ${new Date(latestScan.created_at).toLocaleString()}_`)
   // /itsquare token
   if (command === 'token') {
     if (!slackUser) {
-      await event.respond("I couldn't identify your user account.")
+      await event.channel.post("I couldn't identify your user account.")
       return
     }
     
@@ -245,7 +245,7 @@ _Last scanned: ${new Date(latestScan.created_at).toLocaleString()}_`)
           expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
         })
       
-      await event.respond(`*Your Scan Token*
+      await event.channel.post(`*Your Scan Token*
 
 Save this token securely - it won't be shown again!
 
@@ -259,13 +259,13 @@ ITSQUARE_TOKEN=${token} npx @itsquare/agent scan
 \`\`\``)
     } catch (err) {
       console.error('Token generation error:', err)
-      await event.respond("Failed to generate token. Please try again.")
+      await event.channel.post("Failed to generate token. Please try again.")
     }
     return
   }
   
   // /itsquare help (default)
-  await event.respond(`*ITSquare.AI Commands*
+  await event.channel.post(`*ITSquare.AI Commands*
 
 \`/itsquare status\` - View your device health report
 \`/itsquare token\` - Generate a scan token
