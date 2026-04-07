@@ -9,55 +9,50 @@ export async function POST(
 ) {
   const { platform } = await context.params
   
-  console.log('[v0] Webhook POST received for platform:', platform)
-  
-  // Handle Slack URL verification challenge (sent as POST with JSON body)
+  // Handle Slack URL verification challenge
+  // We need to clone the request to check for url_verification without consuming the body
   if (platform === 'slack') {
-    const clonedRequest = request.clone()
-    try {
-      const body = await clonedRequest.json()
-      console.log('[v0] Slack webhook body type:', body.type)
-      
-      // Handle URL verification challenge
-      if (body.type === 'url_verification') {
-        console.log('[v0] Responding to Slack URL verification challenge')
-        return new Response(JSON.stringify({ challenge: body.challenge }), {
-          headers: { 'Content-Type': 'application/json' },
-        })
+    const contentType = request.headers.get('content-type') || ''
+    
+    // Only check for URL verification if content-type is JSON
+    if (contentType.includes('application/json')) {
+      const clonedRequest = request.clone()
+      try {
+        const body = await clonedRequest.json()
+        
+        // Handle URL verification challenge from Slack
+        if (body.type === 'url_verification') {
+          return new Response(JSON.stringify({ challenge: body.challenge }), {
+            headers: { 'Content-Type': 'application/json' },
+          })
+        }
+      } catch {
+        // JSON parse failed, continue to handler
       }
-    } catch (e) {
-      // Body might be form data for slash commands, continue to handler
-      console.log('[v0] Body is not JSON, likely a slash command')
     }
   }
   
   const handler = bot.webhooks[platform as Platform]
   
   if (!handler) {
-    console.log('[v0] Unknown platform:', platform)
     return new Response(`Unknown platform: ${platform}`, { status: 404 })
   }
-  
-  console.log('[v0] Passing to Chat SDK handler')
   
   return handler(request, {
     waitUntil: (task) => after(() => task),
   })
 }
 
-// Handle Slack URL verification challenge and health checks
+// Health check endpoint
 export async function GET(
   request: Request,
   context: { params: Promise<{ platform: string }> }
 ) {
   const { platform } = await context.params
   
-  console.log('[v0] Webhook GET received for platform:', platform)
-  
   if (platform !== 'slack') {
     return new Response('Not found', { status: 404 })
   }
   
-  // Return 200 for health checks
   return new Response('ITSquare.AI Slack Bot is running', { status: 200 })
 }

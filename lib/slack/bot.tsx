@@ -19,33 +19,17 @@ import {
 } from './ai-analysis'
 import type { SlackWorkspace, SlackUser, DeviceScan } from './types'
 
-// Check for required environment variables
-const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN
-const SLACK_SIGNING_SECRET = process.env.SLACK_SIGNING_SECRET
-const REDIS_URL = process.env.REDIS_URL
-
-console.log('[v0] Initializing ITSquare bot...')
-console.log('[v0] SLACK_BOT_TOKEN exists:', !!SLACK_BOT_TOKEN)
-console.log('[v0] SLACK_SIGNING_SECRET exists:', !!SLACK_SIGNING_SECRET)
-console.log('[v0] REDIS_URL exists:', !!REDIS_URL)
-
-if (!SLACK_BOT_TOKEN || !SLACK_SIGNING_SECRET || !REDIS_URL) {
-  console.error('[v0] Missing required environment variables for Slack bot')
-}
-
 // Create the Chat SDK bot instance
 export const bot = new Chat({
   userName: 'itsquare',
   adapters: {
     slack: createSlackAdapter({
-      botToken: SLACK_BOT_TOKEN || '',
-      signingSecret: SLACK_SIGNING_SECRET || '',
+      botToken: process.env.SLACK_BOT_TOKEN || '',
+      signingSecret: process.env.SLACK_SIGNING_SECRET || '',
     }),
   },
-  state: createRedisState({ url: REDIS_URL || '' }),
+  state: createRedisState({ url: process.env.REDIS_URL || '' }),
 })
-
-console.log('[v0] ITSquare bot created successfully')
 
 // Helper to get or create a Slack user in our database
 async function getOrCreateSlackUser(
@@ -182,11 +166,9 @@ async function getFleetStats(workspaceId: string) {
 
 // Handle new @mentions to the bot
 bot.onNewMention(async (thread) => {
-  console.log('[v0] onNewMention triggered')
   await thread.subscribe()
   
   const message = thread.lastMessage
-  console.log('[v0] Message text:', message?.text)
   const text = message?.text?.toLowerCase() || ''
   
   // Get workspace info
@@ -404,10 +386,6 @@ bot.onSubscribedMessage(async (thread, message) => {
 
 // Handle slash command /itsquare
 bot.onSlashCommand('/itsquare', async (event) => {
-  console.log('[v0] Slash command /itsquare received')
-  console.log('[v0] Command text:', event.text)
-  console.log('[v0] User:', event.user?.id)
-  
   const args = event.text?.trim().toLowerCase() || ''
   const command = args.split(' ')[0]
   
