@@ -3,6 +3,19 @@ import { createSlackAdapter } from '@chat-adapter/slack'
 import { createRedisState } from '@chat-adapter/state-redis'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateAgentToken } from './encryption'
+import { 
+  QuickHealthCard, 
+  DetailedHealthCard, 
+  IssuesCard, 
+  ScanComparisonCard,
+  FleetOverviewCard
+} from './health-reports'
+import { 
+  generateScanSummary, 
+  generateFixRecommendations,
+  generateITSupportResponse,
+  analyzeScanTrends
+} from './ai-analysis'
 import type { SlackWorkspace, SlackUser, DeviceScan } from './types'
 
 // Create the Chat SDK bot instance
@@ -89,50 +102,65 @@ async function getLatestDeviceScan(slackUserId: string): Promise<DeviceScan | nu
   return data as DeviceScan | null
 }
 
-// Format device health score as color indicator
-function getHealthColor(score: number | null): string {
-  if (!score) return 'gray'
-  if (score >= 80) return 'good'
-  if (score >= 60) return 'warning'
-  return 'danger'
+// Helper to get scan history for a user
+async function getScanHistory(slackUserId: string, limit = 10): Promise<DeviceScan[]> {
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from('device_scans')
+    .select('*')
+    .eq('slack_user_id', slackUserId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  
+  return (data || []) as DeviceScan[]
 }
 
-// Create a device health summary card
-function createDeviceHealthCard(scan: DeviceScan) {
-  const healthColor = getHealthColor(scan.overall_health_score)
+// Helper to get fleet stats for a workspace
+async function getFleetStats(workspaceId: string) {
+  const supabase = createAdminClient()
   
-  return (
-    <Card title={`Device Health: ${scan.hostname || 'Unknown Device'}`}>
-      <Fields>
-        <Field title="Health Score">
-          {scan.overall_health_score ? `${scan.overall_health_score}/100` : 'N/A'}
-        </Field>
-        <Field title="Security Score">
-          {scan.security_score ? `${scan.security_score}/100` : 'N/A'}
-        </Field>
-        <Field title="OS">
-          {scan.os_type ? `${scan.os_type} ${scan.os_version || ''}` : 'Unknown'}
-        </Field>
-        <Field title="Last Scan">
-          {new Date(scan.created_at).toLocaleDateString()}
-        </Field>
-      </Fields>
-      {scan.issue_count_critical > 0 || scan.issue_count_high > 0 ? (
-        <>
-          <Divider />
-          <CardText>
-            {scan.issue_count_critical > 0 && `Critical Issues: ${scan.issue_count_critical} `}
-            {scan.issue_count_high > 0 && `High Issues: ${scan.issue_count_high}`}
-          </CardText>
-        </>
-      ) : null}
-      <Divider />
-      <Actions>
-        <Button id="view_full_report" style="primary">View Full Report</Button>
-        <Button id="run_new_scan">Run New Scan</Button>
-      </Actions>
-    </Card>
-  )
+  // Get latest scan for each unique device in the workspace
+  const { data: scans } = await supabase
+    .from('device_scans')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .order('created_at', { ascending: false })
+  
+  if (!scans || scans.length === 0) {
+    return null
+  }
+  
+  // Dedupe by slack_user_id to get latest scan per user
+  const latestScans = new Map<string, DeviceScan>()
+  for (const scan of scans) {
+    if (scan.slack_user_id && !latestScans.has(scan.slack_user_id)) {
+      latestScans.set(scan.slack_user_id, scan as DeviceScan)
+    }
+  }
+  
+  const devices = Array.from(latestScans.values())
+  const totalDevices = devices.length
+  const healthyDevices = devices.filter(d => (d.overall_health_score || 0) >= 75).length
+  const atRiskDevices = devices.filter(d => {
+    const score = d.overall_health_score || 0
+    return score >= 50 && score < 75
+  }).length
+  const criticalDevices = devices.filter(d => (d.overall_health_score || 0) < 50).length
+  
+  const avgHealthScore = totalDevices > 0
+    ? Math.round(devices.reduce((sum, d) => sum + (d.overall_health_score || 0), 0) / totalDevices)
+    : 0
+  
+  const totalCriticalIssues = devices.reduce((sum, d) => sum + (d.issue_count_critical || 0), 0)
+  
+  return {
+    totalDevices,
+    healthyDevices,
+    atRiskDevices,
+    criticalDevices,
+    avgHealthScore,
+    totalCriticalIssues,
+  }
 }
 
 // Handle new @mentions to the bot
@@ -164,8 +192,8 @@ bot.onNewMention(async (thread) => {
     { name: message?.author?.fullName }
   )
   
-  // Handle common queries
-  if (text.includes('health') || text.includes('status') || text.includes('scan')) {
+  // Handle device status/health queries
+  if (text.includes('status') || text.includes('health') || text.includes('scan')) {
     if (!slackUser) {
       await thread.post("I couldn't identify your user account. Please try again.")
       return
@@ -191,10 +219,73 @@ bot.onNewMention(async (thread) => {
       return
     }
     
-    await thread.post(createDeviceHealthCard(latestScan))
+    // Generate AI summary
+    const aiSummary = await generateScanSummary(latestScan)
+    
+    // Check if they want detailed report
+    if (text.includes('detail') || text.includes('full') || text.includes('report')) {
+      await thread.post(<DetailedHealthCard scan={latestScan} aiSummary={aiSummary} />)
+    } else {
+      await thread.post(<QuickHealthCard scan={latestScan} />)
+      if (aiSummary) {
+        await thread.post(`💡 *AI Analysis:* ${aiSummary}`)
+      }
+    }
     return
   }
   
+  // Handle issues query
+  if (text.includes('issue') || text.includes('problem') || text.includes('fix')) {
+    if (!slackUser) {
+      await thread.post("I couldn't identify your user account.")
+      return
+    }
+    
+    const latestScan = await getLatestDeviceScan(slackUser.id)
+    
+    if (!latestScan) {
+      await thread.post("No device scan found. Run `/itsquare scan` first.")
+      return
+    }
+    
+    await thread.post(<IssuesCard scan={latestScan} />)
+    return
+  }
+  
+  // Handle history/trends query
+  if (text.includes('history') || text.includes('trend') || text.includes('progress')) {
+    if (!slackUser) {
+      await thread.post("I couldn't identify your user account.")
+      return
+    }
+    
+    const scanHistory = await getScanHistory(slackUser.id, 5)
+    
+    if (scanHistory.length < 2) {
+      await thread.post("Not enough scan history yet. Run a few more scans to see trends!")
+      return
+    }
+    
+    const trendAnalysis = await analyzeScanTrends(scanHistory)
+    await thread.post(<ScanComparisonCard currentScan={scanHistory[0]} previousScan={scanHistory[1]} />)
+    await thread.post(`📊 *Trend Analysis:* ${trendAnalysis}`)
+    return
+  }
+  
+  // Handle fleet overview (admin only conceptually)
+  if (text.includes('fleet') || text.includes('team') || text.includes('all device')) {
+    const stats = await getFleetStats(workspace.id)
+    
+    if (!stats) {
+      await thread.post("No fleet data available yet. Have your team members scan their devices!")
+      return
+    }
+    
+    await thread.post(<FleetOverviewCard stats={stats} />)
+    return
+  }
+  
+  // Handle help command
   if (text.includes('help')) {
     await thread.post(
       <Card title="ITSquare.AI Help">
@@ -203,32 +294,48 @@ bot.onNewMention(async (thread) => {
         </CardText>
         <Divider />
         <CardText>
-          • **Device Health**: Ask about your device status or security score{'\n'}
-          • **IT Support**: Ask any IT question and I&apos;ll help troubleshoot{'\n'}
-          • **Access Requests**: Request access to apps and tools{'\n'}
-          • **Run Scans**: Generate tokens to scan your device
+          *Device Health*{'\n'}
+          • &quot;What&apos;s my device status?&quot; - Quick health check{'\n'}
+          • &quot;Show detailed report&quot; - Full device analysis{'\n'}
+          • &quot;What issues do I have?&quot; - List security issues{'\n'}
+          • &quot;Show my scan history&quot; - View trends over time
         </CardText>
         <Divider />
         <CardText>
-          Try saying: &quot;What&apos;s my device health?&quot; or &quot;I need help with VPN&quot;
+          *IT Support*{'\n'}
+          • Ask any IT question and I&apos;ll help!{'\n'}
+          • &quot;How do I enable FileVault?&quot;{'\n'}
+          • &quot;My VPN isn&apos;t working&quot;
+        </CardText>
+        <Divider />
+        <CardText>
+          *Commands*{'\n'}
+          • `/itsquare status` - View device health{'\n'}
+          • `/itsquare token` - Generate scan token{'\n'}
+          • `/itsquare fleet` - Team overview (admins)
         </CardText>
       </Card>
     )
     return
   }
   
-  // Default AI response - will be enhanced in Phase 3
-  await thread.post(
-    <Card title="ITSquare.AI">
-      <CardText>
-        I received your message! AI-powered responses are coming soon. For now, try:
-      </CardText>
-      <CardText>
-        • &quot;What&apos;s my device health?&quot;{'\n'}
-        • &quot;Help&quot; - to see what I can do
-      </CardText>
-    </Card>
-  )
+  // Default: AI-powered IT support response
+  if (slackUser) {
+    const latestScan = await getLatestDeviceScan(slackUser.id)
+    const response = await generateITSupportResponse(
+      message?.text || '',
+      latestScan
+    )
+    await thread.post(response)
+  } else {
+    await thread.post(
+      <Card title="ITSquare.AI">
+        <CardText>
+          I received your message! Try asking about your device health or say &quot;help&quot; for options.
+        </CardText>
+      </Card>
+    )
+  }
 })
 
 // Handle messages in subscribed threads
@@ -238,19 +345,42 @@ bot.onSubscribedMessage(async (thread, message) => {
   
   const text = message.text?.toLowerCase() || ''
   
-  // Simple keyword-based responses for now
-  // Will be replaced with AI in Phase 3
-  if (text.includes('thank')) {
-    await thread.post("You're welcome! Let me know if you need anything else.")
+  // Get context for AI response
+  const teamId = (thread as any).adapter?.teamId || ''
+  const workspace = await getWorkspaceByTeamId(teamId)
+  
+  if (!workspace) return
+  
+  const slackUser = await getOrCreateSlackUser(
+    workspace.id,
+    message.author.id,
+    { name: message.author.fullName }
+  )
+  
+  if (!slackUser) {
+    await thread.post("I'm having trouble identifying your account. Please try again.")
     return
   }
   
-  await thread.post("I'm here to help! Try asking about your device health or say 'help' for options.")
+  // Handle simple acknowledgments
+  if (text.match(/^(thanks?|thank you|thx|ty)$/i)) {
+    await thread.post("You're welcome! Let me know if you need anything else. 👍")
+    return
+  }
+  
+  // For other messages, provide AI-powered response with device context
+  const latestScan = await getLatestDeviceScan(slackUser.id)
+  const response = await generateITSupportResponse(
+    message.text || '',
+    latestScan
+  )
+  await thread.post(response)
 })
 
 // Handle slash command /itsquare
 bot.onSlashCommand('/itsquare', async (event) => {
   const args = event.text?.trim().toLowerCase() || ''
+  const command = args.split(' ')[0]
   
   // Get workspace
   const teamId = (event as any).teamId || ''
@@ -271,7 +401,8 @@ bot.onSlashCommand('/itsquare', async (event) => {
     { name: event.user.fullName }
   )
   
-  if (args === 'scan' || args === 'health') {
+  // /itsquare status or /itsquare health
+  if (command === 'status' || command === 'health' || command === 'scan') {
     if (!slackUser) {
       await event.respond("I couldn't identify your user account.")
       return
@@ -293,11 +424,91 @@ bot.onSlashCommand('/itsquare', async (event) => {
       return
     }
     
-    await event.respond(createDeviceHealthCard(latestScan))
+    // Generate AI summary
+    const aiSummary = await generateScanSummary(latestScan)
+    await event.respond(<DetailedHealthCard scan={latestScan} aiSummary={aiSummary} />)
     return
   }
   
-  if (args === 'token') {
+  // /itsquare issues
+  if (command === 'issues') {
+    if (!slackUser) {
+      await event.respond("I couldn't identify your user account.")
+      return
+    }
+    
+    const latestScan = await getLatestDeviceScan(slackUser.id)
+    
+    if (!latestScan) {
+      await event.respond("No device scan found. Run `/itsquare status` first.")
+      return
+    }
+    
+    await event.respond(<IssuesCard scan={latestScan} />)
+    return
+  }
+  
+  // /itsquare fix
+  if (command === 'fix') {
+    if (!slackUser) {
+      await event.respond("I couldn't identify your user account.")
+      return
+    }
+    
+    const latestScan = await getLatestDeviceScan(slackUser.id)
+    
+    if (!latestScan) {
+      await event.respond("No device scan found. Run `/itsquare status` first.")
+      return
+    }
+    
+    const recommendations = await generateFixRecommendations(latestScan)
+    await event.respond(
+      <Card title="Fix Guide">
+        <CardText>{recommendations}</CardText>
+        <Divider />
+        <Actions>
+          <Button id="view_dashboard" style="primary">Open Dashboard</Button>
+        </Actions>
+      </Card>
+    )
+    return
+  }
+  
+  // /itsquare history
+  if (command === 'history' || command === 'trends') {
+    if (!slackUser) {
+      await event.respond("I couldn't identify your user account.")
+      return
+    }
+    
+    const scanHistory = await getScanHistory(slackUser.id, 5)
+    
+    if (scanHistory.length < 2) {
+      await event.respond("Not enough scan history. Run a few more scans to see trends!")
+      return
+    }
+    
+    const trendAnalysis = await analyzeScanTrends(scanHistory)
+    await event.respond(<ScanComparisonCard currentScan={scanHistory[0]} previousScan={scanHistory[1]} />)
+    return
+  }
+  
+  // /itsquare fleet (admin overview)
+  if (command === 'fleet' || command === 'team' || command === 'overview') {
+    const stats = await getFleetStats(workspace.id)
+    
+    if (!stats) {
+      await event.respond("No fleet data available. Have team members scan their devices first!")
+      return
+    }
+    
+    await event.respond(<FleetOverviewCard stats={stats} />)
+    return
+  }
+  
+  // /itsquare token
+  if (command === 'token') {
     await event.respond(
       <Card title="Generate Scan Token">
         <CardText>
@@ -315,8 +526,12 @@ bot.onSlashCommand('/itsquare', async (event) => {
   await event.respond(
     <Card title="ITSquare.AI Commands">
       <CardText>
-        Available commands:{'\n'}
-        • `/itsquare scan` - View your latest device health{'\n'}
+        *Available commands:*{'\n'}
+        • `/itsquare status` - View your device health report{'\n'}
+        • `/itsquare issues` - List security issues{'\n'}
+        • `/itsquare fix` - Get AI-powered fix recommendations{'\n'}
+        • `/itsquare history` - View scan trends{'\n'}
+        • `/itsquare fleet` - Team device overview{'\n'}
         • `/itsquare token` - Generate a scan token{'\n'}
         • `/itsquare help` - Show this message
       </CardText>
@@ -376,7 +591,7 @@ bot.onAction('generate_token', async (event) => {
     await event.thread.post(
       <Card title="Your Scan Token">
         <CardText>
-          Here is your personal scan token. Save it securely - it cannot be shown again!
+          Here is your personal scan token. Save it securely - it won&apos;t be shown again!
         </CardText>
         <Divider />
         <CardText>
@@ -384,7 +599,7 @@ bot.onAction('generate_token', async (event) => {
         </CardText>
         <Divider />
         <CardText>
-          To scan your device, run:{'\n'}
+          *To scan your device, run:*{'\n'}
           ```ITSQUARE_TOKEN={token} npx @itsquare/agent scan```
         </CardText>
       </Card>
@@ -400,16 +615,74 @@ bot.onAction('generate_token', async (event) => {
 })
 
 bot.onAction('view_full_report', async (event) => {
-  await event.thread.post(
-    <Card title="Full Report">
-      <CardText>
-        View your complete device health report in the dashboard:
-      </CardText>
-      <CardText>
-        https://itsquare.ai/dashboard/scans
-      </CardText>
-    </Card>
+  const teamId = (event as any).teamId || ''
+  const workspace = await getWorkspaceByTeamId(teamId)
+  
+  if (!workspace) return
+  
+  const slackUser = await getOrCreateSlackUser(
+    workspace.id,
+    event.user.id,
+    { name: event.user.fullName }
   )
+  
+  if (!slackUser) return
+  
+  const latestScan = await getLatestDeviceScan(slackUser.id)
+  
+  if (latestScan) {
+    const aiSummary = await generateScanSummary(latestScan)
+    await event.thread.post(<DetailedHealthCard scan={latestScan} aiSummary={aiSummary} />)
+  } else {
+    await event.thread.post("No scan found. Run a device scan first!")
+  }
+})
+
+bot.onAction('view_issues', async (event) => {
+  const teamId = (event as any).teamId || ''
+  const workspace = await getWorkspaceByTeamId(teamId)
+  
+  if (!workspace) return
+  
+  const slackUser = await getOrCreateSlackUser(
+    workspace.id,
+    event.user.id,
+    { name: event.user.fullName }
+  )
+  
+  if (!slackUser) return
+  
+  const latestScan = await getLatestDeviceScan(slackUser.id)
+  
+  if (latestScan) {
+    await event.thread.post(<IssuesCard scan={latestScan} />)
+  }
+})
+
+bot.onAction('get_fix_guide', async (event) => {
+  const teamId = (event as any).teamId || ''
+  const workspace = await getWorkspaceByTeamId(teamId)
+  
+  if (!workspace) return
+  
+  const slackUser = await getOrCreateSlackUser(
+    workspace.id,
+    event.user.id,
+    { name: event.user.fullName }
+  )
+  
+  if (!slackUser) return
+  
+  const latestScan = await getLatestDeviceScan(slackUser.id)
+  
+  if (latestScan) {
+    const recommendations = await generateFixRecommendations(latestScan)
+    await event.thread.post(
+      <Card title="Fix Guide">
+        <CardText>{recommendations}</CardText>
+      </Card>
+    )
+  }
 })
 
 bot.onAction('run_new_scan', async (event) => {
@@ -421,8 +694,34 @@ bot.onAction('run_new_scan', async (event) => {
       <CardText>
         ```npx @itsquare/agent scan```
       </CardText>
+      <CardText>
+        _Make sure your ITSQUARE_TOKEN is set!_
+      </CardText>
     </Card>
   )
+})
+
+bot.onAction('view_dashboard', async () => {
+  // This action just acknowledges - the link is in the card
+})
+
+bot.onAction('view_fleet_dashboard', async () => {
+  // This action just acknowledges - users will click the dashboard link
+})
+
+bot.onAction('export_report', async (event) => {
+  await event.thread.post(
+    <Card title="Export Report">
+      <CardText>
+        Visit the dashboard to export your fleet report:{'\n'}
+        https://itsquare.ai/dashboard/reports
+      </CardText>
+    </Card>
+  )
+})
+
+bot.onAction('dismiss_issues', async (event) => {
+  await event.thread.post("Issues acknowledged. We recommend addressing critical and high-priority items soon.")
 })
 
 export default bot
