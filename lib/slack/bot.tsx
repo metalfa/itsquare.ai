@@ -1,3 +1,4 @@
+/** @jsxImportSource chat */
 import { Chat, Card, CardText, Actions, Button, Divider, Fields, Field } from 'chat'
 import { createSlackAdapter } from '@chat-adapter/slack'
 import { createRedisState } from '@chat-adapter/state-redis'
@@ -23,11 +24,11 @@ export const bot = new Chat({
   userName: 'itsquare',
   adapters: {
     slack: createSlackAdapter({
-      botToken: process.env.SLACK_BOT_TOKEN!,
-      signingSecret: process.env.SLACK_SIGNING_SECRET!,
+      botToken: process.env.SLACK_BOT_TOKEN || '',
+      signingSecret: process.env.SLACK_SIGNING_SECRET || '',
     }),
   },
-  state: createRedisState({ url: process.env.REDIS_URL! }),
+  state: createRedisState({ url: process.env.REDIS_URL || '' }),
 })
 
 // Helper to get or create a Slack user in our database
