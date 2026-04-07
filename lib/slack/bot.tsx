@@ -309,10 +309,16 @@ bot.onNewMention(async (thread) => {
         </CardText>
         <Divider />
         <CardText>
-          *Commands*{'\n'}
+          *Slash Commands* (in channels, not threads):{'\n'}
           • `/itsquare status` - View device health{'\n'}
           • `/itsquare token` - Generate scan token{'\n'}
-          • `/itsquare fleet` - Team overview (admins)
+          • `/itsquare fleet` - Team overview
+        </CardText>
+        <Divider />
+        <CardText>
+          *In threads or DMs*, just @mention me:{'\n'}
+          • &quot;@ITSquare status&quot;{'\n'}
+          • &quot;@ITSquare help&quot;
         </CardText>
       </Card>
     )
@@ -526,14 +532,20 @@ bot.onSlashCommand('/itsquare', async (event) => {
   await event.respond(
     <Card title="ITSquare.AI Commands">
       <CardText>
-        *Available commands:*{'\n'}
+        *Slash commands* (in channels only):{'\n'}
         • `/itsquare status` - View your device health report{'\n'}
         • `/itsquare issues` - List security issues{'\n'}
         • `/itsquare fix` - Get AI-powered fix recommendations{'\n'}
         • `/itsquare history` - View scan trends{'\n'}
         • `/itsquare fleet` - Team device overview{'\n'}
-        • `/itsquare token` - Generate a scan token{'\n'}
-        • `/itsquare help` - Show this message
+        • `/itsquare token` - Generate a scan token
+      </CardText>
+      <Divider />
+      <CardText>
+        *In threads*, @mention me instead:{'\n'}
+        • @ITSquare status{'\n'}
+        • @ITSquare issues{'\n'}
+        • @ITSquare help
       </CardText>
     </Card>
   )
