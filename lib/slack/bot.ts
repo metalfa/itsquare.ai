@@ -111,36 +111,36 @@ bot.onNewMention(async (thread) => {
   const text = message?.text?.toLowerCase() || ''
   
   if (text.includes('help')) {
-    await thread.post(`*ITSquare.AI Help*
+    await thread.post(`*ITSquare.AI - Your AI IT Assistant*
 
-I'm your AI IT assistant. Here's what I can help with:
+*Quick Start:*
+1. Type \`/itsquare scan\` in any channel
+2. Copy-paste the command in your Terminal
+3. Done! Results appear in Slack.
 
-*Device Health*
-- "What's my device status?" - Quick health check
-- "Show detailed report" - Full device analysis
+*Commands:*
+• \`/itsquare scan\` - Scan your device
+• \`/itsquare status\` - View health report
+• \`/itsquare help\` - Show commands
 
-*Slash Commands* (in channels):
-- \`/itsquare status\` - View device health
-- \`/itsquare token\` - Generate scan token
-- \`/itsquare help\` - Show commands`)
+Just ask me if you need IT help!`)
     return
   }
   
   if (text.includes('status') || text.includes('health') || text.includes('scan')) {
-    await thread.post(`To check your device health, use \`/itsquare status\` in a channel.
+    await thread.post(`To scan your device:
 
-Or scan your device first:
-\`\`\`
-npx @itsquare/agent scan
-\`\`\``)
+1. Type \`/itsquare scan\` in a channel
+2. Copy the command that appears
+3. Paste it in Terminal (Mac/Linux) or PowerShell (Windows)
+
+Results will appear here automatically!`)
     return
   }
   
-  await thread.post(`Hi! I'm ITSquare.AI, your IT assistant. 
+  await thread.post(`Hi! I'm ITSquare, your AI IT assistant.
 
-Try:
-- "help" for all commands
-- \`/itsquare\` slash commands in channels`)
+Type \`/itsquare scan\` to check your device health, or ask me any IT question!`)
 })
 
 // Handle messages in subscribed threads
@@ -190,8 +190,53 @@ Visit: https://itsquare.ai/dashboard/integrations`)
     { name: event.user?.fullName }
   )
   
-  // /itsquare status
-  if (command === 'status' || command === 'health' || command === 'scan') {
+  // /itsquare scan - Generate one-liner command to scan device
+  if (command === 'scan') {
+    if (!slackUser) {
+      await respondToSlashCommand(responseUrl, "I couldn't identify your user account. Please try again.")
+      return
+    }
+    
+    try {
+      // Generate a new token for this scan
+      const { token, prefix, hash } = await generateAgentToken()
+      
+      const supabase = createAdminClient()
+      await supabase
+        .from('agent_tokens')
+        .insert({
+          token_hash: hash,
+          token_prefix: prefix,
+          workspace_id: workspace.id,
+          slack_user_id: slackUser.id,
+          name: `${event.user?.fullName || 'User'}'s Device`,
+          scopes: ['device:scan'],
+          is_active: true,
+          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hour expiry
+        })
+      
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://itsquare.ai'
+      
+      await respondToSlashCommand(responseUrl, `*Scan Your Device*
+
+Copy and paste this command in your Terminal (Mac/Linux) or PowerShell (Windows):
+
+\`\`\`
+curl -sL ${appUrl}/api/scan/${token} | bash
+\`\`\`
+
+The scan takes about 10 seconds. Results will appear here automatically.
+
+_This command expires in 24 hours._`)
+    } catch (err) {
+      console.error('Scan token generation error:', err)
+      await respondToSlashCommand(responseUrl, "Failed to generate scan command. Please try again.")
+    }
+    return
+  }
+  
+  // /itsquare status - View latest scan results
+  if (command === 'status' || command === 'health') {
     if (!slackUser) {
       await respondToSlashCommand(responseUrl, "I couldn't identify your user account. Please try again.")
       return
@@ -202,11 +247,7 @@ Visit: https://itsquare.ai/dashboard/integrations`)
     if (!latestScan) {
       await respondToSlashCommand(responseUrl, `*No Device Scan Found*
 
-You haven't scanned your device yet.
-
-1. Run \`/itsquare token\` to get a token
-2. Run: \`ITSQUARE_TOKEN=<token> npx @itsquare/agent scan\`
-3. Run \`/itsquare status\` to see results`)
+You haven't scanned your device yet. Run \`/itsquare scan\` to get started.`)
       return
     }
     
@@ -231,57 +272,19 @@ _Last scanned: ${new Date(latestScan.created_at).toLocaleString()}_`)
     return
   }
   
-  // /itsquare token
-  if (command === 'token') {
-    if (!slackUser) {
-      await respondToSlashCommand(responseUrl, "I couldn't identify your user account.")
-      return
-    }
-    
-    try {
-      const { token, prefix, hash } = await generateAgentToken()
-      
-      const supabase = createAdminClient()
-      
-      await supabase
-        .from('agent_tokens')
-        .insert({
-          token_hash: hash,
-          token_prefix: prefix,
-          workspace_id: workspace.id,
-          slack_user_id: slackUser.id,
-          name: `${event.user?.fullName || 'User'}'s Device`,
-          scopes: ['device:scan'],
-          is_active: true,
-          expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-        })
-      
-      await respondToSlashCommand(responseUrl, `*Your Scan Token*
-
-Save this token - it won't be shown again!
-
-\`${token}\`
-
-*To scan your device:*
-\`\`\`
-ITSQUARE_TOKEN=${token} npx @itsquare/agent scan
-\`\`\``)
-    } catch (err) {
-      console.error('Token generation error:', err)
-      await respondToSlashCommand(responseUrl, "Failed to generate token. Please try again.")
-    }
-    return
-  }
-  
   // /itsquare help (default)
-  await respondToSlashCommand(responseUrl, `*ITSquare.AI Commands*
+  await respondToSlashCommand(responseUrl, `*ITSquare.AI - Your AI IT Assistant*
 
-\`/itsquare status\` - View your device health
-\`/itsquare token\` - Generate a scan token
-\`/itsquare help\` - Show this message
+*Commands:*
+• \`/itsquare scan\` - Scan your device (just copy-paste one command!)
+• \`/itsquare status\` - View your latest health report
+• \`/itsquare help\` - Show this message
 
-*Quick Start:*
-1. \`/itsquare token\` - Get a token
-2. Run the agent on your device
-3. \`/itsquare status\` - See results`)
+*How it works:*
+1. Type \`/itsquare scan\`
+2. Copy the command that appears
+3. Paste it in your Terminal (Mac/Linux) or PowerShell (Windows)
+4. Done! Results appear here automatically.
+
+_Scans check: firewall, disk encryption, antivirus, OS updates, and more._`)
 })
