@@ -140,33 +140,52 @@ async function getOrCreateSlackUser(
 }
 
 // Store conversation history for context
-async function getConversationHistory(threadId: string): Promise<Array<{role: string, content: string}>> {
+async function getConversationHistory(channelId: string, threadTs: string): Promise<Array<{role: string, content: string}>> {
   const supabase = createAdminClient()
   const { data } = await supabase
     .from('it_conversations')
     .select('messages')
-    .eq('thread_id', threadId)
+    .eq('slack_channel_id', channelId)
+    .eq('slack_thread_ts', threadTs)
     .single()
   
   return data?.messages || []
 }
 
 async function saveConversationHistory(
-  threadId: string, 
+  channelId: string,
+  threadTs: string,
   workspaceId: string,
   slackUserId: string,
   messages: Array<{role: string, content: string}>
 ) {
   const supabase = createAdminClient()
-  await supabase
+  
+  // Try to find existing conversation
+  const { data: existing } = await supabase
     .from('it_conversations')
-    .upsert({
-      thread_id: threadId,
-      workspace_id: workspaceId,
-      slack_user_id: slackUserId,
-      messages,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'thread_id' })
+    .select('id')
+    .eq('slack_channel_id', channelId)
+    .eq('slack_thread_ts', threadTs)
+    .single()
+  
+  if (existing) {
+    await supabase
+      .from('it_conversations')
+      .update({ messages, updated_at: new Date().toISOString() })
+      .eq('id', existing.id)
+  } else {
+    await supabase
+      .from('it_conversations')
+      .insert({
+        slack_channel_id: channelId,
+        slack_thread_ts: threadTs,
+        workspace_id: workspaceId,
+        slack_user_id: slackUserId,
+        messages,
+        status: 'active',
+      })
+  }
 }
 
 // AI-powered response generation
@@ -203,18 +222,19 @@ bot.onNewMention(async (thread) => {
   
   const message = thread.lastMessage
   const userMessage = message?.text || ''
-  const threadId = (thread as any).id || `thread_${Date.now()}`
   
   // Get workspace info from thread context
-  const raw = (thread as any).raw || {}
+  const raw = (message as any)?.raw || (thread as any).raw || {}
   const teamId = raw.team || raw.team_id || ''
-  const userId = message?.author?.id || ''
+  const userId = message?.author?.id || raw.user || ''
+  const channelId = raw.channel || ''
+  const threadTs = raw.thread_ts || raw.ts || `${Date.now()}`
   
   const workspace = await getWorkspaceByTeamId(teamId)
   const slackUser = workspace ? await getOrCreateSlackUser(workspace.id, userId) : null
   
   // Get conversation history
-  const history = await getConversationHistory(threadId)
+  const history = await getConversationHistory(channelId, threadTs)
   
   // Generate AI response
   const response = await generateITResponse(userMessage, history)
@@ -226,7 +246,7 @@ bot.onNewMention(async (thread) => {
       { role: 'user', content: userMessage },
       { role: 'assistant', content: response }
     ]
-    await saveConversationHistory(threadId, workspace.id, slackUser.id, newHistory)
+    await saveConversationHistory(channelId, threadTs, workspace.id, slackUser.id, newHistory)
   }
   
   await thread.post(response)
@@ -237,18 +257,19 @@ bot.onSubscribedMessage(async (thread, message) => {
   if (message.author.isMe) return
   
   const userMessage = message.text || ''
-  const threadId = (thread as any).id || `thread_${Date.now()}`
   
   // Get workspace info
-  const raw = (thread as any).raw || {}
+  const raw = (message as any)?.raw || (thread as any).raw || {}
   const teamId = raw.team || raw.team_id || ''
-  const userId = message.author?.id || ''
+  const userId = message.author?.id || raw.user || ''
+  const channelId = raw.channel || ''
+  const threadTs = raw.thread_ts || raw.ts || `${Date.now()}`
   
   const workspace = await getWorkspaceByTeamId(teamId)
   const slackUser = workspace ? await getOrCreateSlackUser(workspace.id, userId) : null
   
   // Get conversation history
-  const history = await getConversationHistory(threadId)
+  const history = await getConversationHistory(channelId, threadTs)
   
   // Generate AI response
   const response = await generateITResponse(userMessage, history)
@@ -260,7 +281,7 @@ bot.onSubscribedMessage(async (thread, message) => {
       { role: 'user', content: userMessage },
       { role: 'assistant', content: response }
     ]
-    await saveConversationHistory(threadId, workspace.id, slackUser.id, newHistory)
+    await saveConversationHistory(channelId, threadTs, workspace.id, slackUser.id, newHistory)
   }
   
   await thread.post(response)
@@ -306,19 +327,6 @@ _I can troubleshoot issues, provide step-by-step solutions, and connect you with
   // AI-powered response for any IT issue
   const slackUser = await getOrCreateSlackUser(workspace.id, userId)
   const response = await generateITResponse(userMessage, [])
-  
-  // Log the interaction
-  if (slackUser) {
-    const supabase = createAdminClient()
-    await supabase.from('it_tickets').insert({
-      workspace_id: workspace.id,
-      slack_user_id: slackUser.id,
-      issue_description: userMessage,
-      ai_response: response,
-      status: 'resolved_by_ai',
-      created_at: new Date().toISOString(),
-    })
-  }
   
   await respondToSlashCommand(responseUrl, response)
 })
