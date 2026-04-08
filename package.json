@@ -9,6 +9,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@ai-sdk/gateway": "^3.0.93",
     "@chat-adapter/slack": "^4.24.0",
     "@chat-adapter/state-redis": "^4.24.0",
     "@hookform/resolvers": "^3.9.1",
