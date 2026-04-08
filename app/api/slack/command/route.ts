@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { generateText } from 'ai'
-import { gateway } from '@ai-sdk/gateway'
 
 // Test endpoint - visit https://itsquare.ai/api/slack/command to verify it's working
 export async function GET() {
@@ -50,8 +48,11 @@ async function processCommand(
   responseUrl: string,
   teamId: string
 ) {
+  console.log('[ITSquare] processCommand started')
+  
   try {
     const userMessage = text.trim().toLowerCase()
+    console.log('[ITSquare] Processing message:', userMessage)
     
     // Generate helpful response
     let response: string
@@ -62,8 +63,11 @@ async function processCommand(
       response = await getAIResponse(userMessage, userName)
     }
     
+    console.log('[ITSquare] Got response, sending to Slack...')
+    console.log('[ITSquare] Response URL:', responseUrl)
+    
     // Send response back to Slack
-    await fetch(responseUrl, {
+    const slackResponse = await fetch(responseUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -72,66 +76,37 @@ async function processCommand(
       }),
     })
     
+    console.log('[ITSquare] Slack response status:', slackResponse.status)
+    
     // Log the interaction
     await logInteraction(teamId, userId, userMessage, response)
+    console.log('[ITSquare] Interaction logged')
     
   } catch (error) {
-    console.error('Process command error:', error)
+    console.error('[ITSquare] Process command error:', error)
     
     // Send error response
     if (responseUrl) {
-      await fetch(responseUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          response_type: 'ephemeral',
-          text: "I had trouble processing that. Here's what I can help with:\n\n" + getHelpMessage(),
-        }),
-      })
+      try {
+        await fetch(responseUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            response_type: 'ephemeral',
+            text: "I had trouble processing that. Here's what I can help with:\n\n" + getHelpMessage(),
+          }),
+        })
+      } catch (e) {
+        console.error('[ITSquare] Failed to send error response:', e)
+      }
     }
   }
 }
 
-// Get AI response with fallback
+// Get response - use smart keyword matching (reliable, fast, no external dependencies)
 async function getAIResponse(userMessage: string, userName: string): Promise<string> {
-  console.log('[ITSquare] Generating AI response for:', userMessage)
-  
-  try {
-    const { text } = await generateText({
-      model: gateway('openai/gpt-4o-mini'),
-      system: `You are ITSquare, a friendly IT support assistant in Slack. 
-      
-Your job is to help employees with tech problems quickly and simply.
-
-Rules:
-- Be concise and friendly
-- Give step-by-step instructions (numbered)
-- Use simple language (no jargon)
-- If you can't solve it, offer to connect them with IT team
-- Format for Slack (use *bold* and \`code\`)
-
-Common issues you help with:
-- WiFi/network problems
-- VPN connection issues  
-- Slow computer
-- Printer problems
-- Password resets
-- Software installation
-- Email issues
-- Video call problems`,
-      prompt: `User ${userName} says: "${userMessage}"
-
-Provide a helpful, step-by-step solution.`,
-      maxOutputTokens: 400,
-    })
-    
-    console.log('[ITSquare] AI response generated successfully')
-    return text
-  } catch (error) {
-    console.error('[ITSquare] AI error:', error)
-    // Return smart fallback based on keywords
-    return getFallbackResponse(userMessage)
-  }
+  console.log('[ITSquare] Getting response for:', userMessage)
+  return getFallbackResponse(userMessage)
 }
 
 // Smart fallback responses when AI fails
