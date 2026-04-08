@@ -3,8 +3,19 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { generateText } from 'ai'
 import { gateway } from '@ai-sdk/gateway'
 
+// Test endpoint - visit https://itsquare.ai/api/slack/command to verify it's working
+export async function GET() {
+  return NextResponse.json({ 
+    status: 'ok', 
+    message: 'ITSquare slash command endpoint is running',
+    timestamp: new Date().toISOString()
+  })
+}
+
 // Simple, direct Slack slash command handler - NO external libraries
 export async function POST(request: Request) {
+  console.log('[ITSquare] Received slash command request')
+  
   try {
     // Parse form data from Slack
     const formData = await request.formData()
@@ -14,6 +25,8 @@ export async function POST(request: Request) {
     const responseUrl = formData.get('response_url')?.toString() || ''
     const teamId = formData.get('team_id')?.toString() || ''
     
+    console.log('[ITSquare] Command:', text, 'User:', userName, 'Team:', teamId)
+    
     // Immediately acknowledge to Slack (they require response within 3 seconds)
     // Then process in background
     processCommand(text, userId, userName, responseUrl, teamId)
@@ -21,7 +34,7 @@ export async function POST(request: Request) {
     // Return immediate acknowledgment
     return new NextResponse(null, { status: 200 })
   } catch (error) {
-    console.error('Slack command error:', error)
+    console.error('[ITSquare] Slack command error:', error)
     return NextResponse.json({ 
       response_type: 'ephemeral',
       text: 'Something went wrong. Please try again.' 
@@ -81,6 +94,8 @@ async function processCommand(
 
 // Get AI response with fallback
 async function getAIResponse(userMessage: string, userName: string): Promise<string> {
+  console.log('[ITSquare] Generating AI response for:', userMessage)
+  
   try {
     const { text } = await generateText({
       model: gateway('openai/gpt-4o-mini'),
@@ -110,9 +125,10 @@ Provide a helpful, step-by-step solution.`,
       maxOutputTokens: 400,
     })
     
+    console.log('[ITSquare] AI response generated successfully')
     return text
   } catch (error) {
-    console.error('AI error:', error)
+    console.error('[ITSquare] AI error:', error)
     // Return smart fallback based on keywords
     return getFallbackResponse(userMessage)
   }
