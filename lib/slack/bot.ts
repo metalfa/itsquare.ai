@@ -17,17 +17,21 @@ export const bot = new Chat({
   state: createRedisState({ url: process.env.REDIS_URL || '' }),
 })
 
-// Helper to send ephemeral message via Slack API
-async function sendEphemeral(channel: string, user: string, text: string) {
-  const response = await fetch('https://slack.com/api/chat.postEphemeral', {
+// Helper to respond to slash commands using Slack's response_url
+// This is the most reliable way - no auth token needed
+async function respondToSlashCommand(responseUrl: string, text: string, isEphemeral = true) {
+  const response = await fetch(responseUrl, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.SLACK_BOT_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ channel, user, text }),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      text,
+      response_type: isEphemeral ? 'ephemeral' : 'in_channel',
+    }),
   })
-  return response.json()
+  if (!response.ok) {
+    console.error('[v0] Slash response failed:', response.status, await response.text())
+  }
+  return response.ok
 }
 
 // Helper to get or create a Slack user in our database
@@ -75,17 +79,12 @@ async function getOrCreateSlackUser(
 // Helper to get workspace by team ID
 async function getWorkspaceByTeamId(teamId: string): Promise<SlackWorkspace | null> {
   const supabase = createAdminClient()
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from('slack_workspaces')
     .select('*')
     .eq('team_id', teamId)
     .eq('status', 'active')
     .single()
-  
-  if (error) {
-    console.log('[v0] Workspace query error:', error.message)
-  }
-  console.log('[v0] Looking for teamId:', teamId, 'Found:', data?.team_id)
   
   return data as SlackWorkspace | null
 }
@@ -163,20 +162,21 @@ bot.onSlashCommand('/itsquare', async (event) => {
   const args = event.text?.trim().toLowerCase() || ''
   const command = args.split(' ')[0]
   
-  // Extract from event.raw (original Slack payload) or fallback to event properties
+  // Extract from event.raw (original Slack payload)
   const raw = (event as any).raw || {}
-  const channelId = raw.channel_id || (event as any).channelId || ''
   const userId = raw.user_id || event.user?.id || ''
   const teamId = raw.team_id || ''
+  const responseUrl = raw.response_url || ''
   
-  console.log('[v0] Slash command:', { command, teamId, userId, channelId })
-  console.log('[v0] Raw payload keys:', Object.keys(raw))
+  if (!responseUrl) {
+    console.error('[v0] No response_url in slash command payload')
+    return
+  }
   
   const workspace = await getWorkspaceByTeamId(teamId)
-  console.log('[v0] Workspace:', workspace ? 'found' : 'not found')
   
   if (!workspace) {
-    await sendEphemeral(channelId, userId, `*Setup Required*
+    await respondToSlashCommand(responseUrl, `*Setup Required*
 
 I don't recognize this workspace. Please reinstall the ITSquare.AI app.
 
@@ -193,14 +193,14 @@ Visit: https://itsquare.ai/dashboard/integrations`)
   // /itsquare status
   if (command === 'status' || command === 'health' || command === 'scan') {
     if (!slackUser) {
-      await sendEphemeral(channelId, userId, "I couldn't identify your user account. Please try again.")
+      await respondToSlashCommand(responseUrl, "I couldn't identify your user account. Please try again.")
       return
     }
     
     const latestScan = await getLatestDeviceScan(slackUser.id)
     
     if (!latestScan) {
-      await sendEphemeral(channelId, userId, `*No Device Scan Found*
+      await respondToSlashCommand(responseUrl, `*No Device Scan Found*
 
 You haven't scanned your device yet.
 
@@ -213,7 +213,7 @@ You haven't scanned your device yet.
     const healthEmoji = (latestScan.overall_health_score || 0) >= 75 ? '🟢' : 
                         (latestScan.overall_health_score || 0) >= 50 ? '🟡' : '🔴'
     
-    await sendEphemeral(channelId, userId, `${healthEmoji} *Device Health Report*
+    await respondToSlashCommand(responseUrl, `${healthEmoji} *Device Health Report*
 
 *Device:* ${latestScan.hostname || 'Unknown'}
 *OS:* ${latestScan.os_type || 'Unknown'} ${latestScan.os_version || ''}
@@ -234,7 +234,7 @@ _Last scanned: ${new Date(latestScan.created_at).toLocaleString()}_`)
   // /itsquare token
   if (command === 'token') {
     if (!slackUser) {
-      await sendEphemeral(channelId, userId, "I couldn't identify your user account.")
+      await respondToSlashCommand(responseUrl, "I couldn't identify your user account.")
       return
     }
     
@@ -256,7 +256,7 @@ _Last scanned: ${new Date(latestScan.created_at).toLocaleString()}_`)
           expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
         })
       
-      await sendEphemeral(channelId, userId, `*Your Scan Token*
+      await respondToSlashCommand(responseUrl, `*Your Scan Token*
 
 Save this token - it won't be shown again!
 
@@ -268,13 +268,13 @@ ITSQUARE_TOKEN=${token} npx @itsquare/agent scan
 \`\`\``)
     } catch (err) {
       console.error('Token generation error:', err)
-      await sendEphemeral(channelId, userId, "Failed to generate token. Please try again.")
+      await respondToSlashCommand(responseUrl, "Failed to generate token. Please try again.")
     }
     return
   }
   
   // /itsquare help (default)
-  await sendEphemeral(channelId, userId, `*ITSquare.AI Commands*
+  await respondToSlashCommand(responseUrl, `*ITSquare.AI Commands*
 
 \`/itsquare status\` - View your device health
 \`/itsquare token\` - Generate a scan token
