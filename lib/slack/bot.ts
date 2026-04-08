@@ -75,12 +75,17 @@ async function getOrCreateSlackUser(
 // Helper to get workspace by team ID
 async function getWorkspaceByTeamId(teamId: string): Promise<SlackWorkspace | null> {
   const supabase = createAdminClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('slack_workspaces')
     .select('*')
     .eq('team_id', teamId)
     .eq('status', 'active')
     .single()
+  
+  if (error) {
+    console.log('[v0] Workspace query error:', error.message)
+  }
+  console.log('[v0] Looking for teamId:', teamId, 'Found:', data?.team_id)
   
   return data as SlackWorkspace | null
 }
@@ -160,9 +165,13 @@ bot.onSlashCommand('/itsquare', async (event) => {
   const channelId = (event as any).channelId || (event as any).channel_id || ''
   const userId = event.user?.id || ''
   
-  // Get workspace
+  // Get workspace - log for debugging
   const teamId = (event as any).teamId || (event as any).team_id || ''
+  console.log('[v0] Slash command received:', { command, teamId, userId, channelId })
+  console.log('[v0] Full event keys:', Object.keys(event))
+  
   const workspace = await getWorkspaceByTeamId(teamId)
+  console.log('[v0] Workspace lookup result:', workspace ? 'found' : 'not found', { teamId })
   
   if (!workspace) {
     await sendEphemeral(channelId, userId, `*Setup Required*
