@@ -162,16 +162,18 @@ bot.onSubscribedMessage(async (thread, message) => {
 bot.onSlashCommand('/itsquare', async (event) => {
   const args = event.text?.trim().toLowerCase() || ''
   const command = args.split(' ')[0]
-  const channelId = (event as any).channelId || (event as any).channel_id || ''
-  const userId = event.user?.id || ''
   
-  // Get workspace - log for debugging
-  const teamId = (event as any).teamId || (event as any).team_id || ''
-  console.log('[v0] Slash command received:', { command, teamId, userId, channelId })
-  console.log('[v0] Full event keys:', Object.keys(event))
+  // Extract from event.raw (original Slack payload) or fallback to event properties
+  const raw = (event as any).raw || {}
+  const channelId = raw.channel_id || (event as any).channelId || ''
+  const userId = raw.user_id || event.user?.id || ''
+  const teamId = raw.team_id || ''
+  
+  console.log('[v0] Slash command:', { command, teamId, userId, channelId })
+  console.log('[v0] Raw payload keys:', Object.keys(raw))
   
   const workspace = await getWorkspaceByTeamId(teamId)
-  console.log('[v0] Workspace lookup result:', workspace ? 'found' : 'not found', { teamId })
+  console.log('[v0] Workspace:', workspace ? 'found' : 'not found')
   
   if (!workspace) {
     await sendEphemeral(channelId, userId, `*Setup Required*
