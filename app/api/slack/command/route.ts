@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { generateText } from 'ai'
+import { gateway } from '@ai-sdk/gateway'
 
 // Test endpoint - visit https://itsquare.ai/api/slack/command to verify it's working
 export async function GET() {
@@ -76,7 +78,8 @@ async function processCommand(
       }),
     })
     
-    console.log('[ITSquare] Slack response status:', slackResponse.status)
+    const slackResponseBody = await slackResponse.text()
+    console.log('[ITSquare] Slack response:', slackResponse.status, slackResponseBody)
     
     // Log the interaction
     await logInteraction(teamId, userId, userMessage, response)
@@ -103,10 +106,48 @@ async function processCommand(
   }
 }
 
-// Get response - use smart keyword matching (reliable, fast, no external dependencies)
+// Get REAL AI response with timeout and fallback
 async function getAIResponse(userMessage: string, userName: string): Promise<string> {
-  console.log('[ITSquare] Getting response for:', userMessage)
-  return getFallbackResponse(userMessage)
+  console.log('[ITSquare] Calling AI for:', userMessage)
+  
+  const systemPrompt = `You are ITSquare, a friendly IT support assistant inside Slack.
+
+Your job: Help employees fix tech problems quickly with clear, simple instructions.
+
+Rules:
+- Be concise and warm (not robotic)
+- Give numbered step-by-step instructions
+- Use simple language - no technical jargon
+- Format for Slack: use *bold* for emphasis, \`code\` for technical terms
+- If you can't solve it, say you'll connect them with IT team
+- Ask ONE clarifying question if needed, not multiple
+
+You help with: WiFi, VPN, slow computers, printers, passwords, email, video calls, software issues.`
+
+  try {
+    // Set a timeout to prevent hanging
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 25000) // 25s timeout
+    
+    const { text } = await generateText({
+      model: gateway('openai/gpt-4o-mini'),
+      system: systemPrompt,
+      prompt: `Employee ${userName} says: "${userMessage}"\n\nProvide a helpful, concise solution.`,
+      maxOutputTokens: 500,
+      abortSignal: controller.signal,
+    })
+    
+    clearTimeout(timeout)
+    console.log('[ITSquare] AI response received, length:', text?.length)
+    return text
+    
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    console.error('[ITSquare] AI failed:', errorMessage)
+    
+    // Return smart fallback so user still gets help
+    return getFallbackResponse(userMessage)
+  }
 }
 
 // Smart fallback responses when AI fails
