@@ -193,6 +193,8 @@ async function generateITResponse(
   userMessage: string, 
   conversationHistory: Array<{role: string, content: string}>
 ): Promise<string> {
+  console.log('[v0] generateITResponse called with:', userMessage)
+  
   try {
     const messages = [
       { role: 'system' as const, content: IT_KNOWLEDGE_BASE },
@@ -203,17 +205,96 @@ async function generateITResponse(
       { role: 'user' as const, content: userMessage }
     ]
 
+    console.log('[v0] Calling AI with', messages.length, 'messages')
+
     const { text } = await generateText({
       model: gateway('openai/gpt-4o-mini'),
       messages,
-      maxTokens: 500,
+      maxOutputTokens: 500,
     })
 
+    console.log('[v0] AI response received:', text?.substring(0, 100))
     return text
   } catch (error) {
-    console.error('AI generation error:', error)
-    return "I'm having trouble processing that right now. Could you try rephrasing your question, or type 'help' for common solutions?"
+    console.error('[v0] AI generation error:', error)
+    // Provide helpful fallback response
+    return getFallbackResponse(userMessage)
   }
+}
+
+// Fallback responses when AI is unavailable
+function getFallbackResponse(userMessage: string): string {
+  const msg = userMessage.toLowerCase()
+  
+  if (msg.includes('wifi') || msg.includes('internet') || msg.includes('network')) {
+    return `*WiFi/Network Troubleshooting*
+
+Try these steps:
+1. Restart your WiFi (turn off, wait 10 seconds, turn on)
+2. Forget the network and reconnect
+3. Restart your router if you have access
+4. Move closer to the router
+
+Still not working? Let me know and I can connect you with IT.`
+  }
+  
+  if (msg.includes('slow') || msg.includes('freezing') || msg.includes('stuck')) {
+    return `*Slow Computer Troubleshooting*
+
+Try these steps:
+1. Restart your computer (this fixes most issues!)
+2. Close apps you're not using
+3. Close extra browser tabs
+4. Check for software updates
+
+Still slow? I can help dig deeper.`
+  }
+  
+  if (msg.includes('printer') || msg.includes('print')) {
+    return `*Printer Troubleshooting*
+
+Try these steps:
+1. Make sure the printer is on
+2. Check if it has paper and ink
+3. Restart the printer
+4. Try printing a test page
+
+Still not working? Let me know the printer name/location.`
+  }
+  
+  if (msg.includes('password') || msg.includes('login') || msg.includes('locked')) {
+    return `*Password/Login Help*
+
+If you forgot your password:
+1. Click "Forgot Password" on the login page
+2. Check your email for reset link
+
+If your account is locked:
+- Wait 15-30 minutes and try again
+- Or contact IT admin for immediate unlock
+
+Need more help? I can connect you with IT.`
+  }
+  
+  if (msg.includes('vpn')) {
+    return `*VPN Troubleshooting*
+
+Try these steps:
+1. Make sure you have internet first (try loading google.com)
+2. Close and reopen the VPN app
+3. Try a different VPN server location
+4. Restart your computer
+
+Still not connecting? Let me know which VPN app you're using.`
+  }
+  
+  return `I can help with that! To give you the best solution, could you tell me:
+
+1. What device are you using? (Mac/Windows/Phone)
+2. When did this start happening?
+3. Any error messages you're seeing?
+
+Or if it's urgent, I can connect you with someone from IT right away.`
 }
 
 // Handle @mentions - Main AI conversation entry point
