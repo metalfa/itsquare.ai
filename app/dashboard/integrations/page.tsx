@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -18,7 +18,7 @@ import {
   Calendar,
 } from 'lucide-react'
 
-export default function IntegrationsPage() {
+function IntegrationsPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
@@ -237,5 +237,19 @@ export default function IntegrationsPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function IntegrationsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse">
+          <MessageSquare className="h-8 w-8 text-primary" />
+        </div>
+      </div>
+    }>
+      <IntegrationsPageContent />
+    </Suspense>
   )
 }
