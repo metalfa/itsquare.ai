@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
+import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateText } from 'ai'
 import { gateway } from '@ai-sdk/gateway'
 
-// Test endpoint - visit https://itsquare.ai/api/slack/command to verify it's working
+// Test endpoint
 export async function GET() {
   return NextResponse.json({ 
     status: 'ok', 
@@ -12,12 +13,11 @@ export async function GET() {
   })
 }
 
-// Simple, direct Slack slash command handler - NO external libraries
+// Slack slash command handler
 export async function POST(request: Request) {
-  console.log('[ITSquare] Received slash command request')
+  console.log('[ITSquare] POST received')
   
   try {
-    // Parse form data from Slack
     const formData = await request.formData()
     const text = formData.get('text')?.toString() || ''
     const userId = formData.get('user_id')?.toString() || ''
@@ -25,16 +25,18 @@ export async function POST(request: Request) {
     const responseUrl = formData.get('response_url')?.toString() || ''
     const teamId = formData.get('team_id')?.toString() || ''
     
-    console.log('[ITSquare] Command:', text, 'User:', userName, 'Team:', teamId)
+    console.log('[ITSquare] Command:', text, 'User:', userName)
     
-    // Immediately acknowledge to Slack (they require response within 3 seconds)
-    // Then process in background
-    processCommand(text, userId, userName, responseUrl, teamId)
+    // Use after() to process in background while returning 200 immediately
+    after(async () => {
+      await processCommand(text, userId, userName, responseUrl, teamId)
+    })
     
-    // Return immediate acknowledgment
+    // Return 200 immediately (Slack requires < 3 second response)
     return new NextResponse(null, { status: 200 })
+    
   } catch (error) {
-    console.error('[ITSquare] Slack command error:', error)
+    console.error('[ITSquare] Error:', error)
     return NextResponse.json({ 
       response_type: 'ephemeral',
       text: 'Something went wrong. Please try again.' 
@@ -42,7 +44,7 @@ export async function POST(request: Request) {
   }
 }
 
-// Process command in background and respond via response_url
+// Process in background
 async function processCommand(
   text: string, 
   userId: string, 
@@ -50,241 +52,187 @@ async function processCommand(
   responseUrl: string,
   teamId: string
 ) {
-  console.log('[ITSquare] processCommand started')
+  console.log('[ITSquare] Processing:', text)
   
   try {
-    const userMessage = text.trim().toLowerCase()
-    console.log('[ITSquare] Processing message:', userMessage)
-    
-    // Generate helpful response
+    const userMessage = text.trim()
     let response: string
     
-    if (!userMessage || userMessage === 'help') {
+    if (!userMessage || userMessage.toLowerCase() === 'help') {
       response = getHelpMessage()
     } else {
       response = await getAIResponse(userMessage, userName)
     }
     
-    console.log('[ITSquare] Got response, sending to Slack...')
-    console.log('[ITSquare] Response URL:', responseUrl)
+    console.log('[ITSquare] Sending response to Slack')
     
-    // Send response back to Slack
-    const slackResponse = await fetch(responseUrl, {
+    const slackRes = await fetch(responseUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        response_type: 'ephemeral', // Only visible to user
+        response_type: 'ephemeral',
         text: response,
       }),
     })
     
-    const slackResponseBody = await slackResponse.text()
-    console.log('[ITSquare] Slack response:', slackResponse.status, slackResponseBody)
-    
-    // Log the interaction
-    await logInteraction(teamId, userId, userMessage, response)
-    console.log('[ITSquare] Interaction logged')
+    console.log('[ITSquare] Slack responded:', slackRes.status)
     
   } catch (error) {
-    console.error('[ITSquare] Process command error:', error)
+    console.error('[ITSquare] Process error:', error)
     
-    // Send error response
-    if (responseUrl) {
-      try {
-        await fetch(responseUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            response_type: 'ephemeral',
-            text: "I had trouble processing that. Here's what I can help with:\n\n" + getHelpMessage(),
-          }),
-        })
-      } catch (e) {
-        console.error('[ITSquare] Failed to send error response:', e)
-      }
+    try {
+      await fetch(responseUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          response_type: 'ephemeral',
+          text: "Sorry, I had trouble processing that. Try again or type `/itsquare help`",
+        }),
+      })
+    } catch (e) {
+      console.error('[ITSquare] Failed to send error:', e)
     }
   }
 }
 
-// Get REAL AI response with timeout and fallback
+// Get AI response
 async function getAIResponse(userMessage: string, userName: string): Promise<string> {
-  console.log('[ITSquare] Calling AI for:', userMessage)
+  console.log('[ITSquare] AI request for:', userMessage)
   
-  const systemPrompt = `You are ITSquare, a friendly IT support assistant inside Slack.
+  const systemPrompt = `You are ITSquare, a friendly IT support assistant in Slack.
 
-Your job: Help employees fix tech problems quickly with clear, simple instructions.
+Help employees fix tech problems with clear, simple steps.
 
 Rules:
-- Be concise and warm (not robotic)
-- Give numbered step-by-step instructions
-- Use simple language - no technical jargon
-- Format for Slack: use *bold* for emphasis, \`code\` for technical terms
-- If you can't solve it, say you'll connect them with IT team
-- Ask ONE clarifying question if needed, not multiple
+- Be concise and warm
+- Give numbered steps
+- Use simple language (no jargon)
+- Format for Slack: *bold*, \`code\`
+- If unsolvable, offer to connect with IT team
 
-You help with: WiFi, VPN, slow computers, printers, passwords, email, video calls, software issues.`
+You help with: WiFi, VPN, slow computers, printers, passwords, email, video calls.`
 
   try {
-    // Set a timeout to prevent hanging
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 25000) // 25s timeout
-    
     const { text } = await generateText({
       model: gateway('openai/gpt-4o-mini'),
       system: systemPrompt,
-      prompt: `Employee ${userName} says: "${userMessage}"\n\nProvide a helpful, concise solution.`,
-      maxOutputTokens: 500,
-      abortSignal: controller.signal,
+      prompt: `${userName} says: "${userMessage}"\n\nProvide a helpful solution.`,
+      maxOutputTokens: 400,
     })
     
-    clearTimeout(timeout)
-    console.log('[ITSquare] AI response received, length:', text?.length)
+    console.log('[ITSquare] AI success, length:', text?.length)
     return text
     
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-    console.error('[ITSquare] AI failed:', errorMessage)
-    
-    // Return smart fallback so user still gets help
+  } catch (error) {
+    console.error('[ITSquare] AI failed:', error)
     return getFallbackResponse(userMessage)
   }
 }
 
-// Smart fallback responses when AI fails
-function getFallbackResponse(message: string): string {
-  const msg = message.toLowerCase()
+// Fallback when AI fails
+function getFallbackResponse(msg: string): string {
+  const m = msg.toLowerCase()
   
-  if (msg.includes('wifi') || msg.includes('internet') || msg.includes('network') || msg.includes('connect')) {
+  if (m.includes('wifi') || m.includes('internet') || m.includes('network')) {
     return `*WiFi Troubleshooting*
 
 1. Turn WiFi off, wait 10 seconds, turn back on
 2. Forget the network and reconnect
 3. Restart your computer
-4. Try moving closer to the router
+4. Move closer to the router
 
-Still not working? Reply with more details and I'll help further.`
+Still stuck? Let me know more details.`
   }
   
-  if (msg.includes('slow') || msg.includes('frozen') || msg.includes('stuck') || msg.includes('hang')) {
-    return `*Slow/Frozen Computer*
+  if (m.includes('slow') || m.includes('frozen') || m.includes('stuck')) {
+    return `*Slow Computer Fix*
 
-1. *First, try restarting* - this fixes 80% of issues
+1. *Restart your computer* (fixes 80% of issues)
 2. Close apps you're not using
-3. Close extra browser tabs (they use lots of memory)
-4. Check if updates are installing in the background
+3. Close extra browser tabs
+4. Check for updates
 
-If it's still slow after restart, let me know what app is causing problems.`
+Still slow? Tell me what's happening.`
   }
   
-  if (msg.includes('printer') || msg.includes('print')) {
-    return `*Printer Troubleshooting*
+  if (m.includes('printer') || m.includes('print')) {
+    return `*Printer Help*
 
-1. Check the printer is on and has paper
+1. Check printer is on and has paper
 2. Check for paper jams
-3. Try turning printer off and on
-4. On your computer: remove the print job queue and try again
+3. Turn printer off and on
+4. Remove stuck print jobs and retry
 
-Which printer are you trying to use? I can give more specific help.`
+Which printer is it?`
   }
   
-  if (msg.includes('vpn')) {
-    return `*VPN Troubleshooting*
+  if (m.includes('vpn')) {
+    return `*VPN Fix*
 
-1. Make sure your internet works first (try google.com)
-2. Quit the VPN app completely and reopen
-3. Try a different server location
-4. Restart your computer
+1. Check internet works first (try google.com)
+2. Quit VPN app completely and reopen
+3. Try a different server
+4. Restart computer
 
-Which VPN app are you using? That helps me give better advice.`
+Which VPN are you using?`
   }
   
-  if (msg.includes('password') || msg.includes('login') || msg.includes('locked') || msg.includes('forgot')) {
-    return `*Password/Login Help*
+  if (m.includes('password') || m.includes('login') || m.includes('locked')) {
+    return `*Password Help*
 
 *Forgot password:*
-1. Click "Forgot Password" on the login page
-2. Check your email (and spam folder) for reset link
+Click "Forgot Password" and check email
 
 *Account locked:*
-- Wait 15-30 minutes and try again
-- Or contact IT admin for immediate unlock
+Wait 15-30 min, or contact IT admin
 
-Which account/app are you having trouble with?`
+Which account?`
   }
   
-  if (msg.includes('email') || msg.includes('outlook') || msg.includes('gmail')) {
-    return `*Email Troubleshooting*
+  if (m.includes('email') || m.includes('outlook') || m.includes('gmail')) {
+    return `*Email Fix*
 
-1. Check your internet connection
-2. Try the web version (mail.google.com or outlook.office.com)
-3. Close and reopen your email app
-4. Check if the issue is with one email or all
+1. Check internet connection
+2. Try web version (gmail.com or outlook.com)
+3. Close and reopen email app
+4. Sign out and back in
 
-What specifically is happening with your email?`
+What's happening specifically?`
   }
   
-  if (msg.includes('zoom') || msg.includes('teams') || msg.includes('meet') || msg.includes('video') || msg.includes('camera') || msg.includes('mic')) {
-    return `*Video Call Troubleshooting*
+  if (m.includes('zoom') || m.includes('teams') || m.includes('camera') || m.includes('mic')) {
+    return `*Video Call Fix*
 
-*Camera/Video not working:*
-1. Check if camera is covered or disabled
+*Camera not working:*
+1. Check if camera is covered
 2. Check app permissions (Settings > Privacy > Camera)
-3. Close other apps that might use camera
 
-*Audio/Mic not working:*
-1. Check if muted in the app AND on your computer
-2. Check app permissions (Settings > Privacy > Microphone)
-3. Try unplugging and replugging headphones
+*Mic not working:*
+1. Check if muted (app AND computer)
+2. Check app permissions
 
-Which app are you using for video calls?`
+Which app?`
   }
   
-  // Default helpful response
-  return `I can help with that! To give you the best solution, could you tell me:
+  return `I can help! Tell me:
 
-1. What device are you using? (Mac/Windows/Phone)
-2. What exactly happens when the problem occurs?
+1. What device? (Mac/Windows)
+2. What happens exactly?
 3. Any error messages?
 
-Or describe the issue in more detail and I'll do my best to help!`
+Or just describe the problem in more detail.`
 }
 
 function getHelpMessage(): string {
-  return `*ITSquare - Your IT Assistant*
+  return `*ITSquare - Your AI IT Assistant*
 
-Just describe your problem and I'll help solve it!
+Just describe your problem:
 
-*Examples:*
-• \`/itsquare my wifi keeps disconnecting\`
-• \`/itsquare computer is running slow\`
-• \`/itsquare can't connect to VPN\`
-• \`/itsquare printer not working\`
-• \`/itsquare forgot my password\`
-• \`/itsquare zoom camera not working\`
+• \`/itsquare wifi keeps disconnecting\`
+• \`/itsquare computer running slow\`
+• \`/itsquare can't print\`
+• \`/itsquare VPN not connecting\`
+• \`/itsquare forgot password\`
 
-I'll give you step-by-step solutions. If I can't solve it, I'll connect you with someone who can.`
-}
-
-// Log interaction to database
-async function logInteraction(
-  teamId: string,
-  slackUserId: string, 
-  question: string, 
-  answer: string
-) {
-  try {
-    const supabase = createAdminClient()
-    await supabase.from('it_conversations').insert({
-      slack_channel_id: 'slash_command',
-      slack_thread_ts: `${Date.now()}`,
-      messages: [
-        { role: 'user', content: question },
-        { role: 'assistant', content: answer }
-      ],
-      status: 'resolved',
-    })
-  } catch (e) {
-    // Don't fail if logging fails
-    console.error('Failed to log interaction:', e)
-  }
+I'll give you step-by-step solutions. If I can't fix it, I'll connect you with IT.`
 }

@@ -1,15 +1,15 @@
 const problemStats = [
   {
-    value: "45 min",
-    description: "Average time to onboard one employee across 5 systems",
+    value: "4.2 hrs",
+    description: "Average time employees lose per week to IT issues",
   },
   {
-    value: "73%",
-    description: "Of companies fail their first access control audit",
+    value: "67%",
+    description: "Of IT tickets are repeat questions with known solutions",
   },
   {
-    value: "$52K/yr",
-    description: "Cost of manual provisioning for a 200-person company",
+    value: "$127",
+    description: "Average cost per IT support ticket (Gartner)",
   },
 ]
 
@@ -35,7 +35,7 @@ export function ProblemSection() {
         {/* Question */}
         <div className="text-center">
           <h2 className="text-2xl font-bold tracking-tight text-foreground">
-            Sound familiar?
+            What if IT support just... worked?
           </h2>
         </div>
       </div>

@@ -3,8 +3,9 @@ import { HeroSection } from "@/components/hero-section"
 import { ProblemSection } from "@/components/problem-section"
 import { SolutionSection } from "@/components/solution-section"
 import { TrustBadges } from "@/components/trust-badges"
-import { ComplianceSection } from "@/components/compliance-section"
 import { ProcessSection } from "@/components/process-section"
+import { ComplianceSection } from "@/components/compliance-section"
+import { PricingSection } from "@/components/pricing-section"
 import { CTASection } from "@/components/cta-section"
 import { Footer } from "@/components/footer"
 
@@ -17,8 +18,9 @@ export default function Home() {
         <ProblemSection />
         <SolutionSection />
         <TrustBadges />
-        <ComplianceSection />
         <ProcessSection />
+        <ComplianceSection />
+        <PricingSection />
         <CTASection />
       </main>
       <Footer />
