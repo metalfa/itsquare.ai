@@ -5,7 +5,7 @@ import { IntegrationsContent } from './integrations-content'
 
 export const metadata = {
   title: 'Integrations | ITSquare.AI',
-  description: 'Connect your identity providers to scan for security risks',
+  description: 'Connect your tools to supercharge IT support',
 }
 
 export default async function IntegrationsPage() {
@@ -27,14 +27,7 @@ export default async function IntegrationsPage() {
     .eq('id', user.id)
     .single()
 
-  // Get integrations for this org
-  const { data: integrations } = await supabase
-    .from('integrations')
-    .select('*')
-    .eq('org_id', profile?.org_id)
-    .order('connected_at', { ascending: false })
-
-  // Get Slack workspace for this org (if any) - use admin client to bypass RLS
+  // Get Slack workspace for this org - use admin client to bypass RLS
   const adminSupabase = createAdminClient()
   const { data: slackWorkspace } = await adminSupabase
     .from('slack_workspaces')
@@ -46,8 +39,12 @@ export default async function IntegrationsPage() {
   return (
     <IntegrationsContent 
       user={user} 
-      profile={profile}
-      integrations={integrations || []}
+      profile={profile ? {
+        full_name: profile.full_name,
+        organization: profile.organization ? {
+          name: profile.organization.name
+        } : null
+      } : null}
       slackWorkspace={slackWorkspace}
     />
   )
