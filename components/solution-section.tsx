@@ -1,23 +1,23 @@
-import { UserPlus, KeyRound, ShieldCheck } from "lucide-react"
+import { MessageSquare, Zap, Users } from "lucide-react"
 
 const solutions = [
   {
-    icon: UserPlus,
-    title: "Onboarding in 30 seconds",
+    icon: MessageSquare,
+    title: "Just describe the problem",
     description:
-      "AI provisions across Okta, Azure AD, AWS, Slack, M365 instantly. No tickets, no manual clicks, no human error.",
+      "WiFi not working? Printer jammed? VPN issues? Just tell ITSquare in plain English. No forms, no tickets, no waiting.",
   },
   {
-    icon: KeyRound,
-    title: "Zero-gap offboarding",
+    icon: Zap,
+    title: "Get instant solutions",
     description:
-      "Instant access revocation across all systems. Close security loopholes the second an employee leaves.",
+      "AI diagnoses the issue and walks you through the fix step-by-step. Most problems solved in under 2 minutes.",
   },
   {
-    icon: ShieldCheck,
-    title: "Audit-ready always",
+    icon: Users,
+    title: "Escalate when needed",
     description:
-      "Automatic HIPAA, PCI, SOC 2 compliance trails. Every access change is logged, signed, and ready for auditors.",
+      "If AI cannot solve it, ITSquare finds the right person who fixed this before and schedules a call automatically.",
   },
 ]
 
@@ -26,8 +26,8 @@ export function SolutionSection() {
     <section id="solutions" className="px-8 py-32 max-w-7xl mx-auto">
       {/* Section Header */}
       <div className="mb-20">
-        <h2 className="text-4xl font-black tracking-tighter mb-4">
-          We fix this in weeks, not months.
+        <h2 className="text-4xl font-black tracking-tighter mb-4 text-balance">
+          IT support that feels like magic.
         </h2>
         <div className="h-1 w-24 bg-primary-container" />
       </div>

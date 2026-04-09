@@ -1,67 +1,83 @@
-const steps = [
-  {
-    number: "01",
-    title: "Audit",
-    description:
-      "One week to map every manual touchpoint and security gap in your current stack.",
-  },
-  {
-    number: "02",
-    title: "Deploy",
-    description:
-      "2-6 weeks to inject custom AI agents into your VPC or on-prem hardware.",
-  },
-  {
-    number: "03",
-    title: "Save",
-    description:
-      "20+ hours/week permanently recovered for your senior engineering talent.",
-  },
-]
-
-const logLines = [
-  "STDOUT: Scanning cloud environment...",
-  "STDOUT: 14 dormant Azure accounts detected.",
-  "STDOUT: Mapping dependencies for Slack/AWS...",
-  "STDOUT: Automation nodes deploying to k8s cluster...",
+const chatDemo = [
+  { role: "user", name: "Sarah", message: "My WiFi keeps disconnecting every few minutes" },
+  { role: "bot", name: "ITSquare", message: "That sounds frustrating! Let me help. Are you on a Mac or Windows?" },
+  { role: "user", name: "Sarah", message: "Mac" },
+  { role: "bot", name: "ITSquare", message: "Got it. Try this:\n\n1. Click the WiFi icon in your menu bar\n2. Hold Option and click it again\n3. Click \"Open Wireless Diagnostics\"\n\nThis will scan for issues. Let me know what it finds!" },
+  { role: "user", name: "Sarah", message: "It says interference from other networks" },
+  { role: "bot", name: "ITSquare", message: "Easy fix! Go to System Settings > WiFi > your network > Details > change the channel to \"Auto\" or try channel 36 or 149. These are less crowded." },
+  { role: "user", name: "Sarah", message: "That worked!! Thank you!!" },
 ]
 
 export function ProcessSection() {
   return (
-    <section id="process" className="px-8 py-32 max-w-7xl mx-auto">
+    <section id="demo" className="px-8 py-32 max-w-7xl mx-auto">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-20">
-        {/* Left Column - Title & Terminal */}
+        {/* Left Column - Title */}
         <div>
-          <h2 className="text-4xl font-black tracking-tighter mb-8 leading-tight">
-            Architecture of <br />
-            Efficiency.
+          <h2 className="text-4xl font-black tracking-tighter mb-8 leading-tight text-balance">
+            See it in action.
           </h2>
-
-          {/* Terminal Card */}
-          <div className="p-8 bg-surface-container ghost-border">
-            <div className="flex items-center gap-4 text-xs font-mono text-primary-container mb-4">
-              <span>{"// LOG_STREAM_INIT"}</span>
-              <span className="w-2 h-2 bg-primary-container animate-pulse" />
+          <p className="text-foreground-variant text-lg mb-8">
+            Real conversation. Real solution. Under 2 minutes.
+          </p>
+          
+          <div className="space-y-4 text-sm text-foreground-variant">
+            <div className="flex items-start gap-3">
+              <span className="text-primary font-bold">01</span>
+              <span>Employee describes the problem naturally</span>
             </div>
-            <div className="space-y-2 font-mono text-[10px] text-foreground-variant opacity-50">
-              {logLines.map((line, index) => (
-                <p key={index}>{line}</p>
-              ))}
+            <div className="flex items-start gap-3">
+              <span className="text-primary font-bold">02</span>
+              <span>AI asks clarifying questions if needed</span>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="text-primary font-bold">03</span>
+              <span>Step-by-step solution delivered in Slack</span>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="text-primary font-bold">04</span>
+              <span>Problem solved. Back to work.</span>
             </div>
           </div>
         </div>
 
-        {/* Right Column - Steps */}
-        <div className="flex flex-col gap-12">
-          {steps.map((step) => (
-            <div key={step.number} className="flex gap-6">
-              <span className="text-4xl font-black text-outline/20">{step.number}</span>
-              <div>
-                <h4 className="text-xl font-bold mb-2">{step.title}</h4>
-                <p className="text-foreground-variant text-sm">{step.description}</p>
+        {/* Right Column - Chat Demo */}
+        <div className="bg-surface-container ghost-border overflow-hidden">
+          {/* Slack-like header */}
+          <div className="px-4 py-3 border-b border-[#434655]/15 flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-red-500/50" />
+            <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
+            <div className="w-3 h-3 rounded-full bg-green-500/50" />
+            <span className="ml-2 text-xs text-foreground-variant font-mono">#it-help</span>
+          </div>
+          
+          {/* Chat messages */}
+          <div className="p-4 space-y-4 max-h-[400px] overflow-y-auto">
+            {chatDemo.map((msg, index) => (
+              <div key={index} className="flex gap-3">
+                <div className={`w-8 h-8 rounded flex-shrink-0 flex items-center justify-center text-xs font-bold ${
+                  msg.role === "bot" 
+                    ? "bg-primary-container text-white" 
+                    : "bg-surface-container-high text-foreground-variant"
+                }`}>
+                  {msg.name[0]}
+                </div>
+                <div>
+                  <div className="flex items-baseline gap-2">
+                    <span className={`text-sm font-bold ${msg.role === "bot" ? "text-primary" : "text-foreground"}`}>
+                      {msg.name}
+                    </span>
+                    <span className="text-[10px] text-foreground-variant/50">
+                      {msg.role === "bot" ? "APP" : ""}
+                    </span>
+                  </div>
+                  <p className="text-sm text-foreground-variant whitespace-pre-line mt-1">
+                    {msg.message}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </section>

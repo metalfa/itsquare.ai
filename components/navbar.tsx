@@ -5,10 +5,10 @@ import { useState } from "react"
 import { Menu, X } from "lucide-react"
 
 const navLinks = [
-  { href: "#solutions", label: "Solutions", active: true },
-  { href: "#compliance", label: "Compliance" },
-  { href: "#process", label: "Process" },
-  { href: "#case-studies", label: "Case Studies" },
+  { href: "#solutions", label: "How it Works" },
+  { href: "#demo", label: "Demo" },
+  { href: "#features", label: "Features" },
+  { href: "#pricing", label: "Pricing" },
 ]
 
 export function Navbar() {
@@ -18,7 +18,7 @@ export function Navbar() {
     <nav className="fixed top-0 w-full z-50 bg-[#0A0A0F]/80 backdrop-blur-md border-b border-[#434655]/15">
       <div className="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
         <Link href="/" className="text-xl font-bold tracking-tighter text-[#E4E1E9]">
-          ITsquare.ai
+          ITSquare.AI
         </Link>
 
         {/* Desktop Navigation */}
@@ -27,11 +27,7 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className={`tracking-tight text-sm font-medium transition-all duration-300 ${
-                link.active
-                  ? "text-[#B4C5FF] font-semibold"
-                  : "text-[#C3C6D7] hover:text-[#E4E1E9]"
-              }`}
+              className="tracking-tight text-sm font-medium text-[#C3C6D7] hover:text-[#E4E1E9] transition-all duration-300"
             >
               {link.label}
             </Link>
@@ -50,7 +46,7 @@ export function Navbar() {
             href="/auth/sign-up"
             className="bg-primary-container text-white px-5 py-2 text-sm font-semibold hover:scale-[0.98] transition-transform duration-300"
           >
-            Start Free Scan
+            Add to Slack
           </Link>
         </div>
 
@@ -72,9 +68,7 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`tracking-tight text-sm font-medium ${
-                  link.active ? "text-[#B4C5FF] font-semibold" : "text-[#C3C6D7]"
-                }`}
+                className="tracking-tight text-sm font-medium text-[#C3C6D7]"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {link.label}
@@ -92,7 +86,7 @@ export function Navbar() {
               className="bg-primary-container text-white px-5 py-3 text-sm font-semibold text-center mt-2"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Start Free Scan
+              Add to Slack
             </Link>
           </div>
         </div>
