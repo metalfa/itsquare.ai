@@ -284,7 +284,20 @@ export default function DashboardPage() {
             </div>
 
             {/* Bottom Links */}
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-4 gap-4">
+              <Link href="/dashboard/knowledge">
+                <Card className="bg-surface border-border/50 hover:border-primary/30 transition-all hover:shadow-md cursor-pointer h-full">
+                  <CardContent className="p-5 flex items-center gap-4">
+                    <div className="p-2.5 bg-primary/10 rounded-lg">
+                      <Zap className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-foreground">Knowledge Base</h4>
+                      <p className="text-sm text-muted-foreground">Train your AI</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
               <Link href="/dashboard/integrations">
                 <Card className="bg-surface border-border/50 hover:border-primary/30 transition-all hover:shadow-md cursor-pointer h-full">
                   <CardContent className="p-5 flex items-center gap-4">

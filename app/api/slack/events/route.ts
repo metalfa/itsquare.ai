@@ -133,8 +133,8 @@ async function handleMessage(teamId: string, event: Record<string, any>) {
     // Get thread history for context
     const history = await getThreadHistory(channelId, threadTs)
 
-    // Generate AI response
-    const aiResponse = await generateITResponse(userMessage, history)
+    // Generate AI response (with RAG context from workspace knowledge base)
+    const aiResponse = await generateITResponse(userMessage, history, workspace.id)
 
     // Save AI response
     await saveMessage(workspace.id, slackUserDbId, channelId, threadTs, 'assistant', aiResponse)
