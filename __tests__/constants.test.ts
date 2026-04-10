@@ -18,8 +18,8 @@ describe('constants', () => {
     expect(MAX_OUTPUT_TOKENS).toBeLessThanOrEqual(4096)
   })
 
-  it('AI_MODEL is a valid OpenAI model', () => {
-    expect(AI_MODEL).toMatch(/^gpt-/)
+  it('AI_MODEL is in gateway format (provider/model)', () => {
+    expect(AI_MODEL).toMatch(/^[a-z]+\//)
   })
 
   it('SLACK_SIGNATURE_MAX_AGE_SECONDS is 5 minutes', () => {
