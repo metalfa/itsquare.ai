@@ -12,7 +12,7 @@ import {
 
 export const metadata = {
   title: 'Billing | ITSquare.AI',
-  description: 'Manage your subscription',
+  description: 'Manage your subscriptions',
 }
 
 export default async function BillingPage() {
