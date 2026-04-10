@@ -7,6 +7,7 @@
 
 import { NextResponse } from 'next/server'
 import { after } from 'next/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { respondToCommand } from '@/lib/services/slack-api'
 import { generateITResponse } from '@/lib/services/ai'
 import { HELP_MESSAGE } from '@/lib/config/prompts'
@@ -32,6 +33,7 @@ export async function POST(request: Request) {
     const text = formData.get('text')?.toString()?.trim() || ''
     const userName = formData.get('user_name')?.toString() || ''
     const responseUrl = formData.get('response_url')?.toString() || ''
+    const teamId = formData.get('team_id')?.toString() || ''
 
     if (!responseUrl) {
       return NextResponse.json({
@@ -42,7 +44,7 @@ export async function POST(request: Request) {
 
     // Process asynchronously — Slack requires <3s ack
     after(async () => {
-      await processCommand(text, userName, responseUrl)
+      await processCommand(text, userName, responseUrl, teamId)
     })
 
     // Ack immediately
@@ -63,6 +65,7 @@ async function processCommand(
   text: string,
   userName: string,
   responseUrl: string,
+  teamId: string,
 ) {
   try {
     let response: string
@@ -70,7 +73,24 @@ async function processCommand(
     if (!text || text.toLowerCase() === 'help') {
       response = HELP_MESSAGE
     } else {
-      response = await generateITResponse(`Employee ${userName} says: ${text}`)
+      // Look up workspace ID so RAG can pull knowledge base context
+      let workspaceId: string | undefined
+      if (teamId) {
+        const supabase = createAdminClient()
+        const { data: workspace } = await supabase
+          .from('slack_workspaces')
+          .select('id')
+          .eq('team_id', teamId)
+          .eq('status', 'active')
+          .single()
+        workspaceId = workspace?.id
+      }
+
+      response = await generateITResponse(
+        `Employee ${userName} says: ${text}`,
+        [],
+        workspaceId,
+      )
     }
 
     await respondToCommand(responseUrl, response)

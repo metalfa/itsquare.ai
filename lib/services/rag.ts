@@ -127,8 +127,8 @@ export async function ingestDocument(
 // Context Retrieval
 // ---------------------------------------------------------------------------
 
-/** Minimum similarity score to include a chunk */
-const SIMILARITY_THRESHOLD = 0.7
+/** Minimum similarity score to include a chunk (0.5 = broadly relevant, 0.7 = very close match) */
+const SIMILARITY_THRESHOLD = 0.5
 
 /** Maximum chunks to retrieve per query */
 const MAX_CHUNKS = 5
