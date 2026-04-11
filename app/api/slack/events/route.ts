@@ -19,8 +19,9 @@ import {
   incrementMessageCount,
   detectResolution,
 } from '@/lib/services/thread-manager'
-import { chooseDiagnosticSet, getDiagnosticCommands } from '@/lib/services/auto-diagnostic'
-import { createExecutionRequest } from '@/lib/services/execution-manager'
+import { chooseDiagnosticSet } from '@/lib/services/auto-diagnostic'
+import { runNetworkDiagnostics, runPerformanceDiagFromScan } from '@/lib/services/server-diagnostics'
+import { randomUUID } from 'crypto'
 
 const SLACK_API = 'https://slack.com/api'
 
@@ -195,75 +196,92 @@ async function handleMessage(teamId: string, event: Record<string, any>, eventTs
       await postMessage(botToken, channelId, finalResponse, threadTs)
     }
 
-    // Check if user wants deeper diagnostics (CLI-based)
+    // Check if user wants deeper diagnostics
     if (wantsDiagnostics(userMessage)) {
-      // Figure out what kind of diagnostics to run
       const conversationSummary = history
         .slice(-6)
         .map((m) => `${m.role}: ${m.content}`)
         .join('\n')
       const diagSet = await chooseDiagnosticSet(conversationSummary + '\n' + userMessage)
 
-      // Detect platform from device scan (default macOS)
-      const platform = await getDevicePlatform(workspace.id, userId)
+      if (diagSet === 'network') {
+        // Network diagnostics run SERVER-SIDE — instant, no user action needed
+        const thinkDiagTs = await postSlackMessage(botToken, channelId, {
+          text: ':hourglass_flowing_sand: _Running network diagnostics..._',
+          thread_ts: threadTs,
+        })
 
-      // Get the commands for this diagnostic set
-      const commands = getDiagnosticCommands(diagSet, platform)
-      const diagName = diagSet === 'network' ? 'network' : diagSet === 'security' ? 'security' : 'system performance'
+        try {
+          const { interpretation } = await runNetworkDiagnostics()
+          if (thinkDiagTs?.ts) {
+            await updateSlackMessage(botToken, channelId, thinkDiagTs.ts, interpretation)
+          }
+        } catch {
+          if (thinkDiagTs?.ts) {
+            await updateSlackMessage(botToken, channelId, thinkDiagTs.ts,
+              'Had trouble running network diagnostics. Let me try a different approach — is this happening on all websites, or just specific ones?')
+          }
+        }
+      } else {
+        // Performance/security: check if we have device scan data
+        const deviceScan = await getDeviceScanData(workspace.id, userId)
 
-      // Create execution request (status: pending until user approves)
-      const parsedCommands = commands.map((cmd) => ({
-        command: cmd,
-        tier: 1 as const,
-        explanation: '',
-        platform: platform as any,
-      }))
+        if (deviceScan) {
+          // We have scan data — diagnose from it immediately
+          const thinkDiagTs = await postSlackMessage(botToken, channelId, {
+            text: ':hourglass_flowing_sand: _Analyzing your system..._',
+            thread_ts: threadTs,
+          })
+          const diagResult = await runPerformanceDiagFromScan(deviceScan)
+          if (thinkDiagTs?.ts) {
+            await updateSlackMessage(botToken, channelId, thinkDiagTs.ts, diagResult)
+          }
+        } else {
+          // No scan data — send one-click diagnostic link
+          const diagToken = randomUUID()
+          await supabase.from('web_diagnostics' as any).insert({
+            workspace_id: workspace.id,
+            slack_user_id: userId,
+            channel_id: channelId,
+            thread_ts: threadTs,
+            token: diagToken,
+            issue_type: diagSet,
+          })
 
-      const execRequestId = await createExecutionRequest(
-        workspace.id,
-        channelId,
-        threadTs,
-        userId,
-        parsedCommands,
-        `${diagName} diagnostics`,
-        platform,
-        thread.id || undefined,
-      )
+          const diagUrl = `https://itsquare.ai/check/${diagToken}`
 
-      if (execRequestId) {
-        // Post consent prompt with buttons
-        await postBlockMessage(botToken, channelId, [
-          {
-            type: 'section',
-            text: {
-              type: 'mrkdwn',
-              text: `🔍 I can run a quick *${diagName} check* on your machine. This will look at ${
-                diagSet === 'network' ? 'connectivity, DNS, and latency'
-                : diagSet === 'security' ? 'firewall, encryption, and updates'
-                : 'CPU, RAM, disk space, and running processes'
-              }. *Nothing will be changed or modified.*`,
+          await postBlockMessage(botToken, channelId, [
+            {
+              type: 'section',
+              text: {
+                type: 'mrkdwn',
+                text: `🔍 I need a quick look at your machine to diagnose this properly.\n\n*Click below — it takes 5 seconds, no install needed:*`,
+              },
             },
-          },
-          {
-            type: 'actions',
-            block_id: `diag_consent_${execRequestId}`,
-            elements: [
-              {
-                type: 'button',
-                text: { type: 'plain_text', text: '✅ Go ahead', emoji: true },
-                style: 'primary',
-                action_id: 'diag_consent_yes',
-                value: execRequestId,
-              },
-              {
-                type: 'button',
-                text: { type: 'plain_text', text: '❌ No thanks', emoji: true },
-                action_id: 'diag_consent_no',
-                value: execRequestId,
-              },
-            ],
-          },
-        ], threadTs)
+            {
+              type: 'actions',
+              block_id: `diag_link_${diagToken}`,
+              elements: [
+                {
+                  type: 'button',
+                  text: { type: 'plain_text', text: '🖥️ Run Quick Scan', emoji: true },
+                  style: 'primary',
+                  url: diagUrl,
+                  action_id: 'diag_web_link',
+                },
+              ],
+            },
+            {
+              type: 'context',
+              elements: [
+                {
+                  type: 'mrkdwn',
+                  text: '_Only checks basic device info (OS, RAM, connection). No personal files or data are accessed._',
+                },
+              ],
+            },
+          ], threadTs)
+        }
       }
     }
 
@@ -317,6 +335,30 @@ async function postSlackMessage(
 }
 
 /**
+ * Get full device scan data for a user.
+ */
+async function getDeviceScanData(workspaceId: string, slackUserId: string): Promise<any | null> {
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from('device_scans' as any)
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .eq('slack_user_id', slackUserId)
+    .order('scanned_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (!data) return null
+
+  const row = data as any
+  // Only use scan data less than 7 days old
+  const age = Date.now() - new Date(row.scanned_at).getTime()
+  if (age > 7 * 24 * 60 * 60 * 1000) return null
+
+  return row
+}
+
+/**
  * Detect if the user is asking for deeper/CLI diagnostics.
  */
 function wantsDiagnostics(message: string): boolean {
@@ -330,32 +372,6 @@ function wantsDiagnostics(message: string): boolean {
     'can you check', 'please check',
   ]
   return triggers.some((t) => lower.includes(t))
-}
-
-/**
- * Get the user's platform from device scan, or detect from conversation.
- */
-async function getDevicePlatform(
-  workspaceId: string,
-  slackUserId: string,
-): Promise<'darwin' | 'win32' | 'linux'> {
-  const supabase = createAdminClient()
-
-  const { data } = await supabase
-    .from('device_scans' as any)
-    .select('os_name')
-    .eq('workspace_id', workspaceId)
-    .eq('slack_user_id', slackUserId)
-    .order('scanned_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  const osName = (data as any)?.os_name?.toLowerCase() || ''
-  if (osName.includes('mac') || osName.includes('darwin')) return 'darwin'
-  if (osName.includes('windows') || osName.includes('win')) return 'win32'
-  if (osName.includes('linux') || osName.includes('ubuntu')) return 'linux'
-
-  return 'darwin' // default
 }
 
 /**
