@@ -17,6 +17,8 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { decryptToken } from '@/lib/slack/encryption'
 import { verifySlackSignature } from '@/lib/services/slack-verify'
 import { postMessage, addReaction, removeReaction } from '@/lib/services/slack-api'
+
+const SLACK_API = 'https://slack.com/api'
 import { getThreadHistory, saveMessage, upsertSlackUser } from '@/lib/services/conversation'
 import { generateITResponse } from '@/lib/services/ai'
 import {
@@ -25,6 +27,10 @@ import {
   incrementMessageCount,
   detectResolution,
 } from '@/lib/services/thread-manager'
+import { parseCommandResponse, detectPlatform } from '@/lib/services/command-parser'
+import { createExecutionRequest, setActionMessageTs, getRecentResults } from '@/lib/services/execution-manager'
+import { buildCommandProposalBlocks, buildManualExecutionBlocks } from '@/lib/services/slack-blocks'
+import { investigate } from '@/lib/services/investigation'
 
 // Track processed events to prevent duplicate handling on Slack retries
 const processedEvents = new Set<string>()
@@ -158,19 +164,67 @@ async function handleMessage(teamId: string, event: Record<string, any>) {
     // Get thread history for multi-turn context
     const history = await getThreadHistory(channelId, threadTs)
 
+    // Check for pending execution results in this thread
+    const recentResults = await getRecentResults(workspace.id, channelId, threadTs)
+    let contextMessage = userMessage
+    if (recentResults.length > 0) {
+      const resultsBlock = recentResults
+        .map((r) => `\`${r.command}\` → ${r.exitCode === 0 ? 'OK' : 'ERROR'}: ${(r.stdout || r.stderr || '').substring(0, 500)}`)
+        .join('\n')
+      contextMessage = `${userMessage}\n\n[Recent command results for context:\n${resultsBlock}]`
+    }
+
     // Generate AI response with full Resolution Engine context
     const aiResponse = await generateITResponse(
-      userMessage,
+      contextMessage,
       history,
       workspace.id,
       userId, // enables 4-source investigation
     )
 
-    // Save AI response
-    await saveMessage(workspace.id, slackUserDbId, channelId, threadTs, 'assistant', aiResponse)
+    // Parse AI response for command proposals
+    const deviceScan = thread.id ? await getDeviceScanPlatform(workspace.id, userId) : null
+    const platform = detectPlatform(deviceScan)
+    const parsed = parseCommandResponse(aiResponse, platform)
 
-    // Post to Slack in thread
-    await postMessage(botToken, channelId, aiResponse, threadTs)
+    // Save the clean text (without [COMMANDS] block) as the AI response
+    await saveMessage(workspace.id, slackUserDbId, channelId, threadTs, 'assistant', parsed.cleanText)
+
+    // Post the conversational part
+    if (parsed.cleanText) {
+      await postMessage(botToken, channelId, parsed.cleanText, threadTs)
+    }
+
+    // If the AI proposed commands, post an interactive message
+    if (parsed.commands && parsed.commands.length > 0) {
+      const execRequestId = await createExecutionRequest(
+        workspace.id,
+        channelId,
+        threadTs,
+        userId,
+        parsed.commands,
+        'Diagnostic commands proposed by ITSquare',
+        platform,
+        thread.id || undefined,
+      )
+
+      if (execRequestId) {
+        // Post Block Kit interactive message with buttons
+        const blocks = buildCommandProposalBlocks(
+          execRequestId,
+          'I\'d like to run some diagnostics on your machine:',
+          parsed.commands,
+        )
+        const actionMsg = await postBlockMessage(botToken, channelId, blocks, threadTs)
+        if (actionMsg?.ts) {
+          setActionMessageTs(execRequestId, actionMsg.ts).catch(() => {})
+        }
+      } else {
+        // Fallback: post commands as manual instructions
+        const manualBlocks = buildManualExecutionBlocks(parsed.commands)
+        await postBlockMessage(botToken, channelId, manualBlocks, threadTs)
+      }
+    }
 
     // Detect resolution signals (async, non-blocking)
     // Only check after at least 2 exchanges (user asked, bot replied, user responded)
@@ -195,5 +249,62 @@ async function handleMessage(teamId: string, event: Record<string, any>) {
   } finally {
     // Remove "thinking" indicator
     await removeReaction(botToken, channelId, messageTs, 'mag')
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Get OS name from device scan for platform detection.
+ */
+async function getDeviceScanPlatform(
+  workspaceId: string,
+  slackUserId: string,
+): Promise<string | null> {
+  const supabase = createAdminClient()
+
+  const { data } = await supabase
+    .from('device_scans' as any)
+    .select('os_name')
+    .eq('workspace_id', workspaceId)
+    .eq('slack_user_id', slackUserId)
+    .order('scanned_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  return (data as any)?.os_name || null
+}
+
+/**
+ * Post a Block Kit message to Slack. Returns the message response.
+ */
+async function postBlockMessage(
+  botToken: string,
+  channel: string,
+  blocks: any[],
+  threadTs?: string,
+): Promise<{ ts?: string } | null> {
+  const body: any = {
+    channel,
+    blocks,
+    text: 'ITSquare command execution request',
+  }
+  if (threadTs) body.thread_ts = threadTs
+
+  try {
+    const res = await fetch(`${SLACK_API}/chat.postMessage`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${botToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    })
+    const data = await res.json()
+    return data.ok ? { ts: data.ts } : null
+  } catch {
+    return null
   }
 }
