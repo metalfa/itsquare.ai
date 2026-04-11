@@ -1,52 +1,38 @@
 /**
  * Slack Interactivity handler.
- * Receives button clicks, menu selections, and other interactive events.
+ * Handles button clicks from diagnostic consent prompts.
  *
- * Flow: Slack → verify signature → ack 200 → process action
- *
- * Actions handled:
- *   exec_run_all — User clicked [▶ Run All]
- *   exec_review_each — User clicked [📋 Review Each]
- *   exec_skip — User clicked [❌ Skip]
- *   exec_approve_cmd — User approved a single command in review mode
- *   exec_skip_cmd — User skipped a single command in review mode
- *   exec_cancel_all — User cancelled all remaining commands
+ * Actions:
+ *   diag_consent_yes — User clicked [✅ Go ahead] for diagnostics
+ *   diag_consent_no  — User clicked [❌ No thanks]
+ *   fix_resolved     — User confirmed the fix worked
+ *   fix_still_broken — User says still broken
+ *   fix_escalate     — User wants human help
  */
 
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { decryptToken } from '@/lib/slack/encryption'
 import { verifySlackSignature } from '@/lib/services/slack-verify'
-import { postMessage } from '@/lib/services/slack-api'
 import {
   approveRequest,
   rejectRequest,
   getExecutionRequest,
 } from '@/lib/services/execution-manager'
-import {
-  buildReviewCommandBlock,
-  buildManualExecutionBlocks,
-} from '@/lib/services/slack-blocks'
 
 const SLACK_API = 'https://slack.com/api'
 
-/**
- * POST — Slack sends interactions as URL-encoded form data.
- */
 export async function POST(request: Request) {
   const rawBody = await request.text()
 
-  // Verify signature
   const timestamp = request.headers.get('x-slack-request-timestamp') || ''
   const signature = request.headers.get('x-slack-signature') || ''
   const verification = verifySlackSignature(rawBody, timestamp, signature)
 
   if (!verification.valid) {
-    console.error('[ITSquare] Interaction signature failed:', verification.error)
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
   }
 
-  // Parse the payload (URL-encoded, payload is JSON string)
   const params = new URLSearchParams(rawBody)
   const payloadStr = params.get('payload')
   if (!payloadStr) {
@@ -55,21 +41,19 @@ export async function POST(request: Request) {
 
   const payload = JSON.parse(payloadStr)
 
-  // Handle block actions (button clicks)
   if (payload.type === 'block_actions') {
-    // Process async, ack immediately
-    handleBlockAction(payload).catch((err) =>
-      console.error('[ITSquare] Interaction handler error:', err),
-    )
+    after(async () => {
+      try {
+        await handleBlockAction(payload)
+      } catch (err) {
+        console.error('[ITSquare] Interaction error:', err)
+      }
+    })
   }
 
-  // Ack immediately (Slack expects <3s response)
   return new NextResponse(null, { status: 200 })
 }
 
-/**
- * GET — Health check.
- */
 export async function GET() {
   return NextResponse.json({
     status: 'ok',
@@ -77,10 +61,6 @@ export async function GET() {
     timestamp: new Date().toISOString(),
   })
 }
-
-// ---------------------------------------------------------------------------
-// Action Handlers
-// ---------------------------------------------------------------------------
 
 async function handleBlockAction(payload: any) {
   const action = payload.actions?.[0]
@@ -90,7 +70,6 @@ async function handleBlockAction(payload: any) {
   const teamId = payload.team?.id
   if (!teamId || !userId) return
 
-  // Get bot token
   const supabase = createAdminClient()
   const { data: workspace } = await supabase
     .from('slack_workspaces')
@@ -102,264 +81,94 @@ async function handleBlockAction(payload: any) {
   if (!workspace) return
   const botToken = decryptToken(workspace.bot_token_encrypted)
 
+  const channelId = payload.channel?.id
+  const messageTs = payload.message?.ts
+  const threadTs = payload.message?.thread_ts || payload.message?.ts
+
   switch (action.action_id) {
-    case 'exec_run_all':
-      await handleRunAll(action.value, userId, botToken, payload)
-      break
+    case 'diag_consent_yes': {
+      // User approved diagnostics
+      const requestId = action.value
 
-    case 'exec_review_each':
-      await handleReviewEach(action.value, userId, botToken, payload)
-      break
+      // Update the consent message to show approval
+      if (channelId && messageTs) {
+        await updateMessage(botToken, channelId, messageTs,
+          '✅ *Diagnostics approved — running now...*\n:hourglass_flowing_sand: _Checking your system. This takes about 10 seconds._')
+      }
 
-    case 'exec_skip':
-      await handleSkip(action.value, userId, botToken, payload)
-      break
+      // Approve the execution request — CLI agent will pick it up
+      await approveRequest(requestId, userId)
 
-    case 'exec_approve_cmd':
-      await handleApproveCommand(action.value, userId, botToken, payload)
+      // The CLI agent polls /api/agent/poll, executes commands,
+      // and POSTs results to /api/agent/results.
+      // The results handler feeds output to AI and posts interpretation.
       break
+    }
 
-    case 'exec_skip_cmd':
-      await handleSkipCommand(action.value, userId, botToken, payload)
-      break
+    case 'diag_consent_no': {
+      const requestId = action.value
+      await rejectRequest(requestId)
 
-    case 'exec_cancel_all':
-      await handleCancelAll(action.value, userId, botToken, payload)
+      if (channelId && messageTs) {
+        await updateMessage(botToken, channelId, messageTs,
+          'No problem! Let me know if you change your mind or if there\'s anything else I can help with.')
+      }
       break
+    }
+
+    case 'fix_resolved': {
+      if (channelId && messageTs) {
+        await updateMessage(botToken, channelId, messageTs,
+          '✅ *Great, glad that\'s sorted!* I\'ll remember this solution for next time.')
+      }
+      // TODO: update conversation_threads status to 'resolved'
+      break
+    }
+
+    case 'fix_still_broken': {
+      if (channelId && threadTs) {
+        await updateMessage(botToken, channelId, messageTs!,
+          '😞 Sorry that didn\'t work.')
+        await postMessage(botToken, channelId,
+          'Let me try a different approach. Can you tell me — when exactly did this start happening? Did anything change recently (new software, update, etc.)?',
+          threadTs)
+      }
+      break
+    }
+
+    case 'fix_escalate': {
+      if (channelId && messageTs) {
+        await updateMessage(botToken, channelId, messageTs,
+          '🆘 *Escalating to the IT team.* I\'m including everything we\'ve discussed so far so they have full context. Someone will reach out to you shortly.')
+      }
+      // TODO: create IT ticket + notify admin channel
+      break
+    }
   }
 }
 
 // ---------------------------------------------------------------------------
-// Run All
+// Slack Helpers
 // ---------------------------------------------------------------------------
 
-async function handleRunAll(
-  requestId: string,
-  userId: string,
-  botToken: string,
-  payload: any,
-) {
-  const execReq = await approveRequest(requestId, userId, 'interactive')
-  if (!execReq) {
-    await replyEphemeral(payload, 'This request has already been handled.')
-    return
-  }
-
-  // Update the original message to show it's been approved
-  await updateOriginalMessage(
-    botToken,
-    payload.channel?.id,
-    payload.message?.ts,
-    '✅ *Commands approved — waiting for execution...*\n\n' +
-      'If you have the ITSquare CLI agent installed, commands will run automatically.\n' +
-      'Otherwise, run these in your terminal:',
-  )
-
-  // Post manual execution instructions (until CLI agent is built)
-  const manualBlocks = buildManualExecutionBlocks(execReq.commands)
-  await postBlockMessage(botToken, execReq.channelId, manualBlocks, execReq.threadTs)
-}
-
-// ---------------------------------------------------------------------------
-// Review Each
-// ---------------------------------------------------------------------------
-
-async function handleReviewEach(
-  requestId: string,
-  userId: string,
-  botToken: string,
-  payload: any,
-) {
-  const execReq = await approveRequest(requestId, userId, 'review_each')
-  if (!execReq) {
-    await replyEphemeral(payload, 'This request has already been handled.')
-    return
-  }
-
-  // Update original message
-  await updateOriginalMessage(
-    botToken,
-    payload.channel?.id,
-    payload.message?.ts,
-    '📋 *Reviewing commands one by one...*',
-  )
-
-  // Post first command for review
-  if (execReq.commands.length > 0) {
-    const blocks = buildReviewCommandBlock(requestId, 0, execReq.commands[0], execReq.commands.length)
-    await postBlockMessage(botToken, execReq.channelId, blocks, execReq.threadTs)
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Skip
-// ---------------------------------------------------------------------------
-
-async function handleSkip(
-  requestId: string,
-  userId: string,
-  botToken: string,
-  payload: any,
-) {
-  await rejectRequest(requestId)
-
-  await updateOriginalMessage(
-    botToken,
-    payload.channel?.id,
-    payload.message?.ts,
-    '❌ *Command execution skipped.* No worries — describe what you\'re seeing and I\'ll keep troubleshooting from the conversation.',
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Single Command Review
-// ---------------------------------------------------------------------------
-
-async function handleApproveCommand(
-  valueJson: string,
-  userId: string,
-  botToken: string,
-  payload: any,
-) {
-  const { requestId, index } = JSON.parse(valueJson)
-  const execReq = await getExecutionRequest(requestId)
-  if (!execReq) return
-
-  const cmd = execReq.commands[index]
-
-  // Post the approved command as a manual instruction
-  await postMessage(
-    botToken,
-    payload.channel?.id || execReq.channelId,
-    `✅ Approved. Run this in your terminal:\n\`\`\`${cmd.command}\`\`\`\n_${cmd.explanation}_`,
-    execReq.threadTs,
-  )
-
-  // Show next command if there is one
-  const nextIndex = index + 1
-  if (nextIndex < execReq.commands.length) {
-    const blocks = buildReviewCommandBlock(
-      requestId,
-      nextIndex,
-      execReq.commands[nextIndex],
-      execReq.commands.length,
-    )
-    await postBlockMessage(botToken, execReq.channelId, blocks, execReq.threadTs)
-  } else {
-    await postMessage(
-      botToken,
-      execReq.channelId,
-      '📋 *All commands reviewed.* Share the outputs with me and I\'ll continue the diagnosis.',
-      execReq.threadTs,
-    )
-  }
-}
-
-async function handleSkipCommand(
-  valueJson: string,
-  userId: string,
-  botToken: string,
-  payload: any,
-) {
-  const { requestId, index } = JSON.parse(valueJson)
-  const execReq = await getExecutionRequest(requestId)
-  if (!execReq) return
-
-  // Show next command
-  const nextIndex = index + 1
-  if (nextIndex < execReq.commands.length) {
-    const blocks = buildReviewCommandBlock(
-      requestId,
-      nextIndex,
-      execReq.commands[nextIndex],
-      execReq.commands.length,
-    )
-    await postBlockMessage(botToken, execReq.channelId, blocks, execReq.threadTs)
-  } else {
-    await postMessage(
-      botToken,
-      execReq.channelId,
-      '📋 *All commands reviewed.* Share any outputs with me and I\'ll continue the diagnosis.',
-      execReq.threadTs,
-    )
-  }
-}
-
-async function handleCancelAll(
-  requestId: string,
-  userId: string,
-  botToken: string,
-  payload: any,
-) {
-  await rejectRequest(requestId)
-  await postMessage(
-    botToken,
-    payload.channel?.id,
-    '🛑 *Command review cancelled.* No commands will be executed. Let me know if you want to try a different approach.',
-    payload.message?.thread_ts,
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Slack API Helpers
-// ---------------------------------------------------------------------------
-
-async function updateOriginalMessage(
-  botToken: string,
-  channel: string,
-  messageTs: string,
-  newText: string,
-) {
-  if (!channel || !messageTs) return
-
+async function updateMessage(botToken: string, channel: string, ts: string, text: string) {
   await fetch(`${SLACK_API}/chat.update`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${botToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      channel,
-      ts: messageTs,
-      text: newText,
-      blocks: [], // remove buttons
-    }),
+    body: JSON.stringify({ channel, ts, text, blocks: [] }),
   })
 }
 
-async function postBlockMessage(
-  botToken: string,
-  channel: string,
-  blocks: any[],
-  threadTs?: string,
-) {
-  const body: any = {
-    channel,
-    blocks,
-    text: 'Command execution request', // fallback text
-  }
-  if (threadTs) body.thread_ts = threadTs
-
+async function postMessage(botToken: string, channel: string, text: string, threadTs: string) {
   await fetch(`${SLACK_API}/chat.postMessage`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${botToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(body),
-  })
-}
-
-async function replyEphemeral(payload: any, text: string) {
-  if (!payload.response_url) return
-
-  await fetch(payload.response_url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      response_type: 'ephemeral',
-      text,
-      replace_original: false,
-    }),
+    body: JSON.stringify({ channel, text, thread_ts: threadTs }),
   })
 }

@@ -19,6 +19,8 @@ import {
   incrementMessageCount,
   detectResolution,
 } from '@/lib/services/thread-manager'
+import { chooseDiagnosticSet, getDiagnosticCommands } from '@/lib/services/auto-diagnostic'
+import { createExecutionRequest } from '@/lib/services/execution-manager'
 
 const SLACK_API = 'https://slack.com/api'
 
@@ -193,6 +195,78 @@ async function handleMessage(teamId: string, event: Record<string, any>, eventTs
       await postMessage(botToken, channelId, finalResponse, threadTs)
     }
 
+    // Check if user wants deeper diagnostics (CLI-based)
+    if (wantsDiagnostics(userMessage)) {
+      // Figure out what kind of diagnostics to run
+      const conversationSummary = history
+        .slice(-6)
+        .map((m) => `${m.role}: ${m.content}`)
+        .join('\n')
+      const diagSet = await chooseDiagnosticSet(conversationSummary + '\n' + userMessage)
+
+      // Detect platform from device scan (default macOS)
+      const platform = await getDevicePlatform(workspace.id, userId)
+
+      // Get the commands for this diagnostic set
+      const commands = getDiagnosticCommands(diagSet, platform)
+      const diagName = diagSet === 'network' ? 'network' : diagSet === 'security' ? 'security' : 'system performance'
+
+      // Create execution request (status: pending until user approves)
+      const parsedCommands = commands.map((cmd) => ({
+        command: cmd,
+        tier: 1 as const,
+        explanation: '',
+        platform: platform as any,
+      }))
+
+      const execRequestId = await createExecutionRequest(
+        workspace.id,
+        channelId,
+        threadTs,
+        userId,
+        parsedCommands,
+        `${diagName} diagnostics`,
+        platform,
+        thread.id || undefined,
+      )
+
+      if (execRequestId) {
+        // Post consent prompt with buttons
+        await postBlockMessage(botToken, channelId, [
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: `🔍 I can run a quick *${diagName} check* on your machine. This will look at ${
+                diagSet === 'network' ? 'connectivity, DNS, and latency'
+                : diagSet === 'security' ? 'firewall, encryption, and updates'
+                : 'CPU, RAM, disk space, and running processes'
+              }. *Nothing will be changed or modified.*`,
+            },
+          },
+          {
+            type: 'actions',
+            block_id: `diag_consent_${execRequestId}`,
+            elements: [
+              {
+                type: 'button',
+                text: { type: 'plain_text', text: '✅ Go ahead', emoji: true },
+                style: 'primary',
+                action_id: 'diag_consent_yes',
+                value: execRequestId,
+              },
+              {
+                type: 'button',
+                text: { type: 'plain_text', text: '❌ No thanks', emoji: true },
+                action_id: 'diag_consent_no',
+                value: execRequestId,
+              },
+            ],
+          },
+        ], threadTs)
+      }
+    }
+
     // Detect resolution (async, non-blocking)
     if (history.length >= 2 && thread.id) {
       detectResolution(
@@ -240,6 +314,72 @@ async function postSlackMessage(
   } catch {
     return null
   }
+}
+
+/**
+ * Detect if the user is asking for deeper/CLI diagnostics.
+ */
+function wantsDiagnostics(message: string): boolean {
+  const lower = message.toLowerCase()
+  const triggers = [
+    'run diagnostics', 'run a diagnostic', 'run commands',
+    'check my system', 'check my machine', 'check my computer',
+    'go deeper', 'deeper analysis', 'deeper look',
+    'scan my', 'diagnose my', 'analyze my',
+    'run a scan', 'system check', 'health check',
+    'can you check', 'please check',
+  ]
+  return triggers.some((t) => lower.includes(t))
+}
+
+/**
+ * Get the user's platform from device scan, or detect from conversation.
+ */
+async function getDevicePlatform(
+  workspaceId: string,
+  slackUserId: string,
+): Promise<'darwin' | 'win32' | 'linux'> {
+  const supabase = createAdminClient()
+
+  const { data } = await supabase
+    .from('device_scans' as any)
+    .select('os_name')
+    .eq('workspace_id', workspaceId)
+    .eq('slack_user_id', slackUserId)
+    .order('scanned_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const osName = (data as any)?.os_name?.toLowerCase() || ''
+  if (osName.includes('mac') || osName.includes('darwin')) return 'darwin'
+  if (osName.includes('windows') || osName.includes('win')) return 'win32'
+  if (osName.includes('linux') || osName.includes('ubuntu')) return 'linux'
+
+  return 'darwin' // default
+}
+
+/**
+ * Post a Block Kit message.
+ */
+async function postBlockMessage(
+  botToken: string,
+  channel: string,
+  blocks: any[],
+  threadTs?: string,
+): Promise<void> {
+  await fetch(`${SLACK_API}/chat.postMessage`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${botToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      channel,
+      blocks,
+      text: 'Diagnostic request',
+      thread_ts: threadTs,
+    }),
+  })
 }
 
 async function updateSlackMessage(

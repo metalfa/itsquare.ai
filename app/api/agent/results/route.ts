@@ -19,8 +19,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { decryptToken } from '@/lib/slack/encryption'
 import { postMessage } from '@/lib/services/slack-api'
-import { generateITResponse } from '@/lib/services/ai'
-import { getThreadHistory } from '@/lib/services/conversation'
+import { interpretDiagnosticResults } from '@/lib/services/auto-diagnostic'
 import {
   submitResults,
   getExecutionRequest,
@@ -106,29 +105,54 @@ async function interpretAndReply(
 
   const botToken = decryptToken(workspace.bot_token_encrypted)
 
-  // Build results context for AI
-  const resultsContext = results
-    .map((r) => {
-      const statusLabel = r.exitCode === 0 ? 'SUCCESS' : 'ERROR'
-      const output = r.stdout || r.stderr || '(no output)'
-      return `Command: ${r.command}\nStatus: ${statusLabel} (exit code ${r.exitCode})\nOutput:\n${output}`
-    })
-    .join('\n\n---\n\n')
-
-  const resultsMessage =
-    `Here are the command execution results. Please interpret them and continue diagnosing:\n\n${resultsContext}`
-
-  // Get conversation history
-  const history = await getThreadHistory(execReq.channelId, execReq.threadTs)
-
-  // Generate AI interpretation
-  const aiResponse = await generateITResponse(
-    resultsMessage,
-    history,
-    execReq.workspaceId,
-    execReq.slackUserId,
+  // Use the auto-diagnostic interpreter for clean, user-friendly output
+  const interpretation = await interpretDiagnosticResults(
+    execReq.purpose,
+    results,
   )
 
-  // Post to Slack thread
-  await postMessage(botToken, execReq.channelId, aiResponse, execReq.threadTs)
+  // Post interpretation to Slack thread
+  await postMessage(botToken, execReq.channelId, interpretation, execReq.threadTs)
+
+  // Post follow-up buttons
+  const SLACK_API = 'https://slack.com/api'
+  await fetch(`${SLACK_API}/chat.postMessage`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${botToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      channel: execReq.channelId,
+      thread_ts: execReq.threadTs,
+      text: 'Did that help?',
+      blocks: [
+        {
+          type: 'actions',
+          block_id: `fix_confirm_${execReq.threadTs}`,
+          elements: [
+            {
+              type: 'button',
+              text: { type: 'plain_text', text: '✅ That fixed it!', emoji: true },
+              style: 'primary',
+              action_id: 'fix_resolved',
+              value: execReq.threadTs,
+            },
+            {
+              type: 'button',
+              text: { type: 'plain_text', text: '😞 Still broken', emoji: true },
+              action_id: 'fix_still_broken',
+              value: execReq.threadTs,
+            },
+            {
+              type: 'button',
+              text: { type: 'plain_text', text: '🆘 Connect me with IT', emoji: true },
+              action_id: 'fix_escalate',
+              value: execReq.threadTs,
+            },
+          ],
+        },
+      ],
+    }),
+  })
 }
