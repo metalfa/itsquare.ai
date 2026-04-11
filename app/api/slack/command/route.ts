@@ -12,7 +12,7 @@ import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { respondToCommand } from '@/lib/services/slack-api'
 import { generateITResponse } from '@/lib/services/ai'
-import { parseCommandResponse } from '@/lib/services/command-parser'
+// Command blocks are stripped since we don't expose CLI to end users
 import { HELP_MESSAGE } from '@/lib/config/prompts'
 
 /**
@@ -95,19 +95,12 @@ async function processCommand(
     // Full Resolution Engine — pass userId for 4-source investigation
     response = await generateITResponse(text, [], workspaceId, userId || undefined)
 
-    // Strip any [COMMANDS] blocks — slash commands can't do interactive buttons
-    // Instead, present commands as manual copy-paste instructions
-    const parsed = parseCommandResponse(response)
-    let finalResponse = parsed.cleanText
-
-    if (parsed.commands && parsed.commands.length > 0) {
-      const cmdInstructions = parsed.commands
-        .map((cmd, i) => `*${i + 1}.* ${cmd.explanation}\n\`\`\`${cmd.command}\`\`\``)
-        .join('\n')
-
-      finalResponse += '\n\nRun these in your terminal:\n' + cmdInstructions
-      finalResponse += '\n\n_Share the output here and I\'ll continue diagnosing._'
-    }
+    // Clean any structured blocks from the response
+    const finalResponse = response
+      .replace(/\[COMMANDS\][\s\S]*?\[\/COMMANDS\]/g, '')
+      .replace(/\[DIAGNOSTIC\][\s\S]*?\[\/DIAGNOSTIC\]/g, '')
+      .replace(/\[FIX\][\s\S]*?\[\/FIX\]/g, '')
+      .trim() || response
 
     // Post in-channel so others benefit from the answer
     await respondToCommand(responseUrl, finalResponse, false)
