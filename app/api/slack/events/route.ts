@@ -2,19 +2,15 @@
  * Slack Events API handler.
  * Receives @mentions and DMs, runs the Resolution Engine, replies in thread.
  *
- * UX Philosophy:
- *   - One message, one response. Never spam.
- *   - Diagnose from what you know. Don't ask users to run terminal commands.
- *   - Show a "working on it" indicator while processing.
- *   - Come back with the answer, not more questions.
- *   - Be a senior IT pro: solve with minimum user involvement.
+ * Uses Next.js after() to keep execution alive on Vercel serverless
+ * after the 200 ack is sent to Slack.
  */
 
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { decryptToken } from '@/lib/slack/encryption'
 import { verifySlackSignature } from '@/lib/services/slack-verify'
-import { postMessage, addReaction, removeReaction } from '@/lib/services/slack-api'
+import { postMessage } from '@/lib/services/slack-api'
 import { getThreadHistory, saveMessage, upsertSlackUser } from '@/lib/services/conversation'
 import { generateITResponse } from '@/lib/services/ai'
 import {
@@ -49,7 +45,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ challenge: body.challenge })
   }
 
-  // Reject Slack retries — if Slack is retrying, we already got the event
+  // Reject Slack retries
   const retryNum = request.headers.get('x-slack-retry-num')
   if (retryNum) {
     return NextResponse.json({ ok: true })
@@ -63,14 +59,21 @@ export async function POST(request: Request) {
       event.type === 'app_mention' ||
       (event.type === 'message' && event.channel_type === 'im')
     ) {
-      // Skip bot messages and message subtypes
       if (event.bot_id || event.subtype) {
         return NextResponse.json({ ok: true })
       }
 
-      handleMessage(body.team_id, event).catch((err) =>
-        console.error('[ITSquare] handleMessage error:', err),
-      )
+      const teamId = body.team_id
+      const eventTs = event.ts as string
+
+      // Use after() so Vercel keeps execution alive after the 200 ack
+      after(async () => {
+        try {
+          await handleMessage(teamId, event, eventTs)
+        } catch (err) {
+          console.error('[ITSquare] handleMessage error:', err)
+        }
+      })
     }
   }
 
@@ -84,7 +87,7 @@ export async function GET() {
   return NextResponse.json({
     status: 'ok',
     endpoint: '/api/slack/events',
-    version: 'resolution-engine-v3',
+    version: 'resolution-engine-v4',
     timestamp: new Date().toISOString(),
   })
 }
@@ -92,15 +95,27 @@ export async function GET() {
 /**
  * Process a Slack message event.
  *
- * Flow:
- *   1. Post "working on it" message immediately
- *   2. Run investigation + generate response
- *   3. Update the "working on it" message with the actual response
- *
- * Result: User sees one loading indicator, then one clean response. No spam.
+ * Dedup: Uses the message timestamp (event.ts) to check if we already
+ * processed this exact message. Prevents double-processing when Slack
+ * sends the same event through multiple delivery paths.
  */
-async function handleMessage(teamId: string, event: Record<string, any>) {
+async function handleMessage(teamId: string, event: Record<string, any>, eventTs: string) {
   const supabase = createAdminClient()
+
+  // Dedup: check if we already saved this exact message (by message_ts)
+  const channelId: string = event.channel
+  const { data: existing } = await supabase
+    .from('slack_conversations')
+    .select('id')
+    .eq('channel_id', channelId)
+    .eq('message_ts', eventTs)
+    .limit(1)
+    .maybeSingle()
+
+  if (existing) {
+    console.log(`[ITSquare] Skipping duplicate event: ${eventTs}`)
+    return
+  }
 
   const { data: workspace } = await supabase
     .from('slack_workspaces')
@@ -115,7 +130,6 @@ async function handleMessage(teamId: string, event: Record<string, any>) {
   }
 
   const botToken = decryptToken(workspace.bot_token_encrypted)
-  const channelId: string = event.channel
   const threadTs: string = event.thread_ts || event.ts
   const userId: string = event.user
   const messageTs: string = event.ts
@@ -126,9 +140,9 @@ async function handleMessage(teamId: string, event: Record<string, any>) {
 
   if (!userMessage) return
 
-  // Post a "working on it" message that we'll update later
+  // Post "Investigating..." — will update in-place with the answer
   const thinkingMsg = await postSlackMessage(botToken, channelId, {
-    text: ':mag: _Investigating..._',
+    text: ':hourglass_flowing_sand: _Working on it..._',
     thread_ts: threadTs,
   })
   const thinkingTs = thinkingMsg?.ts
@@ -140,7 +154,7 @@ async function handleMessage(teamId: string, event: Record<string, any>) {
     // Ensure conversation thread record
     const thread = await ensureThread(workspace.id, channelId, threadTs, userId)
 
-    // Save user message
+    // Save user message (also serves as dedup marker via message_ts)
     await saveMessage(workspace.id, slackUserDbId, channelId, threadTs, 'user', userMessage, messageTs)
     incrementMessageCount(thread.id).catch(() => {})
 
@@ -160,7 +174,7 @@ async function handleMessage(teamId: string, event: Record<string, any>) {
       userId,
     )
 
-    // Clean the response — strip any [COMMANDS] blocks since we're not executing them
+    // Clean any structured blocks from the response
     const cleanResponse = aiResponse
       .replace(/\[COMMANDS\][\s\S]*?\[\/COMMANDS\]/g, '')
       .replace(/\[DIAGNOSTIC\][\s\S]*?\[\/DIAGNOSTIC\]/g, '')
@@ -176,11 +190,10 @@ async function handleMessage(teamId: string, event: Record<string, any>) {
     if (thinkingTs) {
       await updateSlackMessage(botToken, channelId, thinkingTs, finalResponse)
     } else {
-      // Fallback: post as new message if update fails
       await postMessage(botToken, channelId, finalResponse, threadTs)
     }
 
-    // Detect resolution signals (async, non-blocking)
+    // Detect resolution (async, non-blocking)
     if (history.length >= 2 && thread.id) {
       detectResolution(
         thread.id,
@@ -191,8 +204,7 @@ async function handleMessage(teamId: string, event: Record<string, any>) {
     }
   } catch (error) {
     console.error('[ITSquare] Error processing message:', error)
-
-    const errorMsg = "Sorry, I hit a snag processing that. Could you try again?"
+    const errorMsg = "Sorry, I hit a snag. Could you try again?"
     if (thinkingTs) {
       await updateSlackMessage(botToken, channelId, thinkingTs, errorMsg)
     } else {
@@ -202,12 +214,9 @@ async function handleMessage(teamId: string, event: Record<string, any>) {
 }
 
 // ---------------------------------------------------------------------------
-// Slack API Helpers
+// Slack Helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Post a message and return the full response (including ts).
- */
 async function postSlackMessage(
   botToken: string,
   channel: string,
@@ -233,9 +242,6 @@ async function postSlackMessage(
   }
 }
 
-/**
- * Update an existing message in-place.
- */
 async function updateSlackMessage(
   botToken: string,
   channel: string,
@@ -255,7 +261,5 @@ async function updateSlackMessage(
         text: newText,
       }),
     })
-  } catch {
-    // Non-critical — message just won't update
-  }
+  } catch { /* non-critical */ }
 }
