@@ -1,6 +1,8 @@
 /**
  * Slack slash command handler: /itsquare
- * Responds ephemerally via response_url.
+ *
+ * Now uses the full Resolution Engine investigation.
+ * Responds in-channel (not ephemeral) so colleagues can learn from answers.
  *
  * Flow: Slack → ack 200 immediately → process async → POST to response_url
  */
@@ -10,6 +12,7 @@ import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { respondToCommand } from '@/lib/services/slack-api'
 import { generateITResponse } from '@/lib/services/ai'
+import { parseCommandResponse } from '@/lib/services/command-parser'
 import { HELP_MESSAGE } from '@/lib/config/prompts'
 
 /**
@@ -31,7 +34,7 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData()
     const text = formData.get('text')?.toString()?.trim() || ''
-    const userName = formData.get('user_name')?.toString() || ''
+    const userId = formData.get('user_id')?.toString() || ''
     const responseUrl = formData.get('response_url')?.toString() || ''
     const teamId = formData.get('team_id')?.toString() || ''
 
@@ -44,7 +47,7 @@ export async function POST(request: Request) {
 
     // Process asynchronously — Slack requires <3s ack
     after(async () => {
-      await processCommand(text, userName, responseUrl, teamId)
+      await processCommand(text, userId, responseUrl, teamId)
     })
 
     // Ack immediately
@@ -63,7 +66,7 @@ export async function POST(request: Request) {
  */
 async function processCommand(
   text: string,
-  userName: string,
+  userId: string,
   responseUrl: string,
   teamId: string,
 ) {
@@ -71,34 +74,49 @@ async function processCommand(
     let response: string
 
     if (!text || text.toLowerCase() === 'help') {
-      response = HELP_MESSAGE
-    } else {
-      // Look up workspace ID so RAG can pull knowledge base context
-      let workspaceId: string | undefined
-      if (teamId) {
-        const supabase = createAdminClient()
-        const { data: workspace } = await supabase
-          .from('slack_workspaces')
-          .select('id')
-          .eq('team_id', teamId)
-          .eq('status', 'active')
-          .single()
-        workspaceId = workspace?.id
-      }
-
-      response = await generateITResponse(
-        `Employee ${userName} says: ${text}`,
-        [],
-        workspaceId,
-      )
+      // Help is ephemeral — only the user needs to see it
+      await respondToCommand(responseUrl, HELP_MESSAGE, true)
+      return
     }
 
-    await respondToCommand(responseUrl, response)
+    // Look up workspace ID for full investigation
+    let workspaceId: string | undefined
+    if (teamId) {
+      const supabase = createAdminClient()
+      const { data: workspace } = await supabase
+        .from('slack_workspaces')
+        .select('id')
+        .eq('team_id', teamId)
+        .eq('status', 'active')
+        .single()
+      workspaceId = workspace?.id
+    }
+
+    // Full Resolution Engine — pass userId for 4-source investigation
+    response = await generateITResponse(text, [], workspaceId, userId || undefined)
+
+    // Strip any [COMMANDS] blocks — slash commands can't do interactive buttons
+    // Instead, present commands as manual copy-paste instructions
+    const parsed = parseCommandResponse(response)
+    let finalResponse = parsed.cleanText
+
+    if (parsed.commands && parsed.commands.length > 0) {
+      const cmdInstructions = parsed.commands
+        .map((cmd, i) => `*${i + 1}.* ${cmd.explanation}\n\`\`\`${cmd.command}\`\`\``)
+        .join('\n')
+
+      finalResponse += '\n\nRun these in your terminal:\n' + cmdInstructions
+      finalResponse += '\n\n_Share the output here and I\'ll continue diagnosing._'
+    }
+
+    // Post in-channel so others benefit from the answer
+    await respondToCommand(responseUrl, finalResponse, false)
   } catch (error) {
     console.error('[ITSquare] Process command error:', error)
     await respondToCommand(
       responseUrl,
       "I had trouble processing that. Try again or type `/itsquare help`.",
+      true,
     ).catch(() => {})
   }
 }
