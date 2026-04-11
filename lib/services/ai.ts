@@ -1,34 +1,45 @@
 /**
  * AI service — generates IT support responses via Vercel AI Gateway.
  *
- * Now with RAG: if the workspace has a knowledge base, relevant context
- * is retrieved and injected into the prompt for company-specific answers.
+ * Resolution Engine: every conversation triggers a 4-source investigation.
+ * Results are synthesized into context that the AI uses to diagnose and resolve.
  */
 
 import { generateText } from 'ai'
 import { gateway } from '@ai-sdk/gateway'
 import { SYSTEM_PROMPT, FALLBACK_MESSAGE } from '@/lib/config/prompts'
 import { AI_MODEL, MAX_OUTPUT_TOKENS, MAX_CONTEXT_MESSAGES } from '@/lib/config/constants'
+import { investigate } from './investigation'
+import { buildInvestigationPrompt } from './context-builder'
 import { retrieveContext, buildContextPrompt } from './rag'
 import type { ConversationMessage } from './conversation'
 
 /**
  * Generate an AI response for an IT support conversation.
  *
+ * Uses the full Resolution Engine when workspace + user info is available.
+ * Falls back to basic RAG-only mode when user identity isn't known (e.g. slash commands).
+ *
  * @param userMessage - The current user message
  * @param history - Previous messages in this thread (for multi-turn)
- * @param workspaceId - Optional workspace ID for RAG context
- * @returns AI-generated response text
+ * @param workspaceId - Optional workspace ID for investigation
+ * @param slackUserId - Optional Slack user ID for personalized context
  */
 export async function generateITResponse(
   userMessage: string,
   history: ConversationMessage[] = [],
   workspaceId?: string,
+  slackUserId?: string,
 ): Promise<string> {
   try {
-    // Retrieve relevant knowledge base context (if workspace has KB)
     let contextPrompt = ''
-    if (workspaceId) {
+
+    if (workspaceId && slackUserId) {
+      // Full Resolution Engine — 4-source investigation
+      const investigationCtx = await investigate(workspaceId, slackUserId, userMessage)
+      contextPrompt = buildInvestigationPrompt(investigationCtx)
+    } else if (workspaceId) {
+      // Fallback: KB-only (e.g. slash commands where we don't have user identity)
       const contexts = await retrieveContext(workspaceId, userMessage)
       contextPrompt = buildContextPrompt(contexts)
     }
@@ -52,7 +63,7 @@ export async function generateITResponse(
     const { text } = await generateText({
       model: gateway(AI_MODEL),
       messages,
-      maxTokens: MAX_OUTPUT_TOKENS,
+      maxOutputTokens: MAX_OUTPUT_TOKENS,
     })
 
     return text

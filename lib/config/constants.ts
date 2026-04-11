@@ -3,10 +3,10 @@
  */
 
 /** Maximum conversation history messages to include in AI context */
-export const MAX_CONTEXT_MESSAGES = 10
+export const MAX_CONTEXT_MESSAGES = 15
 
 /** Maximum AI output tokens per response */
-export const MAX_OUTPUT_TOKENS = 500
+export const MAX_OUTPUT_TOKENS = 800
 
 /** AI model identifier (Vercel AI Gateway format: provider/model) */
 export const AI_MODEL = 'openai/gpt-4o-mini'
@@ -16,3 +16,9 @@ export const SLACK_SIGNATURE_MAX_AGE_SECONDS = 300
 
 /** Free tier message limit per workspace per month */
 export const FREE_TIER_MESSAGE_LIMIT = 50
+
+/** Minimum similarity score for vector search results */
+export const SIMILARITY_THRESHOLD = 0.5
+
+/** Maximum knowledge base chunks per query */
+export const MAX_KB_CHUNKS = 5

@@ -1,8 +1,15 @@
 /**
  * Slack Events API handler.
- * Receives @mentions and DMs, generates AI responses, replies in thread.
+ * Receives @mentions and DMs, runs the Resolution Engine, replies in thread.
  *
- * Flow: Slack → verify signature → ack 200 → process async → reply
+ * Flow:
+ *   Slack → verify signature → ack 200 → process async:
+ *     1. Ensure conversation thread record exists
+ *     2. Extract topic + embedding (first message only)
+ *     3. Run 4-source investigation
+ *     4. Generate AI response with full context
+ *     5. Detect resolution signals
+ *     6. Reply in Slack thread
  */
 
 import { NextResponse } from 'next/server'
@@ -12,6 +19,12 @@ import { verifySlackSignature } from '@/lib/services/slack-verify'
 import { postMessage, addReaction, removeReaction } from '@/lib/services/slack-api'
 import { getThreadHistory, saveMessage, upsertSlackUser } from '@/lib/services/conversation'
 import { generateITResponse } from '@/lib/services/ai'
+import {
+  ensureThread,
+  extractAndStoreTopic,
+  incrementMessageCount,
+  detectResolution,
+} from '@/lib/services/thread-manager'
 
 // Track processed events to prevent duplicate handling on Slack retries
 const processedEvents = new Set<string>()
@@ -84,6 +97,7 @@ export async function GET() {
   return NextResponse.json({
     status: 'ok',
     endpoint: '/api/slack/events',
+    version: 'resolution-engine-v1',
     timestamp: new Date().toISOString(),
   })
 }
@@ -121,26 +135,55 @@ async function handleMessage(teamId: string, event: Record<string, any>) {
   if (!userMessage) return
 
   // Show "thinking" indicator
-  await addReaction(botToken, channelId, messageTs, 'eyes')
+  await addReaction(botToken, channelId, messageTs, 'mag')
 
   try {
     // Upsert user record
     const slackUserDbId = await upsertSlackUser(workspace.id, userId)
 
-    // Save user message
-    await saveMessage(workspace.id, slackUserDbId, channelId, threadTs, 'user', userMessage, messageTs)
+    // Ensure conversation thread record exists
+    const thread = await ensureThread(workspace.id, channelId, threadTs, userId)
 
-    // Get thread history for context
+    // Save user message + increment thread counter
+    await saveMessage(workspace.id, slackUserDbId, channelId, threadTs, 'user', userMessage, messageTs)
+    incrementMessageCount(thread.id).catch(() => {})
+
+    // Extract topic on first message in thread (async, non-blocking)
+    if (thread.messageCount === 0 && thread.id) {
+      extractAndStoreTopic(thread.id, userMessage).catch((err) =>
+        console.error('[ITSquare] Topic extraction error:', err),
+      )
+    }
+
+    // Get thread history for multi-turn context
     const history = await getThreadHistory(channelId, threadTs)
 
-    // Generate AI response (with RAG context from workspace knowledge base)
-    const aiResponse = await generateITResponse(userMessage, history, workspace.id)
+    // Generate AI response with full Resolution Engine context
+    const aiResponse = await generateITResponse(
+      userMessage,
+      history,
+      workspace.id,
+      userId, // enables 4-source investigation
+    )
 
     // Save AI response
     await saveMessage(workspace.id, slackUserDbId, channelId, threadTs, 'assistant', aiResponse)
 
     // Post to Slack in thread
     await postMessage(botToken, channelId, aiResponse, threadTs)
+
+    // Detect resolution signals (async, non-blocking)
+    // Only check after at least 2 exchanges (user asked, bot replied, user responded)
+    if (history.length >= 2 && thread.id) {
+      detectResolution(
+        thread.id,
+        userMessage,
+        aiResponse,
+        history.map((m) => ({ role: m.role, content: m.content })),
+      ).catch((err) =>
+        console.error('[ITSquare] Resolution detection error:', err),
+      )
+    }
   } catch (error) {
     console.error('[ITSquare] Error processing message:', error)
     await postMessage(
@@ -151,6 +194,6 @@ async function handleMessage(teamId: string, event: Record<string, any>) {
     )
   } finally {
     // Remove "thinking" indicator
-    await removeReaction(botToken, channelId, messageTs, 'eyes')
+    await removeReaction(botToken, channelId, messageTs, 'mag')
   }
 }
