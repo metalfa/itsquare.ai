@@ -29,7 +29,8 @@ import {
   detectResolution,
 } from '@/lib/services/thread-manager'
 import { parseCommandResponse, detectPlatform } from '@/lib/services/command-parser'
-import { getRecentResults } from '@/lib/services/execution-manager'
+import { createExecutionRequest, setActionMessageTs, getRecentResults } from '@/lib/services/execution-manager'
+import { buildCommandProposalBlocks } from '@/lib/services/slack-blocks'
 
 /**
  * POST — Slack Events API endpoint.
@@ -176,35 +177,62 @@ async function handleMessage(teamId: string, event: Record<string, any>) {
     const platform = detectPlatform(deviceScan)
     const parsed = parseCommandResponse(aiResponse, platform)
 
-    // Build the final response — commands are shown inline (no buttons until CLI agent ships)
-    let finalResponse = parsed.cleanText || ''
+    // Save the clean text as the AI response
+    const cleanText = parsed.cleanText || ''
+    if (cleanText) {
+      await saveMessage(workspace.id, slackUserDbId, channelId, threadTs, 'assistant', cleanText)
+      await postMessage(botToken, channelId, cleanText, threadTs)
+    }
 
+    // If the AI proposed commands, post interactive buttons + manual fallback
     if (parsed.commands && parsed.commands.length > 0) {
+      const execRequestId = await createExecutionRequest(
+        workspace.id,
+        channelId,
+        threadTs,
+        userId,
+        parsed.commands,
+        'Diagnostic commands proposed by ITSquare',
+        platform,
+        thread.id || undefined,
+      )
+
+      if (execRequestId) {
+        // Post Block Kit interactive message with buttons
+        const blocks = buildCommandProposalBlocks(
+          execRequestId,
+          '_I\'d like to run some diagnostics:_',
+          parsed.commands,
+        )
+        const actionMsg = await postBlockMessage(botToken, channelId, blocks, threadTs)
+        if (actionMsg?.ts) {
+          setActionMessageTs(execRequestId, actionMsg.ts).catch(() => {})
+        }
+      }
+
+      // Always also post the manual instructions below the buttons
+      // so users without the CLI agent can still copy-paste
       const cmdSection = parsed.commands
         .map((cmd, i) => `*${i + 1}.* ${cmd.explanation}\n\`\`\`${cmd.command}\`\`\``)
         .join('\n')
 
-      if (finalResponse) finalResponse += '\n\n'
-      finalResponse += `🔧 *Run these in your terminal:*\n\n${cmdSection}`
-      finalResponse += '\n\n_Paste the output back here and I\'ll interpret the results._'
+      const manualMsg = `📋 *Or run manually in your terminal:*\n\n${cmdSection}\n\n_Paste the output here and I'll interpret the results._`
+      await postMessage(botToken, channelId, manualMsg, threadTs)
+    } else if (!cleanText) {
+      await postMessage(
+        botToken,
+        channelId,
+        "I'm not sure what to suggest here. Could you describe the issue in more detail?",
+        threadTs,
+      )
     }
-
-    if (!finalResponse) {
-      finalResponse = "I'm not sure what to suggest here. Could you describe the issue in more detail?"
-    }
-
-    // Save AI response
-    await saveMessage(workspace.id, slackUserDbId, channelId, threadTs, 'assistant', finalResponse)
-
-    // Post to Slack in thread
-    await postMessage(botToken, channelId, finalResponse, threadTs)
 
     // Detect resolution signals (async, non-blocking)
     if (history.length >= 2 && thread.id) {
       detectResolution(
         thread.id,
         userMessage,
-        finalResponse,
+        parsed.cleanText || aiResponse,
         history.map((m) => ({ role: m.role, content: m.content })),
       ).catch((err) =>
         console.error('[ITSquare] Resolution detection error:', err),
@@ -244,4 +272,38 @@ async function getDeviceScanPlatform(
     .maybeSingle()
 
   return (data as any)?.os_name || null
+}
+
+const SLACK_API = 'https://slack.com/api'
+
+/**
+ * Post a Block Kit message to Slack. Returns the message response.
+ */
+async function postBlockMessage(
+  botToken: string,
+  channel: string,
+  blocks: any[],
+  threadTs?: string,
+): Promise<{ ts?: string } | null> {
+  const body: any = {
+    channel,
+    blocks,
+    text: 'ITSquare diagnostic request',
+  }
+  if (threadTs) body.thread_ts = threadTs
+
+  try {
+    const res = await fetch(`${SLACK_API}/chat.postMessage`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${botToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    })
+    const data = await res.json()
+    return data.ok ? { ts: data.ts } : null
+  } catch {
+    return null
+  }
 }
