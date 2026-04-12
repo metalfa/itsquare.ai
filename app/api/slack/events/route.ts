@@ -393,8 +393,10 @@ function detectTroubleshootingIntent(message: string): boolean {
   const troublePatterns = [
     'slow', 'fast', 'speed', 'laggy', 'lag', 'frozen', 'freeze',
     'crash', 'crashing', 'not working', 'not responding', 'stuck',
+    'doesnt work', 'doesn\'t work', 'dont work', 'don\'t work',
+    'stopped working', 'won\'t work', 'wont work', 'not functioning',
     'won\'t load', 'won\'t open', 'won\'t start', 'won\'t connect',
-    'can\'t connect', 'no internet', 'disconnecting', 'dropping',
+    'can\'t connect', 'cant connect', 'no internet', 'disconnecting', 'dropping',
     'blue screen', 'error', 'failed', 'failing', 'broken',
     'battery', 'overheating', 'hot', 'noisy', 'fan',
     'out of space', 'disk full', 'storage', 'memory',
