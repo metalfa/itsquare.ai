@@ -197,6 +197,7 @@ async function handleMessage(teamId: string, event: Record<string, any>, eventTs
     // Decide how to respond: single unified message
     // Show scan button if: no device data at all, OR user explicitly wants deeper diag
     const needsScan = !hasDeviceData || wantsDeeper
+    console.log(`[ITSquare] Decision: hasDeviceData=${hasDeviceData}, wantsDeeper=${wantsDeeper}, needsScan=${needsScan}`)
 
     if (needsScan) {
       // Create diagnostic token
@@ -346,6 +347,16 @@ async function getDeviceScanData(workspaceId: string, slackUserId: string): Prom
   // Only use scan data less than 7 days old
   const age = Date.now() - new Date(row.scanned_at).getTime()
   if (age > 7 * 24 * 60 * 60 * 1000) return null
+
+  // Quality check: browser scans without available RAM or disk data are too shallow
+  // to make a real diagnosis — treat as "no useful data"
+  const hasUsefulData = (
+    (row.ram_total_gb && row.ram_available_gb) ||
+    (row.disk_total_gb && row.disk_available_gb) ||
+    row.uptime_days ||
+    (row.top_processes && row.top_processes.length > 0)
+  )
+  if (!hasUsefulData) return null
 
   return row
 }
