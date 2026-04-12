@@ -1,25 +1,43 @@
 /**
  * Web Diagnostic API
  *
- * POST /api/agent/web-diagnostic
- * Receives device data from the one-click /check/<token> page.
+ * GET  /api/agent/web-diagnostic?ping=1  → 204 (speed test ping endpoint)
+ * POST /api/agent/web-diagnostic         → receives device data from /check/<token> page
  *
- * Flow:
+ * POST Flow:
  * 1. User clicks diagnostic link in Slack
- * 2. Browser page collects device info (OS, RAM, connection, etc.)
+ * 2. Browser page collects device info (OS, RAM, connection, speed test, CPU benchmark, etc.)
  * 3. Posts here with the token
  * 4. We look up the pending diagnostic request
  * 5. Store the device data
- * 6. Run server-side diagnostics
- * 7. Post interpretation to Slack
+ * 6. Run AI-powered interpretation via GPT-4o-mini
+ * 7. Post interpretation + follow-up buttons to Slack (single message)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { generateText } from 'ai'
+import { gateway } from '@ai-sdk/gateway'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { decryptToken } from '@/lib/slack/encryption'
-import { runNetworkDiagnostics, runPerformanceDiagFromScan } from '@/lib/services/server-diagnostics'
+import { AI_MODEL, MAX_OUTPUT_TOKENS } from '@/lib/config/constants'
 
 const SLACK_API = 'https://slack.com/api'
+
+// ---------------------------------------------------------------------------
+// GET — speed test ping endpoint
+// ---------------------------------------------------------------------------
+
+export async function GET(request: NextRequest) {
+  const ping = request.nextUrl.searchParams.get('ping')
+  if (ping) {
+    return new NextResponse(null, { status: 204 })
+  }
+  return NextResponse.json({ status: 'ok', endpoint: '/api/agent/web-diagnostic' })
+}
+
+// ---------------------------------------------------------------------------
+// POST — receive diagnostic data
+// ---------------------------------------------------------------------------
 
 export async function POST(request: NextRequest) {
   try {
@@ -68,10 +86,9 @@ export async function POST(request: NextRequest) {
           os_name: osName,
           os_version: extractOSVersion(data.userAgent),
           ram_total_gb: data.deviceMemory || null,
-          ram_available_gb: null, // browser can't know this
-          disk_total_gb: data.storageTotalMB ? Math.round(data.storageTotalMB / 1024) : null,
-          disk_available_gb: data.storageTotalMB && data.storageUsedMB
-            ? Math.round((data.storageTotalMB - data.storageUsedMB) / 1024) : null,
+          ram_available_gb: null,
+          disk_total_gb: null,
+          disk_available_gb: null,
           uptime_days: null,
           top_processes: null,
           raw_scan: data,
@@ -93,9 +110,10 @@ export async function POST(request: NextRequest) {
 
     const botToken = decryptToken(workspace.bot_token_encrypted)
 
-    // Build and post the interpretation
-    const interpretation = buildWebDiagInterpretation(data, row.issue_type)
+    // Build AI-powered interpretation
+    const interpretation = await generateDiagInterpretation(data, row.issue_type)
 
+    // Single message: interpretation + follow-up buttons
     await fetch(`${SLACK_API}/chat.postMessage`, {
       method: 'POST',
       headers: {
@@ -106,24 +124,15 @@ export async function POST(request: NextRequest) {
         channel: row.channel_id,
         thread_ts: row.thread_ts,
         text: interpretation,
-      }),
-    })
-
-    // Post follow-up buttons
-    await fetch(`${SLACK_API}/chat.postMessage`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${botToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        channel: row.channel_id,
-        thread_ts: row.thread_ts,
-        text: 'Did that help?',
         blocks: [
           {
+            type: 'section',
+            text: { type: 'mrkdwn', text: interpretation },
+          },
+          { type: 'divider' },
+          {
             type: 'actions',
-            block_id: `fix_confirm_${row.thread_ts}`,
+            block_id: `fix_confirm_${row.id}`,
             elements: [
               {
                 type: 'button',
@@ -158,10 +167,98 @@ export async function POST(request: NextRequest) {
 }
 
 // ---------------------------------------------------------------------------
-// Interpretation
+// AI-powered interpretation
 // ---------------------------------------------------------------------------
 
-function buildWebDiagInterpretation(data: any, issueType: string): string {
+async function generateDiagInterpretation(data: any, issueType: string): Promise<string> {
+  try {
+    const dataStr = JSON.stringify(
+      {
+        os: detectOS(data.userAgent, data.platform),
+        osVersion: extractOSVersion(data.userAgent),
+        ram: data.deviceMemory ? `${data.deviceMemory}GB` : 'unknown',
+        cpuCores: data.hardwareConcurrency || 'unknown',
+        cpuBenchmark: data.cpuBenchmarkMs
+          ? `${data.cpuBenchmarkMs}ms (score: ${data.cpuScore}/100)`
+          : 'not available',
+        jsHeap:
+          data.jsHeapUsedMB != null
+            ? `${data.jsHeapUsedMB}MB used / ${data.jsHeapTotalMB}MB total / ${data.jsHeapLimitMB}MB limit`
+            : 'not available',
+        speedTest: data.speedTestDownloadMbps != null
+          ? `${data.speedTestDownloadMbps} Mbps download, ${data.speedTestLatencyMs}ms latency`
+          : 'not available',
+        connectionType: data.connectionType || 'unknown',
+        navigatorDownlink: data.downlink ? `${data.downlink} Mbps` : 'unknown',
+        navigatorRtt: data.rtt ? `${data.rtt}ms` : 'unknown',
+        latencyGoogle: data.latencyGoogle ? `${data.latencyGoogle}ms` : 'not tested',
+        latencyCloudflare: data.latencyCloudflare ? `${data.latencyCloudflare}ms` : 'not tested',
+        latencySlack: data.latencySlack ? `${data.latencySlack}ms` : 'not tested',
+        battery:
+          data.batteryLevel != null
+            ? `${data.batteryLevel}% ${data.batteryCharging ? '(charging)' : '(not charging)'}`
+            : 'unknown',
+        display: `${data.screenWidth}x${data.screenHeight} @${data.pixelRatio}x`,
+        gpu: data.gpuRenderer || 'unknown',
+        storage: data.storageTotalMB
+          ? `${data.storageUsedMB}MB used of ${data.storageTotalMB}MB browser quota`
+          : 'unknown',
+      },
+      null,
+      2,
+    )
+
+    const { text } = await generateText({
+      model: gateway(AI_MODEL),
+      messages: [
+        {
+          role: 'system',
+          content: `You are an IT diagnostic interpreter. Given device scan data and the user's reported issue type, produce a Slack-formatted diagnosis.
+
+FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
+📊 *Here's what I found from your device:*
+
+• *Finding 1 label:* specific value — assessment
+• *Finding 2 label:* specific value — assessment
+(3-6 findings, focus on what's RELEVANT to the issue type)
+
+🔧 *What to do:*
+1. Most impactful action with visual instructions (click X → do Y)
+2. Second action if needed
+3. Third action if needed
+
+RULES:
+- Reference SPECIFIC numbers from the data. "Your download speed is 3.2 Mbps" not "your internet seems slow"
+- For network issues: lead with speed test results and latency
+- For performance issues: lead with CPU benchmark, RAM, JS heap
+- Skip irrelevant metrics (don't mention GPU for a wifi problem)
+- Keep it under 15 lines total
+- Use Slack mrkdwn (*bold*, \`code\`)
+- NEVER mention "browser scan", "JavaScript heap", or technical scan details — translate everything to plain language
+- "Your internet download speed" not "speedTestDownloadMbps"
+- "Your CPU performance score" not "cpuBenchmarkMs"`,
+        },
+        {
+          role: 'user',
+          content: `Issue type: ${issueType}\n\nDevice scan data:\n${dataStr}`,
+        },
+      ],
+      maxTokens: MAX_OUTPUT_TOKENS,
+    })
+
+    return text.trim()
+  } catch (error) {
+    console.error('[ITSquare] AI diagnosis interpretation error:', error)
+    // Fallback to basic interpretation
+    return buildFallbackInterpretation(data, issueType)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Fallback interpretation (used if AI call fails)
+// ---------------------------------------------------------------------------
+
+function buildFallbackInterpretation(data: any, issueType: string): string {
   const findings: string[] = []
 
   // OS
@@ -171,33 +268,61 @@ function buildWebDiagInterpretation(data: any, issueType: string): string {
   // RAM
   if (data.deviceMemory) {
     if (data.deviceMemory <= 4) {
-      findings.push(`• *RAM: ${data.deviceMemory}GB* — this is quite low. Performance will suffer with many apps open.`)
+      findings.push(
+        `• *RAM: ${data.deviceMemory}GB* — this is quite low. Performance will suffer with many apps open.`,
+      )
     } else {
       findings.push(`• *RAM: ${data.deviceMemory}GB* — should be adequate for normal use`)
     }
   }
 
-  // CPU cores
-  if (data.hardwareConcurrency) {
-    findings.push(`• *CPU cores: ${data.hardwareConcurrency}*`)
+  // CPU benchmark
+  if (data.cpuScore != null) {
+    if (data.cpuScore < 40) {
+      findings.push(
+        `• *CPU performance: ${data.cpuScore}/100* — your processor is running slowly, which may cause system-wide sluggishness`,
+      )
+    } else if (data.cpuScore < 70) {
+      findings.push(`• *CPU performance: ${data.cpuScore}/100* — moderate performance`)
+    } else {
+      findings.push(`• *CPU performance: ${data.cpuScore}/100* — good`)
+    }
   }
 
-  // Connection
-  if (data.connectionType) {
-    if (data.rtt && data.rtt > 200) {
-      findings.push(`• *Network: ${data.connectionType}* — latency is ${data.rtt}ms, which is *high*. This would cause slowness.`)
-    } else if (data.downlink && data.downlink < 5) {
-      findings.push(`• *Network: ${data.connectionType}* — bandwidth is ${data.downlink}Mbps, which is *slow*.`)
+  // Speed test
+  if (data.speedTestDownloadMbps != null) {
+    if (data.speedTestDownloadMbps < 5) {
+      findings.push(
+        `• *Internet speed: ${data.speedTestDownloadMbps} Mbps* — very slow. This is likely causing your issues.`,
+      )
+    } else if (data.speedTestDownloadMbps < 20) {
+      findings.push(
+        `• *Internet speed: ${data.speedTestDownloadMbps} Mbps* — below average for video calls and downloads`,
+      )
     } else {
-      findings.push(`• *Network: ${data.connectionType}* — ${data.downlink ? data.downlink + 'Mbps' : 'speed unknown'}, ${data.rtt ? data.rtt + 'ms latency' : ''}`)
+      findings.push(`• *Internet speed: ${data.speedTestDownloadMbps} Mbps* — good`)
+    }
+  } else if (data.connectionType) {
+    if (data.rtt && data.rtt > 200) {
+      findings.push(
+        `• *Network: ${data.connectionType}* — latency is ${data.rtt}ms, which is *high*. This would cause slowness.`,
+      )
+    } else if (data.downlink && data.downlink < 5) {
+      findings.push(
+        `• *Network: ${data.connectionType}* — bandwidth is ${data.downlink}Mbps, which is *slow*.`,
+      )
+    } else {
+      findings.push(
+        `• *Network: ${data.connectionType}* — ${data.downlink ? data.downlink + 'Mbps' : 'speed unknown'}, ${data.rtt ? data.rtt + 'ms latency' : ''}`,
+      )
     }
   }
 
   // Battery
-  if (data.batteryLevel !== null) {
-    if (data.batteryLevel < 20 && !data.batteryCharging) {
-      findings.push(`• *Battery: ${data.batteryLevel}%* — low battery can throttle performance. Plug in your charger!`)
-    }
+  if (data.batteryLevel !== null && data.batteryLevel < 20 && !data.batteryCharging) {
+    findings.push(
+      `• *Battery: ${data.batteryLevel}%* — low battery can throttle performance. Plug in your charger!`,
+    )
   }
 
   // Screen
@@ -212,16 +337,20 @@ function buildWebDiagInterpretation(data: any, issueType: string): string {
   response += '\n\n🔧 *Recommended:*\n'
 
   const recs: string[] = []
+  if (data.speedTestDownloadMbps != null && data.speedTestDownloadMbps < 5) {
+    recs.push('1. *Move closer to your WiFi router* — your internet speed is very low')
+    recs.push('2. *Disconnect and reconnect* to WiFi, or try restarting your router')
+  }
+  if (data.cpuScore != null && data.cpuScore < 40) {
+    recs.push(`${recs.length + 1}. *Restart your device* — this often clears performance issues`)
+    recs.push(`${recs.length + 1}. *Close apps running in the background*`)
+  }
   if (data.deviceMemory && data.deviceMemory <= 4) {
-    recs.push('1. *Close browser tabs* you\'re not using — each tab eats memory')
-    recs.push('2. *Quit apps* running in the background')
+    recs.push(`${recs.length + 1}. *Close browser tabs* you're not using — each tab eats memory`)
   }
   if (data.rtt && data.rtt > 200) {
     recs.push(`${recs.length + 1}. *Move closer to your WiFi router* — your connection latency is high`)
     recs.push(`${recs.length + 1}. *Disconnect and reconnect* to WiFi`)
-  }
-  if (data.downlink && data.downlink < 5) {
-    recs.push(`${recs.length + 1}. *Check if others are streaming* — your bandwidth is limited`)
   }
   if (data.batteryLevel !== null && data.batteryLevel < 20 && !data.batteryCharging) {
     recs.push(`${recs.length + 1}. *Plug in your charger* — low battery throttles performance`)
@@ -261,7 +390,10 @@ function extractOSVersion(userAgent: string): string {
   const winMatch = ua.match(/Windows NT (\d+\.\d+)/)
   if (winMatch) {
     const versions: Record<string, string> = {
-      '10.0': '10/11', '6.3': '8.1', '6.2': '8', '6.1': '7',
+      '10.0': '10/11',
+      '6.3': '8.1',
+      '6.2': '8',
+      '6.1': '7',
     }
     return versions[winMatch[1]] || winMatch[1]
   }

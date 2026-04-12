@@ -357,7 +357,9 @@ async function getDeviceScanData(workspaceId: string, slackUserId: string): Prom
   const hasDeepData = (
     row.ram_available_gb != null ||
     row.uptime_days != null ||
-    (row.top_processes && row.top_processes.length > 0)
+    (row.top_processes && row.top_processes.length > 0) ||
+    (row.raw_scan?.cpuScore != null) ||
+    (row.raw_scan?.speedTestDownloadMbps != null)
   )
   if (!hasDeepData) {
     console.log('[ITSquare] Shallow scan detected — treating as no device data')

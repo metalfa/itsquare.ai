@@ -89,6 +89,46 @@ function buildDeviceScanSection(ctx: InvestigationContext): string | null {
     }
   }
 
+  // Enhanced browser scan data
+  const rawScan = (scan as any).rawScan
+  if (rawScan) {
+    if (rawScan.cpuScore != null) {
+      lines.push(`- CPU benchmark score: ${rawScan.cpuScore}/100 (${rawScan.cpuBenchmarkMs}ms)`)
+      if (rawScan.cpuScore < 30) {
+        lines.push('  ⚠️ VERY SLOW CPU — likely causing system-wide performance issues')
+      } else if (rawScan.cpuScore < 60) {
+        lines.push('  ⚠️ BELOW AVERAGE CPU — may cause sluggishness with heavy workloads')
+      }
+    }
+    if (rawScan.speedTestDownloadMbps != null) {
+      lines.push(`- Download speed: ${rawScan.speedTestDownloadMbps} Mbps (latency: ${rawScan.speedTestLatencyMs}ms)`)
+      if (rawScan.speedTestDownloadMbps < 5) {
+        lines.push('  ⚠️ VERY SLOW INTERNET — likely the main cause of slowness')
+      } else if (rawScan.speedTestDownloadMbps < 20) {
+        lines.push('  ⚠️ BELOW AVERAGE INTERNET — may cause issues with video calls and large downloads')
+      }
+    }
+    if (rawScan.jsHeapUsedMB != null) {
+      const heapPct = Math.round((rawScan.jsHeapUsedMB / rawScan.jsHeapLimitMB) * 100)
+      lines.push(`- Browser memory: ${rawScan.jsHeapUsedMB}MB used of ${rawScan.jsHeapLimitMB}MB limit (${heapPct}%)`)
+      if (heapPct > 80) {
+        lines.push('  ⚠️ BROWSER RUNNING OUT OF MEMORY — too many tabs or heavy web apps')
+      }
+    }
+    if (rawScan.latencyGoogle != null) {
+      lines.push(`- Latency: Google ${rawScan.latencyGoogle}ms, Cloudflare ${rawScan.latencyCloudflare || '?'}ms, Slack ${rawScan.latencySlack || '?'}ms`)
+      const latencyValues = [rawScan.latencyGoogle, rawScan.latencyCloudflare, rawScan.latencySlack].filter((v: any) => v != null)
+      const avgLatency = latencyValues.reduce((a: number, b: number) => a + b, 0) / latencyValues.length
+      if (avgLatency > 300) {
+        lines.push('  ⚠️ HIGH NETWORK LATENCY — slow WiFi or congested network')
+      }
+    }
+    if (rawScan.batteryLevel != null && rawScan.batteryLevel < 20 && !rawScan.batteryCharging) {
+      lines.push(`- Battery: ${rawScan.batteryLevel}% (NOT charging)`)
+      lines.push('  ⚠️ LOW BATTERY — device may be throttling performance to save power')
+    }
+  }
+
   const scanDate = new Date(scan.scannedAt)
   const daysAgo = Math.round((Date.now() - scanDate.getTime()) / (1000 * 60 * 60 * 24))
   lines.push(`- Scan date: ${daysAgo === 0 ? 'today' : `${daysAgo} day${daysAgo !== 1 ? 's' : ''} ago`}`)

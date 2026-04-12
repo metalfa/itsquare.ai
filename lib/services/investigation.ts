@@ -52,6 +52,7 @@ export interface DeviceScanData {
   uptimeDays: number | null
   topProcesses: Array<{ name: string; cpu_pct: number; mem_mb: number }> | null
   scannedAt: string
+  rawScan: any | null
 }
 
 export interface SimilarIssueCount {
@@ -197,7 +198,7 @@ async function getDeviceScan(
       .from('device_scans' as any)
       .select(
         'hostname, os_name, os_version, ram_total_gb, ram_available_gb, ' +
-        'disk_total_gb, disk_available_gb, uptime_days, top_processes, scanned_at',
+        'disk_total_gb, disk_available_gb, uptime_days, top_processes, raw_scan, scanned_at',
       )
       .eq('workspace_id', workspaceId)
       .eq('slack_user_id', slackUserId)
@@ -217,10 +218,13 @@ async function getDeviceScan(
     // Quality check: shallow browser-only scans lack deep metrics
     // (ram_available_gb, uptime_days, top_processes). Skip them so
     // the AI doesn't get misleading partial data.
+    // Enhanced browser scans with cpuScore or speedTestDownloadMbps also qualify.
     const hasDeepData = (
       row.ram_available_gb != null ||
       row.uptime_days != null ||
-      (row.top_processes && row.top_processes.length > 0)
+      (row.top_processes && row.top_processes.length > 0) ||
+      (row.raw_scan?.cpuScore != null) ||
+      (row.raw_scan?.speedTestDownloadMbps != null)
     )
     if (!hasDeepData) return null
 
@@ -235,6 +239,7 @@ async function getDeviceScan(
       uptimeDays: row.uptime_days,
       topProcesses: row.top_processes,
       scannedAt: row.scanned_at,
+      rawScan: row.raw_scan || null,
     }
   } catch (error) {
     console.error('[ITSquare] Device scan lookup failed:', error)
