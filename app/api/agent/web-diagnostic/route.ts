@@ -229,12 +229,15 @@ FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
 
 RULES:
 - Reference SPECIFIC numbers from the data. "Your download speed is 3.2 Mbps" not "your internet seems slow"
-- For network issues: lead with speed test results and latency
-- For performance issues: lead with CPU benchmark, RAM, JS heap
+- For network issues: lead with speed test results and latency. Recommend: disconnect/reconnect WiFi, move closer to router, check for bandwidth hogs
+- For performance issues: lead with CPU benchmark and RAM. Recommend: close apps, restart, check for updates
 - Skip irrelevant metrics (don't mention GPU for a wifi problem)
+- "What to do" steps MUST be specific visual actions: "Click the WiFi icon → Disconnect → Wait 10 seconds → Reconnect"
+- NEVER recommend generic "Restart your device" as the first step unless uptime or system issues warrant it
+- If everything looks healthy, SAY SO: "Your system looks good — the issue may be temporary or app-specific"
 - Keep it under 15 lines total
 - Use Slack mrkdwn (*bold*, \`code\`)
-- NEVER mention "browser scan", "JavaScript heap", or technical scan details — translate everything to plain language
+- NEVER mention "browser scan", "JavaScript heap", or technical scan details — translate to plain language
 - "Your internet download speed" not "speedTestDownloadMbps"
 - "Your CPU performance score" not "cpuBenchmarkMs"`,
         },
