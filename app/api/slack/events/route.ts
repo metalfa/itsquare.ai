@@ -419,9 +419,11 @@ function detectDeeperIntent(message: string): boolean {
   // Exact/substring matches
   const exactTriggers = [
     'go deeper', 'deeper', 'scan my', 'diagnose my', 'check my',
-    'run diagnostics', 'run a scan', 'health check', 'system check',
+    'run diagnostics', 'run a scan', 'run scan', 'full scan',
+    'do a scan', 'scan please', 'scan again',
+    'health check', 'system check',
     'analyze my', 'deeper analysis', 'deeper look',
-    'please check', 'can you check',
+    'please check', 'can you check', 'please scan',
   ]
   if (exactTriggers.some((t) => lower.includes(t))) return true
 

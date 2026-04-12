@@ -60,15 +60,30 @@ export async function generateITResponse(
       messages.push({ role: 'user' as const, content: userMessage })
     }
 
-    const { text } = await generateText({
-      model: gateway(AI_MODEL),
-      messages,
-      maxOutputTokens: MAX_OUTPUT_TOKENS,
-    })
+    // Try AI generation with one retry on failure
+    let lastError: unknown
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const { text } = await generateText({
+          model: gateway(AI_MODEL),
+          messages,
+          maxOutputTokens: MAX_OUTPUT_TOKENS,
+        })
+        return text
+      } catch (err) {
+        lastError = err
+        console.error(`[ITSquare] AI generation error (attempt ${attempt + 1}):`, err)
+        if (attempt === 0) {
+          // Brief pause before retry
+          await new Promise((r) => setTimeout(r, 1000))
+        }
+      }
+    }
 
-    return text
+    console.error('[ITSquare] AI generation failed after 2 attempts:', lastError)
+    return FALLBACK_MESSAGE
   } catch (error) {
-    console.error('[ITSquare] AI generation error:', error)
+    console.error('[ITSquare] Investigation/context error:', error)
     return FALLBACK_MESSAGE
   }
 }
