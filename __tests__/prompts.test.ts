@@ -4,11 +4,10 @@ import { SYSTEM_PROMPT, HELP_MESSAGE, FALLBACK_MESSAGE } from '@/lib/config/prom
 describe('prompts', () => {
   it('SYSTEM_PROMPT contains essential instructions', () => {
     expect(SYSTEM_PROMPT).toContain('ITSquare')
-    expect(SYSTEM_PROMPT).toContain('investigate')
-    expect(SYSTEM_PROMPT).toContain('NEVER ask the user')
-    expect(SYSTEM_PROMPT).toContain('[COMMANDS]')
+    expect(SYSTEM_PROMPT).toContain('Diagnose first')
+    expect(SYSTEM_PROMPT).toContain('NEVER')
     expect(SYSTEM_PROMPT).toContain('Slack')
-    expect(SYSTEM_PROMPT).toContain('ticket')
+    expect(SYSTEM_PROMPT).toContain('escalation')
   })
 
   it('HELP_MESSAGE contains slash command examples', () => {

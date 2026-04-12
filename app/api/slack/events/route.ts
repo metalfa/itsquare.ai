@@ -20,7 +20,6 @@ import {
   detectResolution,
 } from '@/lib/services/thread-manager'
 import { chooseDiagnosticSet } from '@/lib/services/auto-diagnostic'
-import { runNetworkDiagnostics, runPerformanceDiagFromScan } from '@/lib/services/server-diagnostics'
 import { randomUUID } from 'crypto'
 
 const SLACK_API = 'https://slack.com/api'
@@ -90,7 +89,7 @@ export async function GET() {
   return NextResponse.json({
     status: 'ok',
     endpoint: '/api/slack/events',
-    version: 'resolution-engine-v4',
+    version: 'resolution-engine-v5',
     timestamp: new Date().toISOString(),
   })
 }
@@ -143,7 +142,7 @@ async function handleMessage(teamId: string, event: Record<string, any>, eventTs
 
   if (!userMessage) return
 
-  // Post "Investigating..." — will update in-place with the answer
+  // Post "Working on it..." — will update in-place
   const thinkingMsg = await postSlackMessage(botToken, channelId, {
     text: ':hourglass_flowing_sand: _Working on it..._',
     thread_ts: threadTs,
@@ -157,7 +156,7 @@ async function handleMessage(teamId: string, event: Record<string, any>, eventTs
     // Ensure conversation thread record
     const thread = await ensureThread(workspace.id, channelId, threadTs, userId)
 
-    // Save user message (also serves as dedup marker via message_ts)
+    // Save user message
     await saveMessage(workspace.id, slackUserDbId, channelId, threadTs, 'user', userMessage, messageTs)
     incrementMessageCount(thread.id).catch(() => {})
 
@@ -169,7 +168,13 @@ async function handleMessage(teamId: string, event: Record<string, any>, eventTs
     // Get thread history
     const history = await getThreadHistory(channelId, threadTs)
 
-    // Generate AI response with full Resolution Engine
+    // Check if user has recent device scan data
+    const deviceScan = await getDeviceScanData(workspace.id, userId)
+    const hasDeviceData = !!deviceScan
+    const isFirstMessage = thread.messageCount === 0
+    const wantsDeeper = detectDeeperIntent(userMessage)
+
+    // Generate AI response
     const aiResponse = await generateITResponse(
       userMessage,
       history,
@@ -177,7 +182,7 @@ async function handleMessage(teamId: string, event: Record<string, any>, eventTs
       userId,
     )
 
-    // Clean any structured blocks from the response
+    // Clean structured blocks from the response
     const cleanResponse = aiResponse
       .replace(/\[COMMANDS\][\s\S]*?\[\/COMMANDS\]/g, '')
       .replace(/\[DIAGNOSTIC\][\s\S]*?\[\/DIAGNOSTIC\]/g, '')
@@ -189,99 +194,85 @@ async function handleMessage(teamId: string, event: Record<string, any>, eventTs
     // Save AI response
     await saveMessage(workspace.id, slackUserDbId, channelId, threadTs, 'assistant', finalResponse)
 
-    // Update the "working on it" message with the actual response
-    if (thinkingTs) {
-      await updateSlackMessage(botToken, channelId, thinkingTs, finalResponse)
-    } else {
-      await postMessage(botToken, channelId, finalResponse, threadTs)
-    }
+    // Decide how to respond: single unified message
+    const needsScan = (!hasDeviceData && isFirstMessage) || wantsDeeper
 
-    // Check if user wants deeper diagnostics
-    if (wantsDiagnostics(userMessage)) {
+    if (needsScan) {
+      // Create diagnostic token
+      const diagToken = randomUUID()
       const conversationSummary = history
         .slice(-6)
         .map((m) => `${m.role}: ${m.content}`)
         .join('\n')
       const diagSet = await chooseDiagnosticSet(conversationSummary + '\n' + userMessage)
 
-      if (diagSet === 'network') {
-        // Network diagnostics run SERVER-SIDE — instant, no user action needed
-        const thinkDiagTs = await postSlackMessage(botToken, channelId, {
-          text: ':hourglass_flowing_sand: _Running network diagnostics..._',
-          thread_ts: threadTs,
-        })
+      await supabase.from('web_diagnostics' as any).insert({
+        workspace_id: workspace.id,
+        slack_user_id: userId,
+        channel_id: channelId,
+        thread_ts: threadTs,
+        token: diagToken,
+        issue_type: diagSet,
+      })
 
-        try {
-          const { interpretation } = await runNetworkDiagnostics()
-          if (thinkDiagTs?.ts) {
-            await updateSlackMessage(botToken, channelId, thinkDiagTs.ts, interpretation)
-          }
-        } catch {
-          if (thinkDiagTs?.ts) {
-            await updateSlackMessage(botToken, channelId, thinkDiagTs.ts,
-              'Had trouble running network diagnostics. Let me try a different approach — is this happening on all websites, or just specific ones?')
-          }
-        }
+      const diagUrl = `https://itsquare.ai/check/${diagToken}`
+
+      // Build unified Block Kit message: AI response + scan button
+      const blocks: any[] = [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: wantsDeeper
+              ? '🔍 Let me take another look at your machine to dig deeper.'
+              : finalResponse,
+          },
+        },
+        { type: 'divider' },
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: '🖥️ *Quick scan — takes 5 seconds, no install needed:*',
+          },
+        },
+        {
+          type: 'actions',
+          block_id: `diag_link_${diagToken}`,
+          elements: [
+            {
+              type: 'button',
+              text: { type: 'plain_text', text: '🔍 Scan My Machine', emoji: true },
+              style: 'primary',
+              url: diagUrl,
+              action_id: 'diag_web_link',
+            },
+          ],
+        },
+        {
+          type: 'context',
+          elements: [
+            {
+              type: 'mrkdwn',
+              text: '_Checks basic device info (OS, RAM, connection). No personal files or data are accessed._',
+            },
+          ],
+        },
+      ]
+
+      // Update the thinking message with blocks
+      if (thinkingTs) {
+        await updateSlackMessageBlocks(botToken, channelId, thinkingTs, blocks,
+          wantsDeeper ? 'Let me take another look at your machine.' : finalResponse)
       } else {
-        // Performance/security: check if we have device scan data
-        const deviceScan = await getDeviceScanData(workspace.id, userId)
-
-        if (deviceScan) {
-          // We have scan data — diagnose from it immediately
-          const thinkDiagTs = await postSlackMessage(botToken, channelId, {
-            text: ':hourglass_flowing_sand: _Analyzing your system..._',
-            thread_ts: threadTs,
-          })
-          const diagResult = await runPerformanceDiagFromScan(deviceScan)
-          if (thinkDiagTs?.ts) {
-            await updateSlackMessage(botToken, channelId, thinkDiagTs.ts, diagResult)
-          }
-        } else {
-          // No scan data — send one-click diagnostic link
-          const diagToken = randomUUID()
-          await supabase.from('web_diagnostics' as any).insert({
-            workspace_id: workspace.id,
-            slack_user_id: userId,
-            channel_id: channelId,
-            thread_ts: threadTs,
-            token: diagToken,
-            issue_type: diagSet,
-          })
-
-          const diagUrl = `https://itsquare.ai/check/${diagToken}`
-
-          await postBlockMessage(botToken, channelId, [
-            {
-              type: 'section',
-              text: {
-                type: 'mrkdwn',
-                text: `🔍 I need a quick look at your machine to diagnose this properly.\n\n*Click below — it takes 5 seconds, no install needed:*`,
-              },
-            },
-            {
-              type: 'actions',
-              block_id: `diag_link_${diagToken}`,
-              elements: [
-                {
-                  type: 'button',
-                  text: { type: 'plain_text', text: '🖥️ Run Quick Scan', emoji: true },
-                  style: 'primary',
-                  url: diagUrl,
-                  action_id: 'diag_web_link',
-                },
-              ],
-            },
-            {
-              type: 'context',
-              elements: [
-                {
-                  type: 'mrkdwn',
-                  text: '_Only checks basic device info (OS, RAM, connection). No personal files or data are accessed._',
-                },
-              ],
-            },
-          ], threadTs)
-        }
+        await postBlockMessage(botToken, channelId, blocks, threadTs)
+      }
+    } else {
+      // Has device data or not first message — just send the AI response
+      if (thinkingTs) {
+        await updateSlackMessage(botToken, channelId, thinkingTs, finalResponse)
+      } else {
+        await postMessage(botToken, channelId, finalResponse, threadTs)
       }
     }
 
@@ -359,19 +350,60 @@ async function getDeviceScanData(workspaceId: string, slackUserId: string): Prom
 }
 
 /**
- * Detect if the user is asking for deeper/CLI diagnostics.
+ * Detect if the user wants deeper diagnostics.
+ * Uses fuzzy matching to handle typos like "goo peeper" → "go deeper"
  */
-function wantsDiagnostics(message: string): boolean {
-  const lower = message.toLowerCase()
-  const triggers = [
-    'run diagnostics', 'run a diagnostic', 'run commands',
-    'check my system', 'check my machine', 'check my computer',
-    'go deeper', 'deeper analysis', 'deeper look',
-    'scan my', 'diagnose my', 'analyze my',
-    'run a scan', 'system check', 'health check',
-    'can you check', 'please check',
+function detectDeeperIntent(message: string): boolean {
+  const lower = message.toLowerCase().trim()
+
+  // Exact/substring matches
+  const exactTriggers = [
+    'go deeper', 'deeper', 'scan my', 'diagnose my', 'check my',
+    'run diagnostics', 'run a scan', 'health check', 'system check',
+    'analyze my', 'deeper analysis', 'deeper look',
+    'please check', 'can you check',
   ]
-  return triggers.some((t) => lower.includes(t))
+  if (exactTriggers.some((t) => lower.includes(t))) return true
+
+  // Fuzzy match for common typos — check if any 2-word combo is close to "go deeper"
+  const words = lower.split(/\s+/)
+  for (let i = 0; i < words.length - 1; i++) {
+    const bigram = words[i] + ' ' + words[i + 1]
+    if (levenshtein(bigram, 'go deeper') <= 3) return true
+    if (levenshtein(bigram, 'run scan') <= 2) return true
+    if (levenshtein(bigram, 'check machine') <= 3) return true
+    if (levenshtein(bigram, 'diagnose machine') <= 3) return true
+  }
+
+  // Single word fuzzy
+  for (const word of words) {
+    if (levenshtein(word, 'deeper') <= 2) return true
+    if (levenshtein(word, 'diagnose') <= 2) return true
+    if (levenshtein(word, 'diagnostic') <= 2) return true
+    if (levenshtein(word, 'diagnostics') <= 2) return true
+  }
+
+  return false
+}
+
+/**
+ * Levenshtein distance between two strings.
+ */
+function levenshtein(a: string, b: string): number {
+  const matrix: number[][] = []
+  for (let i = 0; i <= a.length; i++) matrix[i] = [i]
+  for (let j = 0; j <= b.length; j++) matrix[0][j] = j
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost,
+      )
+    }
+  }
+  return matrix[a.length][b.length]
 }
 
 /**
@@ -415,6 +447,30 @@ async function updateSlackMessage(
         channel,
         ts: messageTs,
         text: newText,
+      }),
+    })
+  } catch { /* non-critical */ }
+}
+
+async function updateSlackMessageBlocks(
+  botToken: string,
+  channel: string,
+  messageTs: string,
+  blocks: any[],
+  fallbackText: string,
+): Promise<void> {
+  try {
+    await fetch(`${SLACK_API}/chat.update`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${botToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        channel,
+        ts: messageTs,
+        blocks,
+        text: fallbackText,
       }),
     })
   } catch { /* non-critical */ }
