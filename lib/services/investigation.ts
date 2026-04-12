@@ -214,6 +214,16 @@ async function getDeviceScan(
     const sevenDays = 7 * 24 * 60 * 60 * 1000
     if (scanAge > sevenDays) return null
 
+    // Quality check: shallow browser-only scans lack deep metrics
+    // (ram_available_gb, uptime_days, top_processes). Skip them so
+    // the AI doesn't get misleading partial data.
+    const hasDeepData = (
+      row.ram_available_gb != null ||
+      row.uptime_days != null ||
+      (row.top_processes && row.top_processes.length > 0)
+    )
+    if (!hasDeepData) return null
+
     return {
       hostname: row.hostname,
       osName: row.os_name,

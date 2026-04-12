@@ -348,15 +348,20 @@ async function getDeviceScanData(workspaceId: string, slackUserId: string): Prom
   const age = Date.now() - new Date(row.scanned_at).getTime()
   if (age > 7 * 24 * 60 * 60 * 1000) return null
 
-  // Quality check: browser scans without available RAM or disk data are too shallow
-  // to make a real diagnosis — treat as "no useful data"
-  const hasUsefulData = (
-    (row.ram_total_gb && row.ram_available_gb) ||
-    (row.disk_total_gb && row.disk_available_gb) ||
-    row.uptime_days ||
+  // Quality check: browser-only scans have disk_total_gb from StorageManager
+  // (browser quota, not real disk) and ram_total_gb from navigator.deviceMemory
+  // but lack ram_available_gb, uptime_days, and top_processes.
+  // These shallow scans can't drive a real diagnosis — require at least one
+  // "deep" field that only comes from a real agent or enhanced scan.
+  const hasDeepData = (
+    row.ram_available_gb != null ||
+    row.uptime_days != null ||
     (row.top_processes && row.top_processes.length > 0)
   )
-  if (!hasUsefulData) return null
+  if (!hasDeepData) {
+    console.log('[ITSquare] Shallow scan detected — treating as no device data')
+    return null
+  }
 
   return row
 }
