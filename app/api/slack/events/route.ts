@@ -171,8 +171,8 @@ async function handleMessage(teamId: string, event: Record<string, any>, eventTs
     // Check if user has recent device scan data
     const deviceScan = await getDeviceScanData(workspace.id, userId)
     const hasDeviceData = !!deviceScan
-    const isFirstMessage = thread.messageCount === 0
     const wantsDeeper = detectDeeperIntent(userMessage)
+    const isTroubleshooting = detectTroubleshootingIntent(userMessage)
 
     // Generate AI response
     const aiResponse = await generateITResponse(
@@ -195,9 +195,10 @@ async function handleMessage(teamId: string, event: Record<string, any>, eventTs
     await saveMessage(workspace.id, slackUserDbId, channelId, threadTs, 'assistant', finalResponse)
 
     // Decide how to respond: single unified message
-    // Show scan button if: no device data at all, OR user explicitly wants deeper diag
-    const needsScan = !hasDeviceData || wantsDeeper
-    console.log(`[ITSquare] Decision: hasDeviceData=${hasDeviceData}, wantsDeeper=${wantsDeeper}, needsScan=${needsScan}`)
+    // Show scan button ONLY for troubleshooting issues without device data, or explicit "go deeper"
+    // Simple questions (wifi password, how do I, etc.) just get a text answer
+    const needsScan = wantsDeeper || (isTroubleshooting && !hasDeviceData)
+    console.log(`[ITSquare] Decision: hasDeviceData=${hasDeviceData}, isTroubleshooting=${isTroubleshooting}, wantsDeeper=${wantsDeeper}, needsScan=${needsScan}`)
 
     if (needsScan) {
       // Create diagnostic token
@@ -364,6 +365,44 @@ async function getDeviceScanData(workspaceId: string, slackUserId: string): Prom
   }
 
   return row
+}
+
+/**
+ * Detect if this is a troubleshooting/device issue that benefits from a scan.
+ * Returns false for simple questions (wifi password, how do I, setup help, etc.)
+ */
+function detectTroubleshootingIntent(message: string): boolean {
+  const lower = message.toLowerCase()
+
+  // Simple question patterns — NO scan needed
+  const simplePatterns = [
+    'password', 'how do i', 'how to', 'what is', 'what\'s the',
+    'where is', 'where do', 'can i', 'set up', 'setup',
+    'install', 'download', 'link', 'url', 'login', 'log in',
+    'sign in', 'account', 'access', 'permission', 'reset my',
+    'forgot', 'update my', 'change my', 'enable', 'disable',
+    'turn on', 'turn off', 'schedule', 'meeting', 'calendar',
+    'email', 'teams', 'zoom', 'print', 'printer',
+    'thank', 'thanks', 'ok', 'okay', 'got it', 'never mind',
+  ]
+  if (simplePatterns.some((p) => lower.includes(p))) return false
+
+  // Troubleshooting patterns — scan IS useful
+  const troublePatterns = [
+    'slow', 'fast', 'speed', 'laggy', 'lag', 'frozen', 'freeze',
+    'crash', 'crashing', 'not working', 'not responding', 'stuck',
+    'won\'t load', 'won\'t open', 'won\'t start', 'won\'t connect',
+    'can\'t connect', 'no internet', 'disconnecting', 'dropping',
+    'blue screen', 'error', 'failed', 'failing', 'broken',
+    'battery', 'overheating', 'hot', 'noisy', 'fan',
+    'out of space', 'disk full', 'storage', 'memory',
+    'wifi', 'wi-fi', 'network', 'internet', 'vpn',
+    'taking forever', 'takes long', 'performance',
+  ]
+  if (troublePatterns.some((p) => lower.includes(p))) return true
+
+  // Default: don't scan for ambiguous messages
+  return false
 }
 
 /**
