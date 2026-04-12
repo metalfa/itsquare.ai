@@ -195,7 +195,8 @@ async function handleMessage(teamId: string, event: Record<string, any>, eventTs
     await saveMessage(workspace.id, slackUserDbId, channelId, threadTs, 'assistant', finalResponse)
 
     // Decide how to respond: single unified message
-    const needsScan = (!hasDeviceData && isFirstMessage) || wantsDeeper
+    // Show scan button if: no device data at all, OR user explicitly wants deeper diag
+    const needsScan = !hasDeviceData || wantsDeeper
 
     if (needsScan) {
       // Create diagnostic token
