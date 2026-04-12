@@ -97,6 +97,26 @@ export async function POST(request: NextRequest) {
         { onConflict: 'workspace_id,slack_user_id' },
       )
 
+    // Also insert a health snapshot (append-only history)
+    await supabase
+      .from('device_health_snapshots' as any)
+      .insert({
+        workspace_id: row.workspace_id,
+        slack_user_id: row.slack_user_id,
+        source: 'web',
+        os_name: osName,
+        os_version: extractOSVersion(data.userAgent),
+        ram_total_gb: data.deviceMemory || null,
+        cpu_cores: data.hardwareConcurrency || null,
+        cpu_score: data.cpuScore || null,
+        download_speed_mbps: data.speedTestDownloadMbps || null,
+        upload_speed_mbps: null,
+        latency_ms: data.speedTestLatencyMs || null,
+        battery_level: data.batteryLevel ?? null,
+        battery_charging: data.batteryCharging ?? null,
+        raw_data: data,
+      })
+
     // Get workspace for bot token
     const { data: workspace } = await supabase
       .from('slack_workspaces')

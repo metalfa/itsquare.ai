@@ -14,6 +14,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateEmbedding } from './embeddings'
 import { retrieveContext, type RetrievedContext } from './rag'
+import { getHealthTrends, type HealthTrendSummary } from './health-trends'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -66,6 +67,7 @@ export interface InvestigationContext {
   knowledgeBase: RetrievedContext[]
   deviceScan: DeviceScanData | null
   recentSimilarIssues: SimilarIssueCount | null
+  healthTrends: HealthTrendSummary | null
 }
 
 // ---------------------------------------------------------------------------
@@ -85,14 +87,15 @@ export async function investigate(
   const queryEmbedding = await generateEmbedding(userMessage)
   const supabase = createAdminClient()
 
-  // Run all 4 sources + pattern check in parallel
-  const [userHistory, colleagueResolutions, knowledgeBase, deviceScan, recentSimilar] =
+  // Run all sources + pattern check + health trends in parallel
+  const [userHistory, colleagueResolutions, knowledgeBase, deviceScan, recentSimilar, healthTrends] =
     await Promise.all([
       searchUserHistory(supabase, queryEmbedding, workspaceId, slackUserId),
       searchColleagueResolutions(supabase, queryEmbedding, workspaceId, slackUserId),
       retrieveContext(workspaceId, userMessage),
       getDeviceScan(supabase, workspaceId, slackUserId),
       countRecentSimilarIssues(supabase, queryEmbedding, workspaceId),
+      getHealthTrends(workspaceId, slackUserId).catch(() => null),
     ])
 
   return {
@@ -101,6 +104,7 @@ export async function investigate(
     knowledgeBase,
     deviceScan,
     recentSimilarIssues: recentSimilar,
+    healthTrends,
   }
 }
 

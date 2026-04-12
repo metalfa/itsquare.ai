@@ -6,6 +6,7 @@
  */
 
 import type { InvestigationContext } from './investigation'
+import { buildTrendPrompt } from './health-trends'
 
 /**
  * Build the full context injection block for the AI system prompt.
@@ -33,6 +34,10 @@ export function buildInvestigationPrompt(ctx: InvestigationContext): string {
   // Pattern alert
   const patternSection = buildPatternAlert(ctx)
   if (patternSection) sections.push(patternSection)
+
+  // Source F: Health Trends
+  const trendSection = buildHealthTrendSection(ctx)
+  if (trendSection) sections.push(trendSection)
 
   if (sections.length === 0) return ''
 
@@ -196,6 +201,11 @@ function buildKnowledgeBaseSection(ctx: InvestigationContext): string | null {
   }
 
   return lines.join('\n\n')
+}
+
+function buildHealthTrendSection(ctx: InvestigationContext): string | null {
+  if (!ctx.healthTrends) return null
+  return buildTrendPrompt(ctx.healthTrends)
 }
 
 function buildPatternAlert(ctx: InvestigationContext): string | null {
