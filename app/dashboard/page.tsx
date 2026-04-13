@@ -19,7 +19,6 @@ import {
   BookOpen,
   Slack,
   Shield,
-  Activity,
 } from 'lucide-react'
 
 interface DashboardStats {
@@ -74,10 +73,44 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-3">
-          <Activity className="h-8 w-8 text-primary animate-pulse" />
-          <p className="text-muted-foreground">Loading dashboard...</p>
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground">IT Support Command Center</p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="border-border/50">
+              <CardContent className="p-4">
+                <div className="h-5 w-20 bg-muted/50 rounded animate-pulse mb-3" />
+                <div className="h-8 w-16 bg-muted/50 rounded animate-pulse mb-1" />
+                <div className="h-4 w-24 bg-muted/50 rounded animate-pulse" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="md:col-span-2">
+            <Card className="border-border/50">
+              <CardContent className="p-6">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-center gap-3 py-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-muted/50 animate-pulse" />
+                    <div className="h-4 flex-1 bg-muted/50 rounded animate-pulse" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+          <div className="space-y-4">
+            <Card className="border-border/50">
+              <CardContent className="p-6">
+                <div className="h-4 w-32 bg-muted/50 rounded animate-pulse mb-4" />
+                <div className="h-4 w-full bg-muted/50 rounded animate-pulse mb-2" />
+                <div className="h-4 w-3/4 bg-muted/50 rounded animate-pulse" />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     )
@@ -107,7 +140,7 @@ export default function DashboardPage() {
           </h1>
           <p className="text-muted-foreground">IT Support Command Center</p>
         </div>
-        <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
+        <Badge variant="outline" className="text-green-400 border-green-500/30 bg-green-500/10">
           <span className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse" />
           Live
         </Badge>
@@ -155,7 +188,7 @@ export default function DashboardPage() {
               Recent Conversations
             </h2>
             {conversations.open > 0 && (
-              <Badge variant="secondary" className="text-amber-600 bg-amber-50">
+              <Badge variant="secondary" className="text-amber-400 bg-amber-500/10">
                 {conversations.open} open
               </Badge>
             )}
@@ -187,9 +220,9 @@ export default function DashboardPage() {
                       <Badge
                         variant="outline"
                         className={`text-xs ${
-                          thread.status === 'resolved' ? 'text-green-600 border-green-200' :
-                          thread.status === 'escalated' ? 'text-red-600 border-red-200' :
-                          'text-amber-600 border-amber-200'
+                          thread.status === 'resolved' ? 'text-green-400 border-green-500/30' :
+                          thread.status === 'escalated' ? 'text-red-400 border-red-500/30' :
+                          'text-amber-400 border-amber-500/30'
                         }`}
                       >
                         {thread.status}
@@ -206,9 +239,9 @@ export default function DashboardPage() {
         <div className="space-y-4">
           {/* Health Alerts */}
           {devices.healthAlerts.length > 0 && (
-            <Card className="border-red-200/50 bg-red-50/30">
+            <Card className="border-red-500/30 bg-red-500/10">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2 text-red-700">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2 text-red-400">
                   <AlertTriangle className="h-4 w-4" />
                   Health Alerts
                 </CardTitle>
@@ -216,7 +249,7 @@ export default function DashboardPage() {
               <CardContent className="space-y-2">
                 {devices.healthAlerts.map((alert, i) => (
                   <div key={i} className="flex items-center justify-between text-sm">
-                    <span className="text-red-800">{alert.metric}</span>
+                    <span className="text-red-300">{alert.metric}</span>
                     <Badge variant="destructive" className="text-xs">
                       {alert.metric === 'Network' ? `${alert.value} Mbps` :
                        alert.metric === 'Latency' ? `${alert.value}ms` :

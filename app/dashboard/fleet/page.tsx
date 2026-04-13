@@ -219,9 +219,9 @@ function DeviceRow({ device }: { device: DeviceSnapshot }) {
         {hasCritical ? (
           <Badge variant="destructive" className="text-xs">Critical</Badge>
         ) : allGood ? (
-          <Badge variant="outline" className="text-green-600 border-green-200 text-xs">Healthy</Badge>
+          <Badge variant="outline" className="text-green-400 border-green-500/30 text-xs">Healthy</Badge>
         ) : (
-          <Badge variant="outline" className="text-amber-600 border-amber-200 text-xs">Warning</Badge>
+          <Badge variant="outline" className="text-amber-400 border-amber-500/30 text-xs">Warning</Badge>
         )}
       </td>
     </tr>
