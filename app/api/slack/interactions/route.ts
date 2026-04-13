@@ -18,6 +18,7 @@ import {
   approveRequest,
   rejectRequest,
 } from '@/lib/services/execution-manager'
+import { autoExtractToKB } from '@/lib/services/solution-tracker'
 
 const SLACK_API = 'https://slack.com/api'
 
@@ -79,6 +80,7 @@ async function handleBlockAction(payload: any) {
 
   if (!workspace) return
   const botToken = decryptToken(workspace.bot_token_encrypted)
+  const workspaceId = workspace.id
 
   const channelId = payload.channel?.id
   const messageTs = payload.message?.ts
@@ -120,7 +122,10 @@ async function handleBlockAction(payload: any) {
         await updateMessage(botToken, channelId, messageTs,
           '✅ *Great, glad that\'s sorted!* I\'ll remember this solution for next time.')
       }
-      // TODO: update conversation_threads status to 'resolved'
+      // Update thread: mark resolved + bump times_worked
+      if (threadTs && workspaceId) {
+        await markResolution(workspaceId, channelId!, threadTs, 'resolved', true)
+      }
       break
     }
 
@@ -132,15 +137,22 @@ async function handleBlockAction(payload: any) {
           'Let me try a different approach. Can you tell me — when exactly did this start happening? Did anything change recently (new software, update, etc.)?',
           threadTs)
       }
+      // Track failure: bump times_failed + lower confidence
+      if (threadTs && workspaceId) {
+        await markResolution(workspaceId, channelId!, threadTs, 'open', false)
+      }
       break
     }
 
     case 'fix_escalate': {
       if (channelId && messageTs) {
         await updateMessage(botToken, channelId, messageTs,
-          '🆘 *Escalating to the IT team.* I\'m including everything we\'ve discussed so far so they have full context. Someone will reach out to you shortly.')
+          '🆘 *Escalating to the IT team.* I\'ll include everything we\'ve discussed so far so they have full context. Someone will reach out to you shortly.')
       }
-      // TODO: create IT ticket + notify admin channel
+      // Mark as escalated
+      if (threadTs && workspaceId) {
+        await markResolution(workspaceId, channelId!, threadTs, 'escalated', false)
+      }
       break
     }
   }
@@ -170,4 +182,68 @@ async function postMessage(botToken: string, channel: string, text: string, thre
     },
     body: JSON.stringify({ channel, text, thread_ts: threadTs }),
   })
+}
+
+// ---------------------------------------------------------------------------
+// Solution Effectiveness Tracking
+// ---------------------------------------------------------------------------
+
+/**
+ * Update conversation_threads with resolution outcome.
+ * - worked=true: bump times_worked, raise confidence, try auto-extract to KB
+ * - worked=false: bump times_failed, lower confidence
+ */
+async function markResolution(
+  workspaceId: string,
+  channelId: string,
+  threadTs: string,
+  status: 'resolved' | 'escalated' | 'open',
+  worked: boolean,
+) {
+  const supabase = createAdminClient()
+
+  // Find the thread
+  const { data: thread } = await supabase
+    .from('conversation_threads')
+    .select('id, resolution_summary, resolution_confidence, times_worked, times_failed')
+    .eq('workspace_id', workspaceId)
+    .eq('channel_id', channelId)
+    .eq('thread_ts', threadTs)
+    .maybeSingle()
+
+  if (!thread) return
+
+  const timesWorked = (thread.times_worked || 0) + (worked ? 1 : 0)
+  const timesFailed = (thread.times_failed || 0) + (worked ? 0 : 1)
+
+  // Confidence formula: success rate with Bayesian smoothing
+  // Starts at 1.0, adjusts based on outcomes
+  const totalOutcomes = timesWorked + timesFailed
+  const confidence = totalOutcomes > 0
+    ? (timesWorked + 1) / (totalOutcomes + 2) // Laplace smoothing
+    : thread.resolution_confidence || 1.0
+
+  const update: Record<string, any> = {
+    status,
+    times_worked: timesWorked,
+    times_failed: timesFailed,
+    resolution_confidence: Math.round(confidence * 100) / 100,
+    updated_at: new Date().toISOString(),
+  }
+
+  if (status === 'resolved') {
+    update.resolved_at = new Date().toISOString()
+  }
+
+  await supabase
+    .from('conversation_threads')
+    .update(update)
+    .eq('id', thread.id)
+
+  // If resolved with a summary, try to auto-extract to KB
+  if (worked && thread.resolution_summary && confidence >= 0.6) {
+    autoExtractToKB(workspaceId, thread.id, thread.resolution_summary).catch((err) =>
+      console.error('[ITSquare] Auto-extract to KB failed:', err)
+    )
+  }
 }
