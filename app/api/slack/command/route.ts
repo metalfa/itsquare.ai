@@ -71,8 +71,6 @@ async function processCommand(
   teamId: string,
 ) {
   try {
-    let response: string
-
     if (!text || text.toLowerCase() === 'help') {
       // Help is ephemeral — only the user needs to see it
       await respondToCommand(responseUrl, HELP_MESSAGE, true)
@@ -93,7 +91,7 @@ async function processCommand(
     }
 
     // Full Resolution Engine — pass userId for 4-source investigation
-    response = await generateITResponse(text, [], workspaceId, userId || undefined)
+    const response = await generateITResponse(text, [], workspaceId, userId || undefined)
 
     // Clean any structured blocks from the response
     const finalResponse = response

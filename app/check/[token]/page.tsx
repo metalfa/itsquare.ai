@@ -104,7 +104,7 @@ async function runSpeedTest(): Promise<{ downloadMbps: number; latencyMs: number
 function runCPUBenchmark(): { benchmarkMs: number; score: number } {
   const start = performance.now()
   // Compute-heavy task: calculate primes up to 100000
-  let count = 0
+  // The loop must actually run (not be optimized away) to measure CPU speed
   for (let i = 2; i < 100000; i++) {
     let isPrime = true
     for (let j = 2; j * j <= i; j++) {
@@ -113,7 +113,7 @@ function runCPUBenchmark(): { benchmarkMs: number; score: number } {
         break
       }
     }
-    if (isPrime) count++
+    void isPrime
   }
   const ms = Math.round(performance.now() - start)
   // Score: 100 = fast (<100ms), 0 = very slow (>2000ms)
@@ -173,8 +173,7 @@ export default function DiagnosticPage() {
 
   useEffect(() => {
     collectAndSubmit()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, []) // Run once on mount
 
   async function collectAndSubmit() {
     try {

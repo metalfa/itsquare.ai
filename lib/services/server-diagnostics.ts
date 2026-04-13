@@ -12,7 +12,6 @@ import dns from 'dns'
 import { promisify } from 'util'
 import { interpretDiagnosticResults } from './auto-diagnostic'
 
-const dnsResolve = promisify(dns.resolve)
 const dnsResolve4 = promisify(dns.resolve4)
 
 // ---------------------------------------------------------------------------

@@ -9,7 +9,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateEmbedding, generateEmbeddings } from './embeddings'
-import { chunkText, type Chunk } from './chunker'
+import { chunkText } from './chunker'
 
 // ---------------------------------------------------------------------------
 // Types

@@ -11,7 +11,6 @@
  * data, we can diagnose from that without running any commands.
  */
 
-import { createAdminClient } from '@/lib/supabase/admin'
 import { generateText } from 'ai'
 import { gateway } from '@ai-sdk/gateway'
 import { AI_MODEL, MAX_OUTPUT_TOKENS } from '@/lib/config/constants'

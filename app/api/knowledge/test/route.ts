@@ -17,7 +17,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generateEmbedding } from '@/lib/services/embeddings'
-import { chunkText } from '@/lib/services/chunker'
 import { ingestDocument, retrieveContext, deleteDocument } from '@/lib/services/rag'
 
 interface TestStep {
@@ -77,7 +76,7 @@ export async function GET() {
   // -------------------------------------------------------------------
   const t2 = Date.now()
   try {
-    const { data, error } = await supabase.rpc('match_knowledge_chunks', {
+    const { error } = await supabase.rpc('match_knowledge_chunks', {
       query_embedding: JSON.stringify(new Array(1536).fill(0)),
       match_workspace_id: '00000000-0000-0000-0000-000000000000',
       match_threshold: 0.99,

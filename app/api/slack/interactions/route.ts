@@ -17,7 +17,6 @@ import { verifySlackSignature } from '@/lib/services/slack-verify'
 import {
   approveRequest,
   rejectRequest,
-  getExecutionRequest,
 } from '@/lib/services/execution-manager'
 
 const SLACK_API = 'https://slack.com/api'

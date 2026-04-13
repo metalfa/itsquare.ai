@@ -50,7 +50,7 @@ export function buildCommandProposalBlocks(
 
   // Command list
   const commandList = commands
-    .map((cmd, i) => {
+    .map((cmd, _i) => {
       const tierIcon = cmd.tier === 1 ? '🔍' : cmd.tier === 2 ? '🔧' : '⚠️'
       return `${tierIcon} \`${cmd.command}\`\n_${cmd.explanation}_`
     })

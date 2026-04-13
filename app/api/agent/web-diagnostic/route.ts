@@ -287,7 +287,7 @@ RULES:
 // Fallback interpretation (used if AI call fails)
 // ---------------------------------------------------------------------------
 
-function buildFallbackInterpretation(data: any, issueType: string): string {
+function buildFallbackInterpretation(data: any, _issueType: string): string {
   const findings: string[] = []
 
   // OS
