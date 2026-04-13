@@ -249,11 +249,17 @@ FORMAT YOUR RESPONSE EXACTLY LIKE THIS:
 
 RULES:
 - Reference SPECIFIC numbers from the data. "Your download speed is 3.2 Mbps" not "your internet seems slow"
-- For network issues: lead with speed test results and latency. Recommend: disconnect/reconnect WiFi, move closer to router, check for bandwidth hogs
-- For performance issues: lead with CPU benchmark and RAM. Recommend: close apps, restart, check for updates
-- Skip irrelevant metrics (don't mention GPU for a wifi problem)
+- PRIORITIZE actions by what the data actually shows:
+  • If CPU score is high (70+), do NOT suggest restart or closing apps — the CPU is fine
+  • If download speed is low (<20 Mbps) or latency is high (>150ms), lead with network fixes
+  • If RAM is low (<4GB), lead with closing tabs/apps
+  • If battery is low and not charging, mention power throttling
+- For network issues: disconnect/reconnect WiFi, move closer to router, check for bandwidth hogs, try wired connection
+- For performance issues: close heavy apps, check for updates, restart only if uptime is high
+- Skip irrelevant metrics (don't mention GPU for a wifi problem, don't mention CPU if score is 70+)
 - "What to do" steps MUST be specific visual actions: "Click the WiFi icon → Disconnect → Wait 10 seconds → Reconnect"
-- NEVER recommend generic "Restart your device" as the first step unless uptime or system issues warrant it
+- NEVER recommend "Restart your device" when CPU score is above 70 and RAM is adequate (8GB+)
+- NEVER recommend generic catch-all steps that don't match the data
 - If everything looks healthy, SAY SO: "Your system looks good — the issue may be temporary or app-specific"
 - Keep it under 15 lines total
 - Use Slack mrkdwn (*bold*, \`code\`)
@@ -365,8 +371,8 @@ function buildFallbackInterpretation(data: any, issueType: string): string {
     recs.push('2. *Disconnect and reconnect* to WiFi, or try restarting your router')
   }
   if (data.cpuScore != null && data.cpuScore < 40) {
-    recs.push(`${recs.length + 1}. *Restart your device* — this often clears performance issues`)
-    recs.push(`${recs.length + 1}. *Close apps running in the background*`)
+    recs.push(`${recs.length + 1}. *Close apps running in the background* — your CPU is under heavy load`)
+    recs.push(`${recs.length + 1}. *Restart your device* — this can clear accumulated processes`)
   }
   if (data.deviceMemory && data.deviceMemory <= 4) {
     recs.push(`${recs.length + 1}. *Close browser tabs* you're not using — each tab eats memory`)
@@ -379,8 +385,14 @@ function buildFallbackInterpretation(data: any, issueType: string): string {
     recs.push(`${recs.length + 1}. *Plug in your charger* — low battery throttles performance`)
   }
   if (recs.length === 0) {
-    recs.push('1. *Restart your device* — this often resolves accumulated slowness')
-    recs.push('2. *Close unnecessary browser tabs and apps*')
+    // Everything looks OK — give context-appropriate advice
+    if (data.speedTestDownloadMbps != null && data.speedTestDownloadMbps < 25) {
+      recs.push('1. *Try disconnecting and reconnecting to WiFi* — your connection could be stronger')
+      recs.push('2. *Close any video calls or streaming tabs* eating bandwidth')
+    } else {
+      recs.push('1. *Your system looks healthy* — the issue may be temporary or app-specific')
+      recs.push('2. *Try closing and reopening the app* that feels slow')
+    }
   }
 
   response += recs.join('\n')
