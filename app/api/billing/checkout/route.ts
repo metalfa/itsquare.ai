@@ -92,6 +92,9 @@ export async function POST() {
     }
 
     // Create Checkout session
+    // NOTE: metadata must be set at the TOP LEVEL so the webhook can read
+    // session.metadata.org_id from checkout.session.completed events.
+    // subscription_data.metadata flows to the Subscription object instead.
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
@@ -101,6 +104,9 @@ export async function POST() {
           quantity: seatCount,
         },
       ],
+      metadata: {
+        org_id: org.id,
+      },
       subscription_data: {
         metadata: {
           org_id: org.id,
