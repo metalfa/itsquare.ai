@@ -63,7 +63,10 @@ export async function POST() {
     }
 
     // Create or retrieve Stripe customer
-    let customerId = org.stripe_customer_id ?? undefined
+    // Guard against null, undefined, or literal string 'NULL' from manual DB edits
+    const rawCustomerId = org.stripe_customer_id
+    let customerId: string | undefined =
+      rawCustomerId && rawCustomerId !== 'NULL' ? rawCustomerId : undefined
 
     if (!customerId) {
       const customer = await stripe.customers.create({
