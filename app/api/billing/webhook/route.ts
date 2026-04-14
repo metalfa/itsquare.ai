@@ -38,8 +38,7 @@ export async function POST(request: NextRequest) {
 
         if (session.mode !== 'subscription') break
 
-        const orgId = session.subscription_data?.metadata?.org_id
-          ?? (session.metadata?.org_id as string | undefined)
+        const orgId = (session.metadata?.org_id as string | undefined)
 
         if (!orgId) {
           console.warn('[ITSquare] checkout.session.completed: no org_id in metadata')

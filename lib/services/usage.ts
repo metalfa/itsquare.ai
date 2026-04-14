@@ -48,7 +48,7 @@ export async function checkUsageLimits(workspaceId: string): Promise<UsageStatus
   // Look up the workspace's org subscription tier
   const { data: workspace } = await supabase
     .from('slack_workspaces')
-    .select('org_id')
+    .select('id, org_id')
     .eq('id', workspaceId)
     .maybeSingle()
 
@@ -62,10 +62,14 @@ export async function checkUsageLimits(workspaceId: string): Promise<UsageStatus
       .eq('id', workspace.org_id)
       .maybeSingle()
 
+    console.log(`[ITSquare] checkUsageLimits: org_id=${workspace.org_id} tier=${org?.subscription_tier}`)
+
     if (org?.subscription_tier && org.subscription_tier !== 'free') {
       plan = org.subscription_tier
       limit = Infinity
     }
+  } else {
+    console.warn(`[ITSquare] checkUsageLimits: no org_id on workspace ${workspaceId} — treating as free`)
   }
 
   // Pro (or any paid tier) — always allowed
