@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Zap, ExternalLink, Loader2 } from 'lucide-react'
+import { Zap, ExternalLink, Loader2, CheckCircle } from 'lucide-react'
 
 interface BillingActionsProps {
   isPro: boolean
@@ -10,8 +11,32 @@ interface BillingActionsProps {
   limit: number
 }
 
-export function BillingActions({ isPro, usage, limit }: BillingActionsProps) {
-  const [loading, setLoading] = useState<'checkout' | 'portal' | null>(null)
+export function BillingActions({ isPro: initialIsPro, usage, limit }: BillingActionsProps) {
+  const [loading, setLoading] = useState<'checkout' | 'portal' | 'sync' | null>(null)
+  const [isPro, setIsPro] = useState(initialIsPro)
+  const [syncDone, setSyncDone] = useState(false)
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  // When returning from Stripe with ?success=1, sync directly from Stripe
+  useEffect(() => {
+    if (searchParams.get('success') === '1' && !initialIsPro && !syncDone) {
+      setSyncDone(true)
+      setLoading('sync')
+      fetch('/api/billing/sync', { method: 'POST' })
+        .then((r) => r.json())
+        .then((data: { synced?: boolean; plan?: string }) => {
+          if (data.synced && data.plan === 'pro') {
+            setIsPro(true)
+            // Clean the URL and refresh server data
+            router.replace('/dashboard/billing')
+            router.refresh()
+          }
+        })
+        .catch((err) => console.error('[Billing] Sync error:', err))
+        .finally(() => setLoading(null))
+    }
+  }, [searchParams, initialIsPro, syncDone, router])
 
   async function handleUpgrade() {
     setLoading('checkout')
@@ -51,9 +76,23 @@ export function BillingActions({ isPro, usage, limit }: BillingActionsProps) {
     }
   }
 
+  // Syncing state — shown right after returning from Stripe
+  if (loading === 'sync') {
+    return (
+      <div className="flex items-center gap-3 text-sm text-muted-foreground py-2">
+        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+        Activating your Pro subscription...
+      </div>
+    )
+  }
+
   if (isPro) {
     return (
       <div className="space-y-3">
+        <div className="flex items-center gap-2 text-sm text-green-500 mb-2">
+          <CheckCircle className="h-4 w-4" />
+          Pro plan active
+        </div>
         <Button
           variant="outline"
           onClick={handleManage}
@@ -73,7 +112,6 @@ export function BillingActions({ isPro, usage, limit }: BillingActionsProps) {
 
   return (
     <div className="space-y-3">
-      {/* Usage indicator */}
       <div className="text-sm text-muted-foreground mb-2">
         <span className="font-medium text-foreground">{usage}</span>
         {' / '}
