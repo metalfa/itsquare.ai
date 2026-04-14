@@ -103,6 +103,7 @@ export async function POST() {
           org_id: org.id,
         },
       },
+      allow_promotion_codes: true,
       success_url: `${BASE_URL}/dashboard/billing?success=1`,
       cancel_url: `${BASE_URL}/dashboard/billing?canceled=1`,
     })
