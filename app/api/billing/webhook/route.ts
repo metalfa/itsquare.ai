@@ -3,7 +3,13 @@
  * Handles Stripe webhook events.
  *
  * Verifies the signature, then syncs subscription state to the database.
+ *
+ * IMPORTANT: This route must receive the raw request body for Stripe signature
+ * verification. It is excluded from the auth middleware in middleware.ts.
  */
+
+// Disable Next.js body parsing — Stripe needs the raw body
+export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe/client'
