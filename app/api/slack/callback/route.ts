@@ -1,8 +1,44 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { encryptToken } from '@/lib/slack/encryption'
+import { encryptToken, decryptToken } from '@/lib/slack/encryption'
+import { openDirectMessage, postMessage } from '@/lib/services/slack-api'
 import type { SlackOAuthResponse } from '@/lib/slack/types'
+
+const WELCOME_MESSAGE = `👋 Hey! I'm ITSquare — your AI IT support agent.
+
+I'm here to help your team solve IT problems without waiting for the IT team.
+
+*Here's how to get started:*
+• Just DM me with any IT question
+• @mention me in any channel: _@ITSquare my laptop is slow_
+• Use the slash command: _/itsquare wifi keeps dropping_
+
+*What I can do:*
+🔍 Diagnose issues (WiFi, slow Mac, app crashes, passwords)
+📚 Search your company knowledge base
+🛠️ Suggest and run safe diagnostic commands
+📋 Escalate to your IT team when needed
+
+Your workspace is on the *Free plan* — 50 messages/month included.
+Upgrade anytime at https://itsquare.ai/dashboard/billing
+
+Type anything to get started! 🚀`
+
+/**
+ * Send a welcome DM to the installing user. Fire-and-forget — never throws.
+ */
+async function sendWelcomeDm(botTokenEncrypted: string, slackUserId: string): Promise<void> {
+  try {
+    const botToken = decryptToken(botTokenEncrypted)
+    const channelId = await openDirectMessage(botToken, slackUserId)
+    if (channelId) {
+      await postMessage(botToken, channelId, WELCOME_MESSAGE)
+    }
+  } catch (err) {
+    console.error('[ITSquare] sendWelcomeDm error:', err)
+  }
+}
 
 interface SlackUserIdentity {
   ok: boolean
@@ -334,6 +370,9 @@ export async function GET(request: Request) {
         )
       }
       
+      // Fire-and-forget welcome DM (does not block the redirect)
+      sendWelcomeDm(encryptedBotToken, slackUserId).catch(() => {})
+
       // Redirect to the magic link verification endpoint
       const verifyUrl = `${baseUrl}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=magiclink&next=/dashboard`
       return NextResponse.redirect(verifyUrl)
@@ -366,7 +405,10 @@ export async function GET(request: Request) {
           updated_at: new Date().toISOString(),
         })
         .eq('id', existingWorkspace.id)
-      
+
+      // Fire-and-forget welcome DM
+      sendWelcomeDm(encryptedBotToken, tokenData.authed_user.id).catch(() => {})
+
       return NextResponse.redirect(
         `${baseUrl}/dashboard/integrations?success=slack_updated`
       )
@@ -404,7 +446,10 @@ export async function GET(request: Request) {
         slack_user_id: tokenData.authed_user.id,
         is_admin: true,
       })
-    
+
+    // Fire-and-forget welcome DM
+    sendWelcomeDm(encryptedBotToken, tokenData.authed_user.id).catch(() => {})
+
     return NextResponse.redirect(
       `${baseUrl}/dashboard/integrations?success=slack_installed`
     )
