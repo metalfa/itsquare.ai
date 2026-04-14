@@ -38,22 +38,40 @@ export async function POST(request: NextRequest) {
 
         if (session.mode !== 'subscription') break
 
-        const orgId = (session.metadata?.org_id as string | undefined)
+        let orgId = session.metadata?.org_id as string | undefined
+
+        // Fallback: look up org by Stripe customer ID
+        if (!orgId && session.customer) {
+          const { data: orgByCustomer } = await admin
+            .from('organizations')
+            .select('id')
+            .eq('stripe_customer_id', session.customer as string)
+            .maybeSingle()
+          orgId = orgByCustomer?.id
+        }
 
         if (!orgId) {
-          console.warn('[ITSquare] checkout.session.completed: no org_id in metadata')
+          console.warn('[ITSquare] checkout.session.completed: could not resolve org_id', {
+            metadata: session.metadata,
+            customer: session.customer,
+          })
           break
         }
 
-        await admin
+        const { error: upgradeError } = await admin
           .from('organizations')
           .update({
             subscription_tier: 'pro',
             stripe_subscription_id: session.subscription as string,
+            stripe_customer_id: session.customer as string,
           })
           .eq('id', orgId)
 
-        console.log(`[ITSquare] Org ${orgId} upgraded to pro, sub: ${session.subscription}`)
+        if (upgradeError) {
+          console.error('[ITSquare] Failed to upgrade org:', upgradeError)
+        } else {
+          console.log(`[ITSquare] ✅ Org ${orgId} upgraded to pro, sub: ${session.subscription}`)
+        }
         break
       }
 
