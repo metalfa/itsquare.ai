@@ -20,6 +20,7 @@ import {
   detectResolution,
 } from '@/lib/services/thread-manager'
 import { chooseDiagnosticSet } from '@/lib/services/auto-diagnostic'
+import { checkUsageLimits, trackUsageEvent } from '@/lib/services/usage'
 import { randomUUID } from 'crypto'
 
 const SLACK_API = 'https://slack.com/api'
@@ -132,6 +133,19 @@ async function handleMessage(teamId: string, event: Record<string, any>, eventTs
   }
 
   const botToken = decryptToken(workspace.bot_token_encrypted)
+
+  // Usage enforcement: check monthly limits before AI generation
+  const usageStatus = await checkUsageLimits(workspace.id)
+  if (!usageStatus.allowed) {
+    await postSlackMessage(botToken, channelId, {
+      text: `Your team has used all ${usageStatus.limit} free messages this month. Upgrade to Pro for unlimited: https://itsquare.ai/dashboard/billing`,
+      thread_ts: event.thread_ts || event.ts,
+    })
+    return
+  }
+
+  // Track this usage event (non-blocking)
+  trackUsageEvent(workspace.id, event.user as string, 'message').catch(() => {})
   const threadTs: string = event.thread_ts || event.ts
   const userId: string = event.user
   const messageTs: string = event.ts
