@@ -27,7 +27,7 @@ export async function getMonthlyUsage(workspaceId: string): Promise<number> {
     .from('slack_conversations')
     .select('id', { count: 'exact', head: true })
     .eq('workspace_id', workspaceId)
-    .eq('role', 'user')
+    .eq('message_role', 'user')
     .gte('created_at', startOfMonth.toISOString())
 
   if (error) {
