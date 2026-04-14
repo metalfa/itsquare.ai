@@ -1,14 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { 
-  MessageSquare, 
-  ArrowLeft,
-  Check,
-  Zap,
-} from 'lucide-react'
+import { MessageSquare, ArrowLeft, Check, Zap } from 'lucide-react'
+import { FREE_TIER_MESSAGE_LIMIT } from '@/lib/config/constants'
+import { getMonthlyUsage } from '@/lib/services/usage'
+import { BillingActions } from './billing-actions'
 
 export const metadata = {
   title: 'Billing | ITSquare.AI',
@@ -24,8 +22,10 @@ export default async function BillingPage() {
     redirect('/auth/login')
   }
 
+  const admin = createAdminClient()
+
   // Get user profile with organization
-  const { data: profile } = await supabase
+  const { data: profile } = await admin
     .from('users')
     .select(`
       *,
@@ -34,7 +34,24 @@ export default async function BillingPage() {
     .eq('id', user.id)
     .single()
 
-  const isPro = profile?.organization?.subscription_tier === 'pro'
+  const org = profile?.organization as { id: string; subscription_tier: string } | null
+  const isPro = org?.subscription_tier === 'pro'
+
+  // Get current workspace for usage count
+  let usage = 0
+  if (org) {
+    const { data: workspace } = await admin
+      .from('slack_workspaces')
+      .select('id')
+      .eq('org_id', org.id)
+      .maybeSingle()
+
+    if (workspace) {
+      usage = await getMonthlyUsage(workspace.id)
+    }
+  }
+
+  const limit = FREE_TIER_MESSAGE_LIMIT
 
   return (
     <div className="min-h-screen bg-background">
@@ -51,8 +68,8 @@ export default async function BillingPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8">
-        <Link 
-          href="/dashboard" 
+        <Link
+          href="/dashboard"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -83,12 +100,7 @@ export default async function BillingPage() {
               <p className="text-2xl font-bold text-foreground mb-4">
                 $8<span className="text-base font-normal text-muted-foreground">/user/month</span>
               </p>
-              <Button variant="outline" disabled>
-                Manage Subscription
-              </Button>
-              <p className="text-xs text-muted-foreground mt-2">
-                Stripe billing coming soon
-              </p>
+              <BillingActions isPro={true} usage={usage} limit={limit} />
             </CardContent>
           </Card>
         ) : (
@@ -108,7 +120,7 @@ export default async function BillingPage() {
                 <ul className="space-y-3 mb-6">
                   <li className="flex items-center gap-2 text-sm">
                     <Check className="h-4 w-4 text-green-500" />
-                    50 conversations/month
+                    {limit} conversations/month
                   </li>
                   <li className="flex items-center gap-2 text-sm">
                     <Check className="h-4 w-4 text-green-500" />
@@ -119,9 +131,12 @@ export default async function BillingPage() {
                     Slack integration
                   </li>
                 </ul>
-                <Button variant="outline" className="w-full" disabled>
-                  Current Plan
-                </Button>
+                <div className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">{usage}</span>
+                  {' / '}
+                  {limit}
+                  {' messages used this month'}
+                </div>
               </CardContent>
             </Card>
 
@@ -160,13 +175,7 @@ export default async function BillingPage() {
                     Priority support
                   </li>
                 </ul>
-                <Button className="w-full bg-primary hover:bg-primary/90">
-                  <Zap className="h-4 w-4 mr-2" />
-                  Upgrade to Pro
-                </Button>
-                <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Stripe checkout coming soon
-                </p>
+                <BillingActions isPro={false} usage={usage} limit={limit} />
               </CardContent>
             </Card>
           </div>
