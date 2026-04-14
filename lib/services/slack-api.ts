@@ -98,3 +98,56 @@ export async function removeReaction(
     body: JSON.stringify({ channel, timestamp, name: emoji }),
   })
 }
+
+/**
+ * Publish (or update) the App Home tab for a user.
+ */
+export async function publishAppHome(
+  botToken: string,
+  slackUserId: string,
+  view: Record<string, unknown>,
+): Promise<SlackApiResponse> {
+  const res = await fetch(`${SLACK_API}/views.publish`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${botToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ user_id: slackUserId, view }),
+  })
+
+  const data: SlackApiResponse = await res.json()
+
+  if (!data.ok) {
+    console.error('[ITSquare] Slack publishAppHome error:', data.error)
+  }
+
+  return data
+}
+
+/**
+ * Open a DM channel with a user and return the channel ID.
+ */
+export async function openDirectMessage(
+  botToken: string,
+  slackUserId: string,
+): Promise<string | null> {
+  const res = await fetch(`${SLACK_API}/conversations.open`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${botToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ users: slackUserId }),
+  })
+
+  const data: SlackApiResponse = await res.json()
+
+  if (!data.ok) {
+    console.error('[ITSquare] Slack openDirectMessage error:', data.error)
+    return null
+  }
+
+  const channel = data.channel as { id?: string } | undefined
+  return channel?.id ?? null
+}

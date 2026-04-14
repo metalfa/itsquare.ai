@@ -10,7 +10,8 @@ import { NextResponse, after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { decryptToken } from '@/lib/slack/encryption'
 import { verifySlackSignature } from '@/lib/services/slack-verify'
-import { postMessage } from '@/lib/services/slack-api'
+import { postMessage, publishAppHome } from '@/lib/services/slack-api'
+import { buildAppHomeView } from '@/lib/services/app-home'
 import { getThreadHistory, saveMessage, upsertSlackUser } from '@/lib/services/conversation'
 import { generateITResponse } from '@/lib/services/ai'
 import {
@@ -58,6 +59,37 @@ export async function POST(request: Request) {
   if (body.type === 'event_callback') {
     const event = body.event
 
+    // ── App Home opened ───────────────────────────────────────────────────
+    if (event.type === 'app_home_opened') {
+      const teamId = body.team_id as string
+      const slackUserId = event.user as string
+
+      after(async () => {
+        try {
+          const supabase = createAdminClient()
+
+          const { data: workspace } = await supabase
+            .from('slack_workspaces')
+            .select('id, bot_token_encrypted')
+            .eq('team_id', teamId)
+            .eq('status', 'active')
+            .single()
+
+          if (!workspace) {
+            console.error('[ITSquare] app_home_opened: no active workspace for team', teamId)
+            return
+          }
+
+          const botToken = decryptToken(workspace.bot_token_encrypted)
+          const view = await buildAppHomeView(workspace.id)
+          await publishAppHome(botToken, slackUserId, view)
+        } catch (err) {
+          console.error('[ITSquare] app_home_opened error:', err)
+        }
+      })
+    }
+
+    // ── Message / mention ─────────────────────────────────────────────────
     if (
       event.type === 'app_mention' ||
       (event.type === 'message' && event.channel_type === 'im')
