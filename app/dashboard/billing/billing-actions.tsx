@@ -83,7 +83,7 @@ export function BillingActions({
       const res = await fetch('/api/billing/portal', { method: 'POST' })
       const data: { url?: string; error?: string } = await res.json()
       if (data.url) {
-        window.location.href = data.url
+        window.open(data.url, '_blank', 'noopener,noreferrer')
       } else {
         console.error('[Billing] Portal error:', data.error)
         alert('Failed to open billing portal. Please try again.')

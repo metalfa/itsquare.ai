@@ -1,7 +1,6 @@
 /**
- * App favicon — generated via Next.js ImageResponse (no static file needed).
- * Produces a 32×32 PNG served at /icon.png.
- * Reference: https://nextjs.org/docs/app/api-reference/file-conventions/metadata/app-icons
+ * App favicon — 32×32 PNG, auto-discovered by Next.js App Router.
+ * Design: dark purple square → white chat bubble → "IT" in purple.
  */
 
 import { ImageResponse } from 'next/og'
@@ -17,19 +16,53 @@ export default function Icon() {
           width: 32,
           height: 32,
           borderRadius: 7,
-          background: 'linear-gradient(135deg, #6C47FF 0%, #4F32CC 100%)',
+          background: 'linear-gradient(135deg, #7C3AED 0%, #4F32CC 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          position: 'relative',
         }}
       >
-        {/* Lightning bolt */}
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M13 3L4 14H12L11 21L20 10H12L13 3Z"
-            fill="white"
+        {/* Chat bubble */}
+        <div
+          style={{
+            width: 22,
+            height: 15,
+            background: 'white',
+            borderRadius: 4,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            marginBottom: 3,
+          }}
+        >
+          {/* IT text */}
+          <span
+            style={{
+              fontSize: 7,
+              fontWeight: 800,
+              color: '#6C47FF',
+              letterSpacing: '0.5px',
+              fontFamily: 'sans-serif',
+            }}
+          >
+            IT
+          </span>
+          {/* Bubble tail */}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: -4,
+              left: 5,
+              width: 0,
+              height: 0,
+              borderLeft: '4px solid transparent',
+              borderRight: '0px solid transparent',
+              borderTop: '4px solid white',
+            }}
           />
-        </svg>
+        </div>
       </div>
     ),
     { ...size },

@@ -19,7 +19,16 @@ import {
   BookOpen,
   Slack,
   Shield,
+  XCircle,
 } from 'lucide-react'
+
+interface BillingStatus {
+  tier: string
+  isPro: boolean
+  cancelAtPeriodEnd?: boolean
+  currentPeriodEnd?: string
+  status?: string
+}
 
 interface DashboardStats {
   workspace: { id: string; name: string }
@@ -47,6 +56,7 @@ export default function DashboardPage() {
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [billing, setBilling] = useState<BillingStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -55,12 +65,19 @@ export default function DashboardPage() {
       if (!user) { router.push('/auth/login'); return }
 
       try {
-        const res = await fetch('/api/dashboard/stats')
-        if (res.ok) {
-          setStats(await res.json())
-        } else if (res.status === 404) {
-          // No workspace — show setup
+        const [statsRes, billingRes] = await Promise.all([
+          fetch('/api/dashboard/stats'),
+          fetch('/api/billing/status'),
+        ])
+
+        if (statsRes.ok) {
+          setStats(await statsRes.json())
+        } else if (statsRes.status === 404) {
           setError('no-workspace')
+        }
+
+        if (billingRes.ok) {
+          setBilling(await billingRes.json())
         }
       } catch {
         setError('failed')
@@ -145,6 +162,33 @@ export default function DashboardPage() {
           Live
         </Badge>
       </div>
+
+      {/* Cancellation Banner */}
+      {billing?.cancelAtPeriodEnd && billing.currentPeriodEnd && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-5 py-4 flex items-start gap-4">
+          <XCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">
+              Cancellation scheduled
+            </p>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Your Pro access continues until{' '}
+              <span className="font-medium text-foreground">
+                {new Date(billing.currentPeriodEnd).toLocaleDateString('en-US', {
+                  month: 'long', day: 'numeric', year: 'numeric',
+                })}
+              </span>
+              . After that, you&apos;ll switch to the Free plan.
+            </p>
+          </div>
+          <Link
+            href="/dashboard/billing"
+            className="text-xs text-amber-500 hover:text-amber-400 font-medium whitespace-nowrap shrink-0 mt-0.5 underline underline-offset-2"
+          >
+            Manage
+          </Link>
+        </div>
+      )}
 
       {/* Top Metrics Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
