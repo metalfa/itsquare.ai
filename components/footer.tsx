@@ -3,6 +3,7 @@ import Link from "next/link"
 const policyLinks = [
   { href: "/terms", label: "Terms of Service" },
   { href: "/privacy", label: "Privacy Policy" },
+  { href: "/sub-processors", label: "Sub-Processors" },
   { href: "/security", label: "Security" },
 ]
 
