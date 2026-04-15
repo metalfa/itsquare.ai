@@ -2,31 +2,54 @@ import { NextResponse } from 'next/server'
 import { randomBytes } from 'crypto'
 import { cookies } from 'next/headers'
 
-// Slack OAuth scopes required for the bot.
-// Only request scopes that are actively used — Slack App Directory requires justification for each.
+// Slack OAuth scopes.
+// Bot scopes: current functionality + planned roadmap (M6 escalation, M8 fleet, M9 runbooks).
+// All scopes are justified in the App Directory submission via Manage Reasons.
 const SLACK_BOT_SCOPES = [
-  'app_mentions:read',   // Receive events when users @mention the bot
-  'channels:history',   // Read messages in public channels the bot is added to (for @mention context)
-  'channels:read',      // Look up channel info to verify bot membership
-  'chat:write',         // Send IT support responses and diagnostic prompts
-  'commands',           // Handle /itsquare slash command
-  'groups:history',     // Read messages in private channels the bot is added to
-  'groups:read',        // Look up private channel info
-  'im:history',         // Read DM conversation history for multi-turn support sessions
-  'im:read',            // Check DM channel status
-  'im:write',           // Open DM channels to send onboarding messages
-  'reactions:read',     // Read emoji reactions to detect user feedback on responses
-  'reactions:write',    // Add ✅/⏳ reactions to indicate bot processing status
-  'team:read',          // Read workspace name and domain for multi-tenant identification
-  'users:read',         // Look up Slack user details for support context
-  'users:read.email',   // Match Slack users to dashboard accounts by email
+  // ── Active today ──────────────────────────────────────────────────────────
+  'app_mentions:read',    // Receive @mention events from employees in any channel
+  'channels:history',     // Read thread context in public channels for multi-turn support
+  'channels:read',        // Verify bot membership and read channel metadata
+  'chat:write',           // Send IT support responses, diagnostic links, Block Kit messages
+  'commands',             // Handle /itsquare slash command
+  'groups:history',       // Read thread context in private channels (e.g. #it-support)
+  'groups:read',          // Verify membership and metadata for private channels
+  'im:history',           // Read DM conversation history for multi-turn support sessions
+  'im:read',              // Check DM channel status
+  'im:write',             // Send onboarding DM; notify IT staff during escalation (M6)
+  'reactions:read',       // Detect ✅ reactions to trigger resolution tracking (M5)
+  'reactions:write',      // Add ⏳/✅ reactions as real-time processing status
+  'team:read',            // Read workspace name/domain for multi-tenant identification
+  'users:read',           // Look up employee profile for personalization and escalation routing
+  'users:read.email',     // Match Slack users to dashboard accounts by email
+
+  // ── Roadmap (M6 smart escalation, M8 fleet dashboard, M9 runbooks) ───────
+  'assistant:write',      // M8: Participate in Slack AI assistant panel for contextual IT support
+  'bookmarks:read',       // M9: Read pinned runbooks/KB articles in IT channels
+  'bookmarks:write',      // M9: Auto-bookmark verified solutions in IT channels
+  'calls:read',           // M6: Detect call quality issues and trigger proactive diagnostics
+  'calls:write',          // M6: Start Slack call with IT member when chat escalation fails
+  'incoming-webhook',     // M8: Post fleet health alerts and pattern reports to IT alert channel
+  'mpim:history',         // Support IT triage conversations in group DMs
+  'mpim:read',            // Check group DM status and metadata
 ].join(',')
 
-// User scopes — only requested during sign-up/sign-in flow to get dashboard identity.
+// User scopes — requested during sign-up/sign-in and for Enterprise Grid (M7).
 const SLACK_USER_SCOPES = [
-  'identity.basic',   // Get user's Slack ID and display name for account creation
-  'identity.email',   // Get user's email to create/link their dashboard account
-  'identity.avatar',  // Get user's profile photo for dashboard display
+  // ── Active today (sign-up/sign-in flow only) ──────────────────────────────
+  'identity.basic',     // Get Slack user ID and name for dashboard account creation
+  'identity.email',     // Get work email to create/link dashboard account
+  'identity.avatar',    // Get profile photo for dashboard personalization
+  'identity.team',      // Get workspace name for multi-workspace admin dashboard (M7)
+  'identify',           // Base Slack identity scope required for SSO verification
+  'openid',             // OIDC-compliant authentication for dashboard sign-in
+
+  // ── Enterprise Grid / M7 Enterprise tier ─────────────────────────────────
+  'admin',                      // M7: Centralized Enterprise Grid deployment and management
+  'admin.analytics:read',       // M7: Workspace-wide IT support analytics for enterprise admins
+  'admin.app_activities:read',  // M7: Audit logs for compliance reporting in regulated industries
+  'admin.apps:read',            // M7: Manage app deployment across Enterprise Grid workspaces
+  'calls:write',                // M6: Initiate Slack call from dashboard during critical escalation
 ].join(',')
 
 export async function GET(request: Request) {
