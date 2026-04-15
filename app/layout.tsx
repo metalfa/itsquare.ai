@@ -19,23 +19,7 @@ export const metadata: Metadata = {
   title: 'ITSquare.AI | Your AI IT Support Team in Slack',
   description: 'The smartest IT support agent lives in your Slack. Employees describe problems, AI solves them instantly. No tickets, no waiting, no frustration.',
   generator: 'v0.app',
-  icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
-  },
+  // icons are auto-discovered from app/icon.tsx and app/apple-icon.tsx
 }
 
 export const viewport: Viewport = {
