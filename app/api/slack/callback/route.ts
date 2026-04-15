@@ -40,19 +40,15 @@ async function sendWelcomeDm(botTokenEncrypted: string, slackUserId: string): Pr
   }
 }
 
-interface SlackUserIdentity {
+// OIDC userinfo response from https://slack.com/api/openid.connect.userInfo
+interface SlackOIDCUserInfo {
   ok: boolean
-  user?: {
-    name: string
-    id: string
-    email?: string
-    image_192?: string
-  }
-  team?: {
-    id: string
-    name: string
-    domain?: string
-  }
+  sub?: string          // Slack user ID
+  name?: string         // Display name
+  email?: string        // Work email
+  picture?: string      // Avatar URL
+  'https://slack.com/team_id'?: string
+  'https://slack.com/team_name'?: string
   error?: string
 }
 
@@ -144,26 +140,26 @@ export async function GET(request: Request) {
         )
       }
       
-      // Fetch user identity from Slack
-      const identityResponse = await fetch('https://slack.com/api/users.identity', {
+      // Fetch user identity via OIDC userinfo endpoint (Marketplace-approved)
+      const identityResponse = await fetch('https://slack.com/api/openid.connect.userInfo', {
         headers: {
           'Authorization': `Bearer ${userToken}`,
         },
       })
       
-      const identity: SlackUserIdentity = await identityResponse.json()
+      const identity: SlackOIDCUserInfo = await identityResponse.json()
       
-      if (!identity.ok || !identity.user?.email) {
-        console.error('Failed to get user identity:', identity.error)
+      if (!identity.ok || !identity.email) {
+        console.error('Failed to get OIDC user info:', identity.error)
         return NextResponse.redirect(
           `${baseUrl}${errorRedirect}?error=identity_failed`
         )
       }
       
-      const userEmail = identity.user.email
-      const userName = identity.user.name
-      const userAvatar = identity.user.image_192
-      const slackUserId = identity.user.id
+      const userEmail = identity.email
+      const userName = identity.name ?? userEmail.split('@')[0]
+      const userAvatar = identity.picture
+      const slackUserId = identity.sub!
       const teamName = tokenData.team.name
       
       // Check if user already exists in Supabase
