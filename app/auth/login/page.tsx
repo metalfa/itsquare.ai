@@ -36,6 +36,14 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const message = searchParams.get('message')
   const emailParam = searchParams.get('email')
+  const errorParam = searchParams.get('error')
+
+  const errorMessages: Record<string, string> = {
+    slack_oauth_denied: 'Slack sign-in was cancelled. You can try again or sign in with email below.',
+    identity_failed: 'Could not retrieve your Slack identity. Please try again or sign in with email.',
+    no_email: 'Your Slack account has no email address. Please sign in with email below.',
+    auth_failed: 'Authentication failed. Please try again.',
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -78,6 +86,12 @@ function LoginForm() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {errorParam && (
+              <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-600 text-sm">
+                {errorMessages[errorParam] ?? 'Something went wrong. Please try again.'}
+              </div>
+            )}
+
             {message === 'account_exists' && (
               <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-600 text-sm">
                 An account with that email already exists. Please sign in below.
