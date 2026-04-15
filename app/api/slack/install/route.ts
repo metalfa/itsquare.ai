@@ -34,22 +34,13 @@ const SLACK_BOT_SCOPES = [
   'mpim:read',            // Check group DM status and metadata
 ].join(',')
 
-// User scopes — requested during sign-up/sign-in and for Enterprise Grid (M7).
+// User scopes — ONLY these 3 for standard workspaces.
+// identity.team, identify, openid, admin.*, calls:write require Enterprise Grid
+// approval from Slack and break OAuth for all standard workspaces when requested.
 const SLACK_USER_SCOPES = [
-  // ── Active today (sign-up/sign-in flow only) ──────────────────────────────
-  'identity.basic',     // Get Slack user ID and name for dashboard account creation
-  'identity.email',     // Get work email to create/link dashboard account
-  'identity.avatar',    // Get profile photo for dashboard personalization
-  'identity.team',      // Get workspace name for multi-workspace admin dashboard (M7)
-  'identify',           // Base Slack identity scope required for SSO verification
-  'openid',             // OIDC-compliant authentication for dashboard sign-in
-
-  // ── Enterprise Grid / M7 Enterprise tier ─────────────────────────────────
-  'admin',                      // M7: Centralized Enterprise Grid deployment and management
-  'admin.analytics:read',       // M7: Workspace-wide IT support analytics for enterprise admins
-  'admin.app_activities:read',  // M7: Audit logs for compliance reporting in regulated industries
-  'admin.apps:read',            // M7: Manage app deployment across Enterprise Grid workspaces
-  'calls:write',                // M6: Initiate Slack call from dashboard during critical escalation
+  'identity.basic',
+  'identity.email',
+  'identity.avatar',
 ].join(',')
 
 export async function GET(request: Request) {
