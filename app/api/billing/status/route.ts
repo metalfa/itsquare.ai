@@ -38,8 +38,10 @@ export async function GET() {
 
     const isPro = org?.subscription_tier === 'pro'
 
-    if (!isPro || !org?.stripe_subscription_id) {
-      return NextResponse.json({ tier: org?.subscription_tier ?? 'free', isPro: false })
+    // Return pro status based on tier even without a Stripe subscription ID
+    // (e.g. manually provisioned accounts, reviewer accounts, grandfathered plans)
+    if (!org?.stripe_subscription_id) {
+      return NextResponse.json({ tier: org?.subscription_tier ?? 'free', isPro: isPro })
     }
 
     // Fetch live cancellation state from Stripe
