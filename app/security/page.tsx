@@ -1,97 +1,146 @@
 import Link from "next/link"
-import { ArrowLeft, Shield, Lock, FileCheck, Server } from "lucide-react"
+import { ArrowLeft, Shield, Lock, Server, Mail, AlertTriangle, Eye, Key } from "lucide-react"
+import { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: "Security | ITSquare.AI",
+  description: "Security practices, vulnerability disclosure, and data protection at ITSquare.AI.",
+}
 
 export default function SecurityPage() {
   return (
     <div className="min-h-screen bg-background grid-bg">
-      <div className="max-w-4xl mx-auto px-8 py-20">
-        <Link 
-          href="/" 
+      <div className="max-w-3xl mx-auto px-8 py-20">
+        <Link
+          href="/"
           className="inline-flex items-center gap-2 text-sm text-foreground-variant hover:text-primary mb-12 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Home
         </Link>
 
-        <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-6">
-          Security & Compliance
+        <h1 className="text-4xl font-black tracking-tighter mb-4">
+          Security
         </h1>
-        <p className="text-lg text-foreground-variant mb-16 max-w-2xl">
-          Enterprise-grade security built into every layer of our infrastructure automation platform.
+        <p className="text-sm text-foreground-variant mb-12">
+          Last updated: April 2026
         </p>
 
-        <div className="grid md:grid-cols-2 gap-6 mb-16">
-          <div className="ghost-border bg-surface-container p-8">
-            <Shield className="w-8 h-8 text-primary mb-4" />
-            <h3 className="text-lg font-bold mb-2">SOC 2 Type II</h3>
-            <p className="text-foreground-variant text-sm leading-relaxed">
-              Annual audits verify our security controls meet the highest industry standards for data protection.
+        <div className="prose prose-invert max-w-none space-y-12">
+
+          {/* Data Security */}
+          <section>
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+              <Lock className="h-5 w-5 text-primary" />
+              Data Security
+            </h2>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {[
+                {
+                  icon: <Key className="h-5 w-5 text-primary" />,
+                  title: "Encryption at rest",
+                  body: "All data stored in AES-256 encrypted databases. Slack OAuth tokens are encrypted at the application layer using AES-256-GCM before being written to disk.",
+                },
+                {
+                  icon: <Shield className="h-5 w-5 text-primary" />,
+                  title: "Encryption in transit",
+                  body: "All communications between clients, the ITSquare.AI application, and third-party services use TLS 1.2 or higher. No unencrypted channels.",
+                },
+                {
+                  icon: <Server className="h-5 w-5 text-primary" />,
+                  title: "Workspace isolation",
+                  body: "Row-level security (RLS) is enforced on every database table. One workspace cannot access another workspace's conversations, device data, or knowledge base.",
+                },
+                {
+                  icon: <Eye className="h-5 w-5 text-primary" />,
+                  title: "Minimal data access",
+                  body: "The bot reads only messages it is directly involved in — DMs and @mentions. It does not read channels it hasn't been invited to and never reads messages passively.",
+                },
+              ].map((item) => (
+                <div key={item.title} className="rounded-xl border border-border/50 bg-surface-container p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    {item.icon}
+                    <h3 className="font-semibold text-foreground text-sm">{item.title}</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{item.body}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Infrastructure */}
+          <section>
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <Server className="h-5 w-5 text-primary" />
+              Infrastructure
+            </h2>
+            <ul className="space-y-3 text-sm text-muted-foreground leading-relaxed">
+              <li className="flex gap-3"><span className="text-primary mt-1">→</span><span><strong className="text-foreground">Hosting:</strong> Application layer on Vercel (serverless, AWS us-east-1). Database on Supabase (PostgreSQL, AWS us-east-1). All infrastructure is in the United States.</span></li>
+              <li className="flex gap-3"><span className="text-primary mt-1">→</span><span><strong className="text-foreground">Authentication:</strong> Slack OAuth 2.0 for app installation. Slack SSO for dashboard sign-in. Supabase Auth for session management.</span></li>
+              <li className="flex gap-3"><span className="text-primary mt-1">→</span><span><strong className="text-foreground">Slack security:</strong> All inbound Slack requests are verified using HMAC-SHA256 signature verification before processing. Invalid signatures are rejected immediately.</span></li>
+              <li className="flex gap-3"><span className="text-primary mt-1">→</span><span><strong className="text-foreground">AI processing:</strong> Messages are sent to OpenAI's API (US infrastructure) only to generate IT support responses. OpenAI does not retain API data or use it for model training.</span></li>
+              <li className="flex gap-3"><span className="text-primary mt-1">→</span><span><strong className="text-foreground">No secrets in code:</strong> All credentials and API keys are stored as environment variables. No secrets are committed to source control.</span></li>
+            </ul>
+          </section>
+
+          {/* Vulnerability Disclosure */}
+          <section id="vulnerability-disclosure">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-primary" />
+              Vulnerability Disclosure
+            </h2>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+              We take security reports seriously. If you discover a vulnerability in ITSquare.AI,
+              please report it to us responsibly. We commit to the following:
             </p>
+            <ul className="space-y-3 text-sm text-muted-foreground leading-relaxed mb-6">
+              <li className="flex gap-3"><span className="text-primary mt-1">→</span><span>We will acknowledge your report within <strong className="text-foreground">2 business days</strong>.</span></li>
+              <li className="flex gap-3"><span className="text-primary mt-1">→</span><span>We will investigate and provide a status update within <strong className="text-foreground">7 business days</strong>.</span></li>
+              <li className="flex gap-3"><span className="text-primary mt-1">→</span><span>We will notify you when the vulnerability is resolved.</span></li>
+              <li className="flex gap-3"><span className="text-primary mt-1">→</span><span>We will not pursue legal action against researchers who report in good faith and follow responsible disclosure practices.</span></li>
+              <li className="flex gap-3"><span className="text-primary mt-1">→</span><span>Please <strong className="text-foreground">do not</strong> publicly disclose the vulnerability until we have had the opportunity to address it.</span></li>
+            </ul>
+
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-6">
+              <p className="text-sm font-semibold text-foreground mb-2">Report a vulnerability</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Send a detailed description of the issue, steps to reproduce, and potential impact to:
+              </p>
+              <a
+                href="mailto:brucelee@itsquare.ai?subject=Security Vulnerability Report — ITSquare.AI"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+              >
+                <Mail className="h-4 w-4" />
+                brucelee@itsquare.ai
+              </a>
+              <p className="text-xs text-muted-foreground mt-4">
+                Please include: description, reproduction steps, affected component, potential impact, and your contact info.
+              </p>
+            </div>
+          </section>
+
+          {/* What we don't claim */}
+          <section>
+            <h2 className="text-xl font-bold mb-4">Certifications</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              ITSquare.AI is an early-stage product. We do not currently hold SOC 2, ISO 27001,
+              HIPAA, or PCI DSS certifications. We are committed to pursuing SOC 2 Type II
+              certification as the product matures. If your organization has specific compliance
+              requirements, contact us at{" "}
+              <Link href="mailto:brucelee@itsquare.ai" className="text-primary hover:underline">
+                brucelee@itsquare.ai
+              </Link>{" "}
+              to discuss.
+            </p>
+          </section>
+
+          {/* Footer links */}
+          <div className="pt-8 border-t border-border/30 flex flex-wrap gap-6 text-sm text-muted-foreground">
+            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+            <Link href="/sub-processors" className="hover:text-foreground transition-colors">Sub-Processors</Link>
           </div>
 
-          <div className="ghost-border bg-surface-container p-8">
-            <Lock className="w-8 h-8 text-primary mb-4" />
-            <h3 className="text-lg font-bold mb-2">HIPAA Compliant</h3>
-            <p className="text-foreground-variant text-sm leading-relaxed">
-              Healthcare organizations trust IT Square for PHI protection with full HIPAA compliance.
-            </p>
-          </div>
-
-          <div className="ghost-border bg-surface-container p-8">
-            <FileCheck className="w-8 h-8 text-primary mb-4" />
-            <h3 className="text-lg font-bold mb-2">PCI DSS</h3>
-            <p className="text-foreground-variant text-sm leading-relaxed">
-              Financial services and payment processing environments supported with PCI compliance.
-            </p>
-          </div>
-
-          <div className="ghost-border bg-surface-container p-8">
-            <Server className="w-8 h-8 text-primary mb-4" />
-            <h3 className="text-lg font-bold mb-2">On-Premise Deployment</h3>
-            <p className="text-foreground-variant text-sm leading-relaxed">
-              Your data never leaves your infrastructure. AI agents run entirely within your environment.
-            </p>
-          </div>
-        </div>
-
-        <div className="p-8 bg-surface-container-high ghost-border">
-          <h2 className="text-xl font-bold mb-4">Security Features</h2>
-          <ul className="space-y-3 text-foreground-variant">
-            <li className="flex items-center gap-3">
-              <span className="w-1.5 h-1.5 bg-primary" />
-              End-to-end encryption for all communications
-            </li>
-            <li className="flex items-center gap-3">
-              <span className="w-1.5 h-1.5 bg-primary" />
-              Role-based access control (RBAC)
-            </li>
-            <li className="flex items-center gap-3">
-              <span className="w-1.5 h-1.5 bg-primary" />
-              Comprehensive audit logging
-            </li>
-            <li className="flex items-center gap-3">
-              <span className="w-1.5 h-1.5 bg-primary" />
-              Zero-trust architecture
-            </li>
-            <li className="flex items-center gap-3">
-              <span className="w-1.5 h-1.5 bg-primary" />
-              Automated vulnerability scanning
-            </li>
-          </ul>
-        </div>
-
-        <div className="mt-12 p-8 bg-surface-container ghost-border border-l-4 border-l-primary-container">
-          <p className="text-foreground-variant mb-4">
-            Need a security assessment or compliance documentation?
-          </p>
-          <Link
-            href="https://calendly.com/bensassi-faysel/discovery-call"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block bg-primary-container text-white px-6 py-3 text-sm font-bold hover:scale-[0.98] transition-transform"
-          >
-            Request Security Documentation
-          </Link>
         </div>
       </div>
     </div>
