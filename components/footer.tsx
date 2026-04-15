@@ -9,6 +9,7 @@ const policyLinks = [
 const productLinks = [
   { href: "#pricing", label: "Pricing" },
   { href: "/docs", label: "Documentation" },
+  { href: "/support", label: "Support" },
   { href: "/contact", label: "Contact" },
 ]
 
@@ -24,10 +25,10 @@ export function Footer() {
           </p>
           <div className="flex flex-col gap-1 text-[11px] text-[#C3C6D7] font-mono">
             <Link
-              href="mailto:support@itsquare.ai"
+              href="mailto:brucelee@itsquare.ai"
               className="hover:text-primary transition-colors"
             >
-              support@itsquare.ai
+              brucelee@itsquare.ai
             </Link>
           </div>
         </div>
