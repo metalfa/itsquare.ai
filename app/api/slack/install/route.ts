@@ -29,7 +29,8 @@ const SLACK_BOT_SCOPES = [
   'bookmarks:write',      // M9: Auto-bookmark verified solutions in IT channels
   'calls:read',           // M6: Detect call quality issues and trigger proactive diagnostics
   'calls:write',          // M6: Start Slack call with IT member when chat escalation fails
-  'incoming-webhook',     // M8: Post fleet health alerts and pattern reports to IT alert channel
+  // 'incoming-webhook' removed from install — triggers mandatory channel picker during OAuth.
+  // Will be added back as a separate flow when M8 fleet alerts are built.
   'mpim:history',         // Support IT triage conversations in group DMs
   'mpim:read',            // Check group DM status and metadata
 ].join(',')
