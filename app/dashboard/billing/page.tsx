@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { MessageSquare, ArrowLeft, Check, Zap } from 'lucide-react'
 import { FREE_TIER_MESSAGE_LIMIT } from '@/lib/config/constants'
 import { getMonthlyUsage } from '@/lib/services/usage'
+import { stripe } from '@/lib/stripe/client'
 import { BillingActions } from './billing-actions'
 
 export const metadata = {
@@ -34,7 +35,11 @@ export default async function BillingPage() {
     .eq('id', user.id)
     .single()
 
-  const org = profile?.organization as { id: string; subscription_tier: string } | null
+  const org = profile?.organization as {
+    id: string
+    subscription_tier: string
+    stripe_subscription_id: string | null
+  } | null
   const isPro = org?.subscription_tier === 'pro'
 
   // Get current workspace for usage count
@@ -48,6 +53,19 @@ export default async function BillingPage() {
 
     if (workspace) {
       usage = await getMonthlyUsage(workspace.id)
+    }
+  }
+
+  // Fetch subscription details from Stripe (cancellation status, period end)
+  let cancelAtPeriodEnd = false
+  let currentPeriodEnd: string | null = null
+  if (isPro && org?.stripe_subscription_id) {
+    try {
+      const sub = await stripe.subscriptions.retrieve(org.stripe_subscription_id)
+      cancelAtPeriodEnd = sub.cancel_at_period_end
+      currentPeriodEnd = new Date(sub.current_period_end * 1000).toISOString()
+    } catch (err) {
+      console.error('[ITSquare] Failed to fetch subscription details:', err)
     }
   }
 
@@ -100,7 +118,13 @@ export default async function BillingPage() {
               <p className="text-2xl font-bold text-foreground mb-4">
                 $8<span className="text-base font-normal text-muted-foreground">/user/month</span>
               </p>
-              <BillingActions isPro={true} usage={usage} limit={limit} />
+              <BillingActions
+                isPro={true}
+                usage={usage}
+                limit={limit}
+                cancelAtPeriodEnd={cancelAtPeriodEnd}
+                currentPeriodEnd={currentPeriodEnd}
+              />
             </CardContent>
           </Card>
         ) : (
@@ -175,7 +199,13 @@ export default async function BillingPage() {
                     Priority support
                   </li>
                 </ul>
-                <BillingActions isPro={false} usage={usage} limit={limit} />
+                <BillingActions
+                  isPro={false}
+                  usage={usage}
+                  limit={limit}
+                  cancelAtPeriodEnd={false}
+                  currentPeriodEnd={null}
+                />
               </CardContent>
             </Card>
           </div>
