@@ -20,6 +20,7 @@ import { gateway } from '@ai-sdk/gateway'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { decryptToken } from '@/lib/slack/encryption'
 import { AI_MODEL, MAX_OUTPUT_TOKENS } from '@/lib/config/constants'
+import { rateLimit, RATE_LIMITS } from '@/lib/services/rate-limit'
 
 const SLACK_API = 'https://slack.com/api'
 
@@ -46,6 +47,16 @@ export async function POST(request: NextRequest) {
 
     if (!token || !data) {
       return NextResponse.json({ error: 'token and data required' }, { status: 400 })
+    }
+
+    // Rate limit by token to prevent abuse
+    const rl = rateLimit(
+      `diag:${token}`,
+      RATE_LIMITS.diagnosticCheck.limit,
+      RATE_LIMITS.diagnosticCheck.windowMs,
+    )
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
     }
 
     const supabase = createAdminClient()
