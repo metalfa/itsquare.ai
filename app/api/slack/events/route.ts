@@ -162,7 +162,7 @@ async function handleMessage(teamId: string, event: Record<string, any>, eventTs
     .maybeSingle()
 
   if (existing) {
-    console.log(`[ITSquare] Skipping duplicate event: ${eventTs}`)
+    // Dedup hit — silently skip
     return
   }
 
@@ -258,7 +258,10 @@ async function handleMessage(teamId: string, event: Record<string, any>, eventTs
     // Show scan button ONLY for troubleshooting issues without device data, or explicit "go deeper"
     // Simple questions (wifi password, how do I, etc.) just get a text answer
     const needsScan = wantsDeeper || (isTroubleshooting && !hasDeviceData)
-    console.log(`[ITSquare] Decision: hasDeviceData=${hasDeviceData}, isTroubleshooting=${isTroubleshooting}, wantsDeeper=${wantsDeeper}, needsScan=${needsScan}`)
+    // Decision logged for debugging — remove if too noisy in production
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[ITSquare] Decision: hasDeviceData=${hasDeviceData}, isTroubleshooting=${isTroubleshooting}, wantsDeeper=${wantsDeeper}, needsScan=${needsScan}`)
+    }
 
     if (needsScan) {
       // Create diagnostic token
@@ -422,7 +425,7 @@ async function getDeviceScanData(workspaceId: string, slackUserId: string): Prom
     (row.raw_scan?.speedTestDownloadMbps != null)
   )
   if (!hasDeepData) {
-    console.log('[ITSquare] Shallow scan detected — treating as no device data')
+    // Shallow scan — browser-only data, can't drive real diagnosis
     return null
   }
 
