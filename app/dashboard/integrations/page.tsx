@@ -44,13 +44,14 @@ function IntegrationsPageContent() {
           .eq('id', user.id)
           .single()
 
-        // Get workspace
+        // Get THE workspace for this org (1 org = 1 workspace)
         if (profileData?.org_id) {
           const { data: workspaceData } = await supabase
             .from('slack_workspaces')
             .select('*')
             .eq('org_id', profileData.org_id)
             .eq('status', 'active')
+            .limit(1)
             .single()
           setWorkspace(workspaceData)
         }

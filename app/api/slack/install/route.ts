@@ -35,13 +35,14 @@ const SLACK_BOT_SCOPES = [
   'mpim:read',            // Check group DM status and metadata
 ].join(',')
 
-// User scopes — ONLY these 3 for standard workspaces.
-// identity.team, identify, openid, admin.*, calls:write require Enterprise Grid
-// approval from Slack and break OAuth for all standard workspaces when requested.
+// User scopes — Marketplace-approved OIDC scopes only.
+// identity.* scopes are NOT supported for Slack Marketplace apps (Slack policy).
+// openid + email + profile are the correct OIDC replacements.
+// admin.* scopes removed — require Enterprise Grid approval and block Marketplace submission.
 const SLACK_USER_SCOPES = [
-  'identity.basic',
-  'identity.email',
-  'identity.avatar',
+  'openid',   // OIDC auth — Slack Marketplace approved
+  'email',    // Get user email via OIDC userinfo endpoint
+  'profile',  // Get user name + avatar via OIDC userinfo endpoint
 ].join(',')
 
 export async function GET(request: Request) {

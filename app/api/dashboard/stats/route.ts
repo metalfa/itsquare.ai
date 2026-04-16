@@ -2,7 +2,10 @@
  * Dashboard Stats API
  *
  * GET /api/dashboard/stats — returns real-time workspace health metrics.
- * Used by the dashboard to render fleet health, conversation stats, and trends.
+ *
+ * BUSINESS MODEL: 1 org = 1 workspace = 1 customer.
+ * The authenticated user's org_id maps to exactly ONE active workspace.
+ * No workspace switching — each workspace is a separate customer.
  */
 
 import { NextResponse } from 'next/server'
@@ -17,7 +20,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user's workspace
+    // Get user's org
     const { data: profile } = await userSupabase
       .from('users')
       .select('org_id')
@@ -29,11 +32,15 @@ export async function GET() {
     }
 
     const admin = createAdminClient()
+
+    // 1 org = 1 workspace. Find THE workspace for this org.
     const { data: workspace } = await admin
       .from('slack_workspaces')
       .select('id, team_name')
       .eq('org_id', profile.org_id)
       .eq('status', 'active')
+      .order('installed_at', { ascending: false })
+      .limit(1)
       .single()
 
     if (!workspace) {
@@ -136,10 +143,6 @@ async function getDeviceStats(supabase: any, wsId: string) {
     return { totalDevices: 0, platforms: {}, healthAlerts: [] }
   }
 
-  // Unique devices (by user)
-  const uniqueUsers = new Set(devices.map((d: any) => d.slack_user_id))
-
-  // Platform breakdown (latest scan per user)
   const seenUsers = new Set()
   const platforms: Record<string, number> = {}
   const healthAlerts: Array<{ user: string; metric: string; value: number; severity: string }> = []
@@ -151,7 +154,6 @@ async function getDeviceStats(supabase: any, wsId: string) {
     const os = d.os_name || 'Unknown'
     platforms[os] = (platforms[os] || 0) + 1
 
-    // Flag health issues
     if (d.cpu_score != null && d.cpu_score < 40) {
       healthAlerts.push({ user: d.slack_user_id, metric: 'CPU', value: d.cpu_score, severity: 'critical' })
     }
@@ -164,7 +166,7 @@ async function getDeviceStats(supabase: any, wsId: string) {
   }
 
   return {
-    totalDevices: uniqueUsers.size,
+    totalDevices: seenUsers.size,
     platforms,
     healthAlerts: healthAlerts.slice(0, 5),
   }
@@ -201,7 +203,6 @@ async function getTopIssues(supabase: any, wsId: string) {
 
   if (!data || data.length === 0) return []
 
-  // Simple frequency count by topic keywords
   const topicCounts: Record<string, number> = {}
   for (const t of data) {
     const normalized = (t.topic as string).toLowerCase().trim()
