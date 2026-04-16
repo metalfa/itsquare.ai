@@ -9,15 +9,18 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const url = new URL(request.url)
+    const requestedWsId = url.searchParams.get('workspace_id')
+
     const userSupabase = await createClient()
     const { data: { user } } = await userSupabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user's workspace
+    // Get user's org
     const { data: profile } = await userSupabase
       .from('users')
       .select('org_id')
@@ -29,15 +32,27 @@ export async function GET() {
     }
 
     const admin = createAdminClient()
-    const { data: workspace } = await admin
+
+    // Fetch ALL active workspaces for this org
+    const { data: allWorkspaces } = await admin
       .from('slack_workspaces')
       .select('id, team_name')
       .eq('org_id', profile.org_id)
       .eq('status', 'active')
-      .single()
+      .order('installed_at', { ascending: true })
 
-    if (!workspace) {
+    if (!allWorkspaces || allWorkspaces.length === 0) {
       return NextResponse.json({ error: 'No workspace' }, { status: 404 })
+    }
+
+    // If a specific workspace was requested, validate it belongs to this org
+    let workspace = allWorkspaces[0]
+    if (requestedWsId) {
+      const found = allWorkspaces.find((w: any) => w.id === requestedWsId)
+      if (found) {
+        workspace = found
+      }
+      // If not found, fall back to first workspace (don't leak data)
     }
 
     const wsId = workspace.id
@@ -61,6 +76,7 @@ export async function GET() {
 
     return NextResponse.json({
       workspace: { id: wsId, name: workspace.team_name },
+      allWorkspaces: allWorkspaces.map((w: any) => ({ id: w.id, name: w.team_name })),
       conversations: conversationStats,
       resolutions: resolutionStats,
       devices: deviceStats,

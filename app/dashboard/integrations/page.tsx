@@ -23,7 +23,7 @@ function IntegrationsPageContent() {
   const searchParams = useSearchParams()
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
-  const [workspace, setWorkspace] = useState<any>(null)
+  const [workspaces, setWorkspaces] = useState<any[]>([])
 
   const success = searchParams.get('success')
   const error = searchParams.get('error')
@@ -44,15 +44,15 @@ function IntegrationsPageContent() {
           .eq('id', user.id)
           .single()
 
-        // Get workspace
+        // Get ALL workspaces for this org
         if (profileData?.org_id) {
           const { data: workspaceData } = await supabase
             .from('slack_workspaces')
             .select('*')
             .eq('org_id', profileData.org_id)
             .eq('status', 'active')
-            .single()
-          setWorkspace(workspaceData)
+            .order('installed_at', { ascending: true })
+          setWorkspaces(workspaceData || [])
         }
       } catch (e) {
         console.error('Integrations load error:', e)
@@ -73,7 +73,7 @@ function IntegrationsPageContent() {
     )
   }
 
-  const isConnected = workspace?.status === 'active'
+  const isConnected = workspaces.length > 0
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-surface">
@@ -139,7 +139,7 @@ function IntegrationsPageContent() {
                 {isConnected && (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-green-500/10 text-green-600 rounded-full">
                     <CheckCircle2 className="h-4 w-4" />
-                    Connected
+                    {workspaces.length} workspace{workspaces.length !== 1 ? 's' : ''} connected
                   </span>
                 )}
               </div>
@@ -147,20 +147,30 @@ function IntegrationsPageContent() {
             <CardContent>
               {isConnected ? (
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-background/50 rounded-xl">
-                    <div>
-                      <p className="font-semibold text-foreground text-lg">{workspace.team_name}</p>
-                      <p className="text-muted-foreground">
-                        {workspace.team_domain}.slack.com
-                      </p>
+                  {/* Show ALL connected workspaces */}
+                  {workspaces.map((ws) => (
+                    <div key={ws.id} className="flex items-center justify-between p-4 bg-background/50 rounded-xl">
+                      <div>
+                        <p className="font-semibold text-foreground text-lg">{ws.team_name}</p>
+                        <p className="text-muted-foreground">
+                          {ws.team_domain}.slack.com
+                        </p>
+                      </div>
+                      <Link href="/api/slack/install">
+                        <Button variant="outline" size="sm">
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Reconnect
+                        </Button>
+                      </Link>
                     </div>
-                    <Link href="/api/slack/install">
-                      <Button variant="outline" size="sm">
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Reconnect
-                      </Button>
-                    </Link>
-                  </div>
+                  ))}
+                  {/* Add another workspace button */}
+                  <Link href="/api/slack/install">
+                    <Button variant="outline" className="w-full border-dashed">
+                      <Slack className="h-4 w-4 mr-2" />
+                      Add Another Workspace
+                    </Button>
+                  </Link>
                   <div className="p-4 bg-background/50 rounded-xl">
                     <p className="font-medium text-foreground mb-2">Your team can now:</p>
                     <ul className="text-sm text-muted-foreground space-y-1">

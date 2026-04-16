@@ -377,6 +377,28 @@ export async function GET(request: Request) {
     // Non-auth flow (just app installation from dashboard)
     const encryptedBotToken = encryptToken(tokenData.access_token)
     
+    // Resolve org_id: prefer cookie, but fall back to the authenticated user's org
+    let resolvedOrgId = orgId || null
+    if (!resolvedOrgId) {
+      try {
+        const { createClient: createServerClient } = await import('@/lib/supabase/server')
+        const userSupabase = await createServerClient()
+        const { data: { user: sessionUser } } = await userSupabase.auth.getUser()
+        if (sessionUser) {
+          const { data: profile } = await supabase
+            .from('users')
+            .select('org_id')
+            .eq('id', sessionUser.id)
+            .single()
+          if (profile?.org_id) {
+            resolvedOrgId = profile.org_id
+          }
+        }
+      } catch (e) {
+        console.warn('[ITSquare] Could not resolve org_id from session:', e)
+      }
+    }
+    
     // Check if workspace already exists
     const { data: existingWorkspace } = await supabase
       .from('slack_workspaces')
@@ -397,7 +419,7 @@ export async function GET(request: Request) {
           status: 'active',
           is_enterprise: !!tokenData.enterprise,
           enterprise_id: tokenData.enterprise?.id || null,
-          org_id: orgId || null,
+          org_id: resolvedOrgId,
           updated_at: new Date().toISOString(),
         })
         .eq('id', existingWorkspace.id)
@@ -422,7 +444,7 @@ export async function GET(request: Request) {
         scopes: tokenData.scope.split(','),
         is_enterprise: !!tokenData.enterprise,
         enterprise_id: tokenData.enterprise?.id || null,
-        org_id: orgId || null,
+        org_id: resolvedOrgId,
       })
       .select('id')
       .single()

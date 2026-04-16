@@ -30,8 +30,14 @@ interface BillingStatus {
   status?: string
 }
 
+interface WorkspaceInfo {
+  id: string
+  name: string
+}
+
 interface DashboardStats {
-  workspace: { id: string; name: string }
+  workspace: WorkspaceInfo
+  allWorkspaces: WorkspaceInfo[]
   conversations: {
     total: number; today: number; thisWeek: number; thisMonth: number; open: number
   }
@@ -58,6 +64,21 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [billing, setBilling] = useState<BillingStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(null)
+
+  // Load stats (optionally for a specific workspace)
+  const loadStats = async (workspaceId?: string | null) => {
+    const qs = workspaceId ? `?workspace_id=${workspaceId}` : ''
+    const statsRes = await fetch(`/api/dashboard/stats${qs}`)
+    if (statsRes.ok) {
+      const data = await statsRes.json()
+      setStats(data)
+      setSelectedWorkspaceId(data.workspace.id)
+      setError(null)
+    } else if (statsRes.status === 404) {
+      setError('no-workspace')
+    }
+  }
 
   useEffect(() => {
     async function loadData() {
@@ -65,16 +86,10 @@ export default function DashboardPage() {
       if (!user) { router.push('/auth/login'); return }
 
       try {
-        const [statsRes, billingRes] = await Promise.all([
-          fetch('/api/dashboard/stats'),
+        const [, billingRes] = await Promise.all([
+          loadStats(),
           fetch('/api/billing/status'),
         ])
-
-        if (statsRes.ok) {
-          setStats(await statsRes.json())
-        } else if (statsRes.status === 404) {
-          setError('no-workspace')
-        }
 
         if (billingRes.ok) {
           setBilling(await billingRes.json())
@@ -87,6 +102,16 @@ export default function DashboardPage() {
     }
     loadData()
   }, [])
+
+  const handleWorkspaceSwitch = async (wsId: string) => {
+    if (wsId === selectedWorkspaceId) return
+    setLoading(true)
+    try {
+      await loadStats(wsId)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -152,9 +177,24 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {stats.workspace.name}
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-foreground">
+              {stats.workspace.name}
+            </h1>
+            {stats.allWorkspaces.length > 1 && (
+              <select
+                value={selectedWorkspaceId || ''}
+                onChange={(e) => handleWorkspaceSwitch(e.target.value)}
+                className="text-sm bg-muted/50 border border-border/50 rounded-lg px-2 py-1 text-foreground cursor-pointer hover:bg-muted transition-colors"
+              >
+                {stats.allWorkspaces.map((ws) => (
+                  <option key={ws.id} value={ws.id}>
+                    {ws.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
           <p className="text-muted-foreground">IT Support Command Center</p>
         </div>
         <Badge variant="outline" className="text-green-400 border-green-500/30 bg-green-500/10">
