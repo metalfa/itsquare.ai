@@ -2,18 +2,18 @@
  * Dashboard Stats API
  *
  * GET /api/dashboard/stats — returns real-time workspace health metrics.
- * Used by the dashboard to render fleet health, conversation stats, and trends.
+ *
+ * BUSINESS MODEL: 1 org = 1 workspace = 1 customer.
+ * The authenticated user's org_id maps to exactly ONE active workspace.
+ * No workspace switching — each workspace is a separate customer.
  */
 
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const url = new URL(request.url)
-    const requestedWsId = url.searchParams.get('workspace_id')
-
     const userSupabase = await createClient()
     const { data: { user } } = await userSupabase.auth.getUser()
     if (!user) {
@@ -33,26 +33,18 @@ export async function GET(request: Request) {
 
     const admin = createAdminClient()
 
-    // Fetch ALL active workspaces for this org
-    const { data: allWorkspaces } = await admin
+    // 1 org = 1 workspace. Find THE workspace for this org.
+    const { data: workspace } = await admin
       .from('slack_workspaces')
       .select('id, team_name')
       .eq('org_id', profile.org_id)
       .eq('status', 'active')
-      .order('installed_at', { ascending: true })
+      .order('installed_at', { ascending: false })
+      .limit(1)
+      .single()
 
-    if (!allWorkspaces || allWorkspaces.length === 0) {
+    if (!workspace) {
       return NextResponse.json({ error: 'No workspace' }, { status: 404 })
-    }
-
-    // If a specific workspace was requested, validate it belongs to this org
-    let workspace = allWorkspaces[0]
-    if (requestedWsId) {
-      const found = allWorkspaces.find((w: any) => w.id === requestedWsId)
-      if (found) {
-        workspace = found
-      }
-      // If not found, fall back to first workspace (don't leak data)
     }
 
     const wsId = workspace.id
@@ -76,7 +68,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       workspace: { id: wsId, name: workspace.team_name },
-      allWorkspaces: allWorkspaces.map((w: any) => ({ id: w.id, name: w.team_name })),
       conversations: conversationStats,
       resolutions: resolutionStats,
       devices: deviceStats,
@@ -152,10 +143,6 @@ async function getDeviceStats(supabase: any, wsId: string) {
     return { totalDevices: 0, platforms: {}, healthAlerts: [] }
   }
 
-  // Unique devices (by user)
-  const uniqueUsers = new Set(devices.map((d: any) => d.slack_user_id))
-
-  // Platform breakdown (latest scan per user)
   const seenUsers = new Set()
   const platforms: Record<string, number> = {}
   const healthAlerts: Array<{ user: string; metric: string; value: number; severity: string }> = []
@@ -167,7 +154,6 @@ async function getDeviceStats(supabase: any, wsId: string) {
     const os = d.os_name || 'Unknown'
     platforms[os] = (platforms[os] || 0) + 1
 
-    // Flag health issues
     if (d.cpu_score != null && d.cpu_score < 40) {
       healthAlerts.push({ user: d.slack_user_id, metric: 'CPU', value: d.cpu_score, severity: 'critical' })
     }
@@ -180,7 +166,7 @@ async function getDeviceStats(supabase: any, wsId: string) {
   }
 
   return {
-    totalDevices: uniqueUsers.size,
+    totalDevices: seenUsers.size,
     platforms,
     healthAlerts: healthAlerts.slice(0, 5),
   }
@@ -217,7 +203,6 @@ async function getTopIssues(supabase: any, wsId: string) {
 
   if (!data || data.length === 0) return []
 
-  // Simple frequency count by topic keywords
   const topicCounts: Record<string, number> = {}
   for (const t of data) {
     const normalized = (t.topic as string).toLowerCase().trim()

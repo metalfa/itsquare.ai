@@ -52,6 +52,23 @@ interface SlackOIDCUserInfo {
   error?: string
 }
 
+/**
+ * Slack OAuth callback.
+ *
+ * BUSINESS MODEL (1 workspace = 1 customer):
+ * - Each Slack workspace is an independent customer
+ * - Installing ITSquare on a workspace creates a dedicated organization for it
+ * - The installing user becomes the admin for THAT workspace's organization
+ * - If the same person installs on multiple workspaces, each gets its own org
+ * - Dashboard always shows exactly one workspace per org
+ * - Regular Slack users never see the dashboard — only the admin who installed
+ *
+ * TWO FLOWS:
+ * 1. Auth flow (signup/signin): User clicks "Sign in with Slack" or "Sign up with Slack"
+ *    → Creates user + org + workspace, signs them into dashboard
+ * 2. Non-auth flow (reconnect): Admin clicks "Reconnect" from dashboard
+ *    → Updates bot token for the existing workspace, no new org/user created
+ */
 export async function GET(request: Request) {
   const url = new URL(request.url)
   const code = url.searchParams.get('code')
@@ -60,7 +77,6 @@ export async function GET(request: Request) {
   
   const cookieStore = await cookies()
   const storedState = cookieStore.get('slack_oauth_state')?.value
-  const orgId = cookieStore.get('slack_oauth_org_id')?.value
   const mode = cookieStore.get('slack_oauth_mode')?.value // 'signup', 'signin', or undefined
   
   // Clear OAuth cookies
@@ -128,9 +144,10 @@ export async function GET(request: Request) {
     
     const supabase = createAdminClient()
     
-    // For sign-up/sign-in flow, we need user identity
+    // ═══════════════════════════════════════════════════════════════════════
+    // AUTH FLOW: Sign-up or sign-in via Slack
+    // ═══════════════════════════════════════════════════════════════════════
     if (isAuthFlow) {
-      // Get user info using the authed_user token
       const userToken = tokenData.authed_user?.access_token
       
       if (!userToken) {
@@ -160,45 +177,64 @@ export async function GET(request: Request) {
       const userName = identity.name ?? userEmail.split('@')[0]
       const userAvatar = identity.picture
       const slackUserId = identity.sub!
+      const teamId = tokenData.team.id
       const teamName = tokenData.team.name
       
-      // Check if user already exists in Supabase
-      const { data: existingUser } = await supabase
-        .from('users')
+      const encryptedBotToken = encryptToken(tokenData.access_token)
+      
+      // ─── Check if this workspace already exists ───────────────────────
+      const { data: existingWorkspace } = await supabase
+        .from('slack_workspaces')
         .select('id, org_id')
-        .eq('email', userEmail)
+        .eq('team_id', teamId)
         .single()
       
-      let userId: string
-      let userOrgId: string | null = null
+      let workspaceId: string
+      let workspaceOrgId: string
       
-      if (existingUser) {
-        // User exists - sign them in
-        if (mode === 'signup') {
-          // User trying to sign up but already has an account - redirect to login
-          return NextResponse.redirect(
-            `${baseUrl}/auth/login?message=account_exists`
-          )
-        }
+      if (existingWorkspace) {
+        // Workspace exists — this is a re-install or sign-in
+        workspaceId = existingWorkspace.id
+        workspaceOrgId = existingWorkspace.org_id
         
-        userId = existingUser.id
-        userOrgId = existingUser.org_id
+        // Update workspace with fresh token
+        await supabase
+          .from('slack_workspaces')
+          .update({
+            team_name: teamName,
+            bot_token_encrypted: encryptedBotToken,
+            bot_user_id: tokenData.bot_user_id,
+            installed_by_slack_user_id: slackUserId,
+            scopes: tokenData.scope.split(','),
+            status: 'active',
+            is_enterprise: !!tokenData.enterprise,
+            enterprise_id: tokenData.enterprise?.id || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', workspaceId)
+        
+        // If workspace had no org (legacy data), create one now
+        if (!workspaceOrgId) {
+          const { data: newOrg } = await supabase
+            .from('organizations')
+            .insert({ name: teamName, subscription_tier: 'free' })
+            .select('id')
+            .single()
+          
+          if (newOrg) {
+            workspaceOrgId = newOrg.id
+            await supabase
+              .from('slack_workspaces')
+              .update({ org_id: workspaceOrgId })
+              .eq('id', workspaceId)
+          }
+        }
       } else {
-        // New user - create account
-        if (mode === 'signin') {
-          // User trying to sign in but doesn't have an account
-          return NextResponse.redirect(
-            `${baseUrl}/auth/sign-up?message=no_account`
-          )
-        }
-        
-        // Create organization first (use Slack team name)
+        // ─── Brand new workspace install ────────────────────────────────
+        // Each workspace gets its own organization (1 workspace = 1 customer)
         const { data: newOrg, error: orgError } = await supabase
           .from('organizations')
-          .insert({
-            name: teamName,
-            subscription_tier: 'free',
-          })
+          .insert({ name: teamName, subscription_tier: 'free' })
           .select('id')
           .single()
         
@@ -209,12 +245,76 @@ export async function GET(request: Request) {
           )
         }
         
-        userOrgId = newOrg.id
+        workspaceOrgId = newOrg.id
         
-        // Create user in auth.users via Supabase auth admin
+        const { data: newWorkspace, error: wsError } = await supabase
+          .from('slack_workspaces')
+          .insert({
+            team_id: teamId,
+            team_name: teamName,
+            team_domain: tokenData.team.name.toLowerCase().replace(/\s+/g, '-'),
+            bot_token_encrypted: encryptedBotToken,
+            bot_user_id: tokenData.bot_user_id,
+            installed_by_slack_user_id: slackUserId,
+            scopes: tokenData.scope.split(','),
+            is_enterprise: !!tokenData.enterprise,
+            enterprise_id: tokenData.enterprise?.id || null,
+            org_id: workspaceOrgId,
+          })
+          .select('id')
+          .single()
+        
+        if (wsError || !newWorkspace) {
+          console.error('Failed to create workspace:', wsError)
+          // Rollback org
+          await supabase.from('organizations').delete().eq('id', workspaceOrgId)
+          return NextResponse.redirect(
+            `${baseUrl}${errorRedirect}?error=workspace_creation_failed`
+          )
+        }
+        
+        workspaceId = newWorkspace.id
+      }
+      
+      // ─── Create or find the dashboard user ────────────────────────────
+      // Look up user by email. If they exist, link them to THIS workspace's org.
+      // A user can only manage one workspace at a time from the dashboard.
+      // If they switch workspaces, their org_id changes.
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id, org_id')
+        .eq('email', userEmail)
+        .single()
+      
+      let userId: string
+      
+      if (existingUser) {
+        userId = existingUser.id
+        
+        if (mode === 'signup') {
+          // They have an account but are trying to sign up — just sign them in
+          // and switch them to this workspace's org
+        }
+        
+        // Update user to point to THIS workspace's organization
+        // This is the key: signing in with a workspace = managing that workspace
+        await supabase
+          .from('users')
+          .update({ org_id: workspaceOrgId })
+          .eq('id', userId)
+        
+      } else {
+        // New user
+        if (mode === 'signin') {
+          return NextResponse.redirect(
+            `${baseUrl}/auth/sign-up?message=no_account`
+          )
+        }
+        
+        // Create auth user
         const { data: authData, error: authError } = await supabase.auth.admin.createUser({
           email: userEmail,
-          email_confirm: true, // Auto-confirm since they verified via Slack
+          email_confirm: true,
           user_metadata: {
             full_name: userName,
             avatar_url: userAvatar,
@@ -225,8 +325,6 @@ export async function GET(request: Request) {
         
         if (authError || !authData.user) {
           console.error('Failed to create auth user:', authError)
-          // Rollback org creation
-          await supabase.from('organizations').delete().eq('id', userOrgId)
           return NextResponse.redirect(
             `${baseUrl}${errorRedirect}?error=user_creation_failed`
           )
@@ -234,91 +332,31 @@ export async function GET(request: Request) {
         
         userId = authData.user.id
         
-        // Create user profile in public.users
+        // Create profile linked to THIS workspace's org
         const { error: profileError } = await supabase
           .from('users')
           .insert({
             id: userId,
             email: userEmail,
             full_name: userName,
-            org_id: userOrgId,
-            role: 'admin', // First user is admin
+            org_id: workspaceOrgId,
+            role: 'admin',
           })
         
         if (profileError) {
           console.error('Failed to create user profile:', profileError)
-          // Attempt cleanup
           await supabase.auth.admin.deleteUser(userId)
-          await supabase.from('organizations').delete().eq('id', userOrgId)
           return NextResponse.redirect(
             `${baseUrl}${errorRedirect}?error=profile_creation_failed`
           )
         }
       }
       
-      // Now save/update the Slack workspace
-      const encryptedBotToken = encryptToken(tokenData.access_token)
-      
-      // Check if workspace already exists
-      const { data: existingWorkspace } = await supabase
-        .from('slack_workspaces')
-        .select('id')
-        .eq('team_id', tokenData.team.id)
-        .single()
-      
-      let workspaceId: string
-      
-      if (existingWorkspace) {
-        // Update existing workspace
-        await supabase
-          .from('slack_workspaces')
-          .update({
-            team_name: tokenData.team.name,
-            bot_token_encrypted: encryptedBotToken,
-            bot_user_id: tokenData.bot_user_id,
-            installed_by_slack_user_id: slackUserId,
-            scopes: tokenData.scope.split(','),
-            status: 'active',
-            is_enterprise: !!tokenData.enterprise,
-            enterprise_id: tokenData.enterprise?.id || null,
-            org_id: userOrgId,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', existingWorkspace.id)
-        
-        workspaceId = existingWorkspace.id
-      } else {
-        // Create new workspace
-        const { data: newWorkspace, error: wsError } = await supabase
-          .from('slack_workspaces')
-          .insert({
-            team_id: tokenData.team.id,
-            team_name: tokenData.team.name,
-            team_domain: tokenData.team.name.toLowerCase().replace(/\s+/g, '-'),
-            bot_token_encrypted: encryptedBotToken,
-            bot_user_id: tokenData.bot_user_id,
-            installed_by_slack_user_id: slackUserId,
-            scopes: tokenData.scope.split(','),
-            is_enterprise: !!tokenData.enterprise,
-            enterprise_id: tokenData.enterprise?.id || null,
-            org_id: userOrgId,
-          })
-          .select('id')
-          .single()
-        
-        if (wsError || !newWorkspace) {
-          console.error('Failed to create workspace:', wsError)
-          // Continue anyway - user account was created
-        } else {
-          workspaceId = newWorkspace.id
-        }
-      }
-      
-      // Create/update slack_user record and link to user
+      // ─── Link Slack user to dashboard user ────────────────────────────
       const { data: existingSlackUser } = await supabase
         .from('slack_users')
         .select('id')
-        .eq('workspace_id', workspaceId!)
+        .eq('workspace_id', workspaceId)
         .eq('slack_user_id', slackUserId)
         .single()
       
@@ -338,7 +376,7 @@ export async function GET(request: Request) {
         await supabase
           .from('slack_users')
           .insert({
-            workspace_id: workspaceId!,
+            workspace_id: workspaceId,
             slack_user_id: slackUserId,
             user_id: userId,
             display_name: userName,
@@ -348,8 +386,7 @@ export async function GET(request: Request) {
           })
       }
       
-      // Create session for the user
-      // Generate a magic link and redirect to it
+      // ─── Sign user in and redirect to dashboard ───────────────────────
       const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
         type: 'magiclink',
         email: userEmail,
@@ -360,54 +397,52 @@ export async function GET(request: Request) {
       
       if (linkError || !linkData.properties?.hashed_token) {
         console.error('Failed to generate magic link:', linkError)
-        // Fallback: redirect to login with success message
         return NextResponse.redirect(
           `${baseUrl}/auth/login?message=slack_connected&email=${encodeURIComponent(userEmail)}`
         )
       }
       
-      // Fire-and-forget welcome DM (does not block the redirect)
+      // Fire-and-forget welcome DM
       sendWelcomeDm(encryptedBotToken, slackUserId).catch(() => {})
 
-      // Redirect to the magic link verification endpoint
       const verifyUrl = `${baseUrl}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=magiclink&next=/dashboard`
       return NextResponse.redirect(verifyUrl)
     }
     
-    // Non-auth flow (just app installation from dashboard)
+    // ═══════════════════════════════════════════════════════════════════════
+    // NON-AUTH FLOW: Reconnect from dashboard (admin already signed in)
+    // ═══════════════════════════════════════════════════════════════════════
+    // This flow is ONLY for refreshing the bot token on an existing workspace.
+    // The workspace already has an org. We just update the token.
     const encryptedBotToken = encryptToken(tokenData.access_token)
     
-    // Resolve org_id: prefer cookie, but fall back to the authenticated user's org
-    let resolvedOrgId = orgId || null
-    if (!resolvedOrgId) {
-      try {
-        const { createClient: createServerClient } = await import('@/lib/supabase/server')
-        const userSupabase = await createServerClient()
-        const { data: { user: sessionUser } } = await userSupabase.auth.getUser()
-        if (sessionUser) {
-          const { data: profile } = await supabase
-            .from('users')
-            .select('org_id')
-            .eq('id', sessionUser.id)
-            .single()
-          if (profile?.org_id) {
-            resolvedOrgId = profile.org_id
-          }
-        }
-      } catch (e) {
-        console.warn('[ITSquare] Could not resolve org_id from session:', e)
+    // Resolve the admin's org from their session
+    let adminOrgId: string | null = null
+    try {
+      const { createClient: createServerClient } = await import('@/lib/supabase/server')
+      const userSupabase = await createServerClient()
+      const { data: { user: sessionUser } } = await userSupabase.auth.getUser()
+      if (sessionUser) {
+        const { data: profile } = await supabase
+          .from('users')
+          .select('org_id')
+          .eq('id', sessionUser.id)
+          .single()
+        adminOrgId = profile?.org_id || null
       }
+    } catch (e) {
+      console.warn('[ITSquare] Could not resolve admin session:', e)
     }
     
     // Check if workspace already exists
     const { data: existingWorkspace } = await supabase
       .from('slack_workspaces')
-      .select('id')
+      .select('id, org_id')
       .eq('team_id', tokenData.team.id)
       .single()
     
     if (existingWorkspace) {
-      // Update existing workspace
+      // Update existing workspace — keep its org_id (don't overwrite with admin's org)
       await supabase
         .from('slack_workspaces')
         .update({
@@ -419,12 +454,10 @@ export async function GET(request: Request) {
           status: 'active',
           is_enterprise: !!tokenData.enterprise,
           enterprise_id: tokenData.enterprise?.id || null,
-          org_id: resolvedOrgId,
           updated_at: new Date().toISOString(),
         })
         .eq('id', existingWorkspace.id)
 
-      // Fire-and-forget welcome DM
       sendWelcomeDm(encryptedBotToken, tokenData.authed_user.id).catch(() => {})
 
       return NextResponse.redirect(
@@ -432,25 +465,38 @@ export async function GET(request: Request) {
       )
     }
     
-    // Create new workspace record
+    // New workspace from non-auth flow — create its own org
+    // This happens if someone installs from the dashboard Reconnect button
+    // but ends up on a different workspace in the Slack OAuth picker
+    const orgName = tokenData.team.name
+    const { data: newOrg } = await supabase
+      .from('organizations')
+      .insert({ name: orgName, subscription_tier: 'free' })
+      .select('id')
+      .single()
+    
+    const newOrgId = newOrg?.id || null
+
     const { data: newWorkspace, error: insertError } = await supabase
       .from('slack_workspaces')
       .insert({
         team_id: tokenData.team.id,
         team_name: tokenData.team.name,
+        team_domain: tokenData.team.name.toLowerCase().replace(/\s+/g, '-'),
         bot_token_encrypted: encryptedBotToken,
         bot_user_id: tokenData.bot_user_id,
         installed_by_slack_user_id: tokenData.authed_user.id,
         scopes: tokenData.scope.split(','),
         is_enterprise: !!tokenData.enterprise,
         enterprise_id: tokenData.enterprise?.id || null,
-        org_id: resolvedOrgId,
+        org_id: newOrgId,
       })
       .select('id')
       .single()
     
     if (insertError || !newWorkspace) {
       console.error('Failed to save workspace:', insertError)
+      if (newOrgId) await supabase.from('organizations').delete().eq('id', newOrgId)
       return NextResponse.redirect(
         `${baseUrl}/dashboard/integrations?error=save_failed`
       )
@@ -465,8 +511,22 @@ export async function GET(request: Request) {
         is_admin: true,
       })
 
-    // Fire-and-forget welcome DM
     sendWelcomeDm(encryptedBotToken, tokenData.authed_user.id).catch(() => {})
+
+    // Switch the admin's profile to manage this new workspace
+    if (adminOrgId && newOrgId) {
+      try {
+        const { createClient: createServerClient } = await import('@/lib/supabase/server')
+        const userSupabase = await createServerClient()
+        const { data: { user: sessionUser } } = await userSupabase.auth.getUser()
+        if (sessionUser) {
+          await supabase
+            .from('users')
+            .update({ org_id: newOrgId })
+            .eq('id', sessionUser.id)
+        }
+      } catch { /* non-critical */ }
+    }
 
     return NextResponse.redirect(
       `${baseUrl}/dashboard/integrations?success=slack_installed`
