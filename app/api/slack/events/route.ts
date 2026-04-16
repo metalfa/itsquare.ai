@@ -23,6 +23,7 @@ import {
 import { chooseDiagnosticSet } from '@/lib/services/auto-diagnostic'
 import { checkUsageLimits, trackUsageEvent } from '@/lib/services/usage'
 import { randomUUID } from 'crypto'
+import { rateLimit, RATE_LIMITS } from '@/lib/services/rate-limit'
 
 const SLACK_API = 'https://slack.com/api'
 
@@ -53,6 +54,19 @@ export async function POST(request: Request) {
   const retryNum = request.headers.get('x-slack-retry-num')
   if (retryNum) {
     return NextResponse.json({ ok: true })
+  }
+
+  // Rate limit by workspace (team_id)
+  if (body.team_id) {
+    const rl = rateLimit(
+      `evt:${body.team_id}`,
+      RATE_LIMITS.slackEvents.limit,
+      RATE_LIMITS.slackEvents.windowMs,
+    )
+    if (!rl.allowed) {
+      console.warn(`[ITSquare] Rate limited team ${body.team_id}`)
+      return NextResponse.json({ ok: true }) // Ack but don't process
+    }
   }
 
   // Handle event callbacks

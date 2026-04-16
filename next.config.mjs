@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typescript: {
+    // TODO: Re-enable once all type errors are resolved
+    // ignoreBuildErrors: false,
     ignoreBuildErrors: true,
   },
   images: {
@@ -40,6 +42,20 @@ const nextConfig = {
           {
             key: 'Permissions-Policy',
             value: 'geolocation=(), microphone=(), camera=()',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: https:",
+              "font-src 'self' data:",
+              "connect-src 'self' https://*.supabase.co https://cdn.jsdelivr.net https://slack.com",
+              "frame-ancestors 'none'",
+              "base-uri 'self'",
+              "form-action 'self' https://slack.com",
+            ].join('; '),
           },
         ],
       },

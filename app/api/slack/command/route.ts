@@ -4,7 +4,7 @@
  * Now uses the full Resolution Engine investigation.
  * Responds in-channel (not ephemeral) so colleagues can learn from answers.
  *
- * Flow: Slack → ack 200 immediately → process async → POST to response_url
+ * Flow: Slack → verify signature → ack 200 immediately → process async → POST to response_url
  */
 
 import { NextResponse } from 'next/server'
@@ -12,7 +12,8 @@ import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { respondToCommand } from '@/lib/services/slack-api'
 import { generateITResponse } from '@/lib/services/ai'
-// Command blocks are stripped since we don't expose CLI to end users
+import { verifySlackSignature } from '@/lib/services/slack-verify'
+import { rateLimit, RATE_LIMITS } from '@/lib/services/rate-limit'
 import { HELP_MESSAGE } from '@/lib/config/prompts'
 
 /**
@@ -32,11 +33,38 @@ export async function GET() {
  */
 export async function POST(request: Request) {
   try {
-    const formData = await request.formData()
-    const text = formData.get('text')?.toString()?.trim() || ''
-    const userId = formData.get('user_id')?.toString() || ''
-    const responseUrl = formData.get('response_url')?.toString() || ''
-    const teamId = formData.get('team_id')?.toString() || ''
+    // Read raw body for signature verification
+    const rawBody = await request.text()
+
+    // Verify request is from Slack
+    const timestamp = request.headers.get('x-slack-request-timestamp') || ''
+    const signature = request.headers.get('x-slack-signature') || ''
+    const verification = verifySlackSignature(rawBody, timestamp, signature)
+
+    if (!verification.valid) {
+      console.error('[ITSquare] Command signature verification failed:', verification.error)
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+    }
+
+    // Parse form data from raw body
+    const params = new URLSearchParams(rawBody)
+    const text = params.get('text')?.trim() || ''
+    const userId = params.get('user_id') || ''
+    const responseUrl = params.get('response_url') || ''
+    const teamId = params.get('team_id') || ''
+
+    // Rate limit by workspace
+    const rl = rateLimit(
+      `cmd:${teamId || 'unknown'}`,
+      RATE_LIMITS.slackCommands.limit,
+      RATE_LIMITS.slackCommands.windowMs,
+    )
+    if (!rl.allowed) {
+      return NextResponse.json({
+        response_type: 'ephemeral',
+        text: 'Too many requests. Please wait a moment and try again.',
+      })
+    }
 
     if (!responseUrl) {
       return NextResponse.json({

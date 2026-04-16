@@ -19,6 +19,7 @@ import {
   rejectRequest,
 } from '@/lib/services/execution-manager'
 import { autoExtractToKB } from '@/lib/services/solution-tracker'
+import { rateLimit, RATE_LIMITS } from '@/lib/services/rate-limit'
 
 const SLACK_API = 'https://slack.com/api'
 
@@ -40,6 +41,17 @@ export async function POST(request: Request) {
   }
 
   const payload = JSON.parse(payloadStr)
+
+  // Rate limit by workspace
+  const teamId = payload.team?.id || payload.user?.team_id || 'unknown'
+  const rl = rateLimit(
+    `int:${teamId}`,
+    RATE_LIMITS.slackInteractions.limit,
+    RATE_LIMITS.slackInteractions.windowMs,
+  )
+  if (!rl.allowed) {
+    return NextResponse.json({ ok: true }) // Ack silently
+  }
 
   if (payload.type === 'block_actions') {
     after(async () => {
