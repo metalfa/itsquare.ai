@@ -1,0 +1,18 @@
+# ITSquare.AI - Slack IT Support Bot
+# Allow marketing pages, block API and dashboard
+
+User-agent: *
+Allow: /
+Allow: /privacy
+Allow: /terms
+Allow: /security
+Allow: /support
+Allow: /docs
+Allow: /contact
+
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /auth/
+Disallow: /check/
+
+Sitemap: https://itsquare.ai/sitemap.xml

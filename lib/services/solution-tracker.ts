@@ -108,7 +108,7 @@ Keep it under 100 words. Be specific and actionable.`,
       embedding: JSON.stringify(articleEmbedding),
     })
 
-  console.log(`[ITSquare] Auto-extracted KB article: "${thread.topic}" (confidence: ${thread.resolution_confidence})`)
+  // KB auto-extraction successful
 }
 
 // ---------------------------------------------------------------------------

@@ -2,8 +2,13 @@ import { NextResponse } from 'next/server'
 
 /**
  * Test endpoint — verifies environment configuration.
+ * Only available in development. Returns 404 in production.
  */
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+
   const config = {
     timestamp: new Date().toISOString(),
     environment: {
