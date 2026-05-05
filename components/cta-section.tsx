@@ -9,14 +9,22 @@ export function CTASection() {
             Stop wasting time on IT problems.
           </h2>
           <p className="text-foreground-variant mb-10 text-lg">
-            Your team deserves instant IT support. Add ITSquare to Slack in 30 seconds and see the difference.
+            Your team deserves IT support that finds problems before they find you. Add ITSquare to Slack or Teams in 30 seconds.
           </p>
-          <Link
-            href="/auth/sign-up"
-            className="inline-block bg-primary-container text-white px-8 py-4 text-md font-bold hover:scale-[0.98] transition-transform duration-300"
-          >
-            Add to Slack - Free
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Link
+              href="/auth/sign-up"
+              className="inline-block bg-primary-container text-white px-8 py-4 text-md font-bold hover:scale-[0.98] transition-transform duration-300"
+            >
+              Get Started Free
+            </Link>
+            <Link
+              href="/governance"
+              className="inline-block ghost-border text-foreground px-8 py-4 text-md font-medium hover:bg-surface-container-highest transition-all duration-300 text-center"
+            >
+              AI Governance Services
+            </Link>
+          </div>
           <p className="mt-6 text-xs font-mono text-outline uppercase tracking-widest">
             Free for up to 50 conversations/month. No credit card required.
           </p>

@@ -1,9 +1,9 @@
 import Link from "next/link"
-import { ArrowRight, Shield, Activity, Zap } from "lucide-react"
+import { ShieldAlert, ArrowRight } from "lucide-react"
 
-export function HeroSection() {
+export function GovernanceHero() {
   return (
-    <section className="relative px-8 pt-32 pb-48 max-w-7xl mx-auto overflow-hidden">
+    <section className="relative px-8 pt-32 pb-24 max-w-7xl mx-auto overflow-hidden">
       {/* Background Glow Effects */}
       <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary-container/10 blur-[120px] rounded-full" />
       <div className="absolute top-1/2 -right-24 w-80 h-80 bg-secondary-container/5 blur-[100px] rounded-full" />
@@ -11,53 +11,43 @@ export function HeroSection() {
       <div className="relative z-10 max-w-4xl">
         {/* Status Badge */}
         <div className="inline-flex items-center gap-2 mb-8 px-3 py-1 bg-surface-container-high ghost-border">
-          <Shield className="w-3 h-3 text-primary" />
+          <ShieldAlert className="w-3 h-3 text-primary" />
           <span className="text-[10px] uppercase tracking-widest font-bold text-foreground-variant">
-            Govern · Detect · Resolve
+            AI Governance Services
           </span>
         </div>
 
         {/* Headline */}
         <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[1.1] mb-8 text-foreground text-balance">
-          AI IT support that{" "}
-          <span className="text-primary-container">governs itself.</span>
+          Your AI agents are{" "}
+          <span className="text-primary-container">ungoverned.</span>
         </h1>
 
         {/* Subheadline */}
         <p className="text-lg md:text-xl text-foreground-variant leading-relaxed max-w-2xl mb-6">
-          Autonomous IT support with built-in governance. Detects device health issues before employees report them. Resolves problems in seconds. Full audit trail included.
+          80% of organizations have encountered risky behavior from AI agents. 
+          We help mid-size companies build AI governance in 3-6 weeks — before regulators and customers start asking questions you can&apos;t answer.
         </p>
-        
-        {/* Value Props */}
-        <div className="flex flex-wrap gap-6 mb-12">
-          <div className="flex items-center gap-2 text-sm text-foreground-variant">
-            <Shield className="h-4 w-4 text-primary" />
-            <span>AI Governance Built-In</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-foreground-variant">
-            <Activity className="h-4 w-4 text-primary" />
-            <span>Proactive Health Scoring</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-foreground-variant">
-            <Zap className="h-4 w-4 text-primary" />
-            <span>Slack & Teams</span>
-          </div>
-        </div>
+
+        {/* Social Proof */}
+        <p className="text-sm text-foreground-variant/70 mb-12">
+          Enterprise-grade governance at mid-market prices. From $3,500.
+        </p>
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row gap-4">
           <Link
-            href="/auth/sign-up"
+            href="https://calendly.com/bensassi-faysel/discovery-call"
             className="bg-primary-container text-white px-8 py-4 text-md font-bold hover:shadow-[0_0_20px_-5px_rgba(37,99,235,0.4)] transition-all duration-300 flex items-center justify-center gap-2"
           >
-            Get Started Free
+            Book a Discovery Call
             <ArrowRight className="h-4 w-4" />
           </Link>
           <Link
-            href="/governance"
+            href="#tiers"
             className="ghost-border text-foreground px-8 py-4 text-md font-medium hover:bg-surface-container-highest transition-all duration-300 text-center"
           >
-            AI Governance Services
+            See Service Tiers
           </Link>
         </div>
       </div>

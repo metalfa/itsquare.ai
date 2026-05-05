@@ -7,7 +7,7 @@ import { Menu, X } from "lucide-react"
 const navLinks = [
   { href: "#solutions", label: "How it Works" },
   { href: "#demo", label: "Demo" },
-  { href: "#features", label: "Features" },
+  { href: "/governance", label: "AI Governance" },
   { href: "#pricing", label: "Pricing" },
 ]
 
@@ -46,7 +46,7 @@ export function Navbar() {
             href="/auth/sign-up"
             className="bg-primary-container text-white px-5 py-2 text-sm font-semibold hover:scale-[0.98] transition-transform duration-300"
           >
-            Add to Slack
+            Get Started
           </Link>
         </div>
 
@@ -86,7 +86,7 @@ export function Navbar() {
               className="bg-primary-container text-white px-5 py-3 text-sm font-semibold text-center mt-2"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Add to Slack
+              Get Started
             </Link>
           </div>
         </div>

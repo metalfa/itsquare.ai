@@ -9,6 +9,7 @@ const policyLinks = [
 
 const productLinks = [
   { href: "#pricing", label: "Pricing" },
+  { href: "/governance", label: "AI Governance" },
   { href: "/docs", label: "Documentation" },
   { href: "/support", label: "Support" },
   { href: "/contact", label: "Contact" },
@@ -22,7 +23,7 @@ export function Footer() {
         <div className="space-y-4">
           <div className="text-lg font-black text-[#E4E1E9]">ITSquare.AI</div>
           <p className="text-[10px] tracking-widest uppercase text-[#C3C6D7]">
-            AI IT Support in Slack
+            Govern · Detect · Resolve
           </p>
           <div className="flex flex-col gap-1 text-[11px] text-[#C3C6D7] font-mono">
             <Link

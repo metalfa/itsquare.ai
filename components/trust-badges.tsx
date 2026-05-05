@@ -1,10 +1,10 @@
-import { Slack, Clock, Brain, Shield } from "lucide-react"
+import { Shield, Clock, Brain, Activity } from "lucide-react"
 
 const badges = [
-  { icon: Slack, label: "Lives in Slack" },
+  { icon: Shield, label: "4-Tier Safety Model" },
   { icon: Clock, label: "Responds in seconds" },
   { icon: Brain, label: "Learns from your company" },
-  { icon: Shield, label: "SOC 2 compliant" },
+  { icon: Activity, label: "Proactive Health Scoring" },
 ]
 
 export function TrustBadges() {
