@@ -14,6 +14,11 @@ import { buildInvestigationPrompt } from './context-builder'
 import { retrieveContext, buildContextPrompt } from './rag'
 import type { ConversationMessage } from './conversation'
 
+export interface AIResponseResult {
+  text: string
+  hasDeviceData: boolean
+}
+
 /**
  * Generate an AI response for an IT support conversation.
  *
@@ -30,14 +35,16 @@ export async function generateITResponse(
   history: ConversationMessage[] = [],
   workspaceId?: string,
   slackUserId?: string,
-): Promise<string> {
+): Promise<AIResponseResult> {
   try {
     let contextPrompt = ''
+    let hasDeviceData = false
 
     if (workspaceId && slackUserId) {
       // Full Resolution Engine — 4-source investigation
       const investigationCtx = await investigate(workspaceId, slackUserId, userMessage)
       contextPrompt = buildInvestigationPrompt(investigationCtx)
+      hasDeviceData = !!investigationCtx.deviceScan
     } else if (workspaceId) {
       // Fallback: KB-only (e.g. slash commands where we don't have user identity)
       const contexts = await retrieveContext(workspaceId, userMessage)
@@ -69,7 +76,7 @@ export async function generateITResponse(
           messages,
           maxOutputTokens: MAX_OUTPUT_TOKENS,
         })
-        return text
+        return { text, hasDeviceData }
       } catch (err) {
         lastError = err
         console.error(`[ITSquare] AI generation error (attempt ${attempt + 1}):`, err)
@@ -81,9 +88,9 @@ export async function generateITResponse(
     }
 
     console.error('[ITSquare] AI generation failed after 2 attempts:', lastError)
-    return FALLBACK_MESSAGE
+    return { text: FALLBACK_MESSAGE, hasDeviceData }
   } catch (error) {
     console.error('[ITSquare] Investigation/context error:', error)
-    return FALLBACK_MESSAGE
+    return { text: FALLBACK_MESSAGE, hasDeviceData: false }
   }
 }

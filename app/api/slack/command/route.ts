@@ -119,7 +119,7 @@ async function processCommand(
     }
 
     // Full Resolution Engine — pass userId for 4-source investigation
-    const response = await generateITResponse(text, [], workspaceId, userId || undefined)
+    const { text: response } = await generateITResponse(text, [], workspaceId, userId || undefined)
 
     // Clean any structured blocks from the response
     const finalResponse = response

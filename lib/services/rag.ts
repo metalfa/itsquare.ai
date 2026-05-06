@@ -135,17 +135,19 @@ const MAX_CHUNKS = 5
 
 /**
  * Retrieve relevant knowledge base context for a user query.
+ * Pass a pre-computed embedding to avoid redundant OpenAI calls.
  * Returns empty array if no knowledge base exists for the workspace.
  */
 export async function retrieveContext(
   workspaceId: string,
   query: string,
+  precomputedEmbedding?: number[],
 ): Promise<RetrievedContext[]> {
   const supabase = createAdminClient()
 
   try {
-    // Generate embedding for the query
-    const queryEmbedding = await generateEmbedding(query)
+    // Use pre-computed embedding if available, otherwise generate one
+    const queryEmbedding = precomputedEmbedding || await generateEmbedding(query)
 
     // Call the Supabase vector search function
     const { data, error } = await supabase.rpc('match_knowledge_chunks', {

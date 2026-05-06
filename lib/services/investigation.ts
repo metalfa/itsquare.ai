@@ -92,7 +92,7 @@ export async function investigate(
     await Promise.all([
       searchUserHistory(supabase, queryEmbedding, workspaceId, slackUserId),
       searchColleagueResolutions(supabase, queryEmbedding, workspaceId, slackUserId),
-      retrieveContext(workspaceId, userMessage),
+      retrieveContext(workspaceId, userMessage, queryEmbedding),
       getDeviceScan(supabase, workspaceId, slackUserId),
       countRecentSimilarIssues(supabase, queryEmbedding, workspaceId),
       getHealthTrends(workspaceId, slackUserId).catch(() => null),

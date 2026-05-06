@@ -228,19 +228,18 @@ async function handleMessage(teamId: string, event: Record<string, any>, eventTs
     // Get thread history
     const history = await getThreadHistory(channelId, threadTs)
 
-    // Check if user has recent device scan data
-    const deviceScan = await getDeviceScanData(workspace.id, userId)
-    const hasDeviceData = !!deviceScan
     const wantsDeeper = detectDeeperIntent(userMessage)
     const isTroubleshooting = detectTroubleshootingIntent(userMessage)
 
-    // Generate AI response
-    const aiResponse = await generateITResponse(
+    // Generate AI response (also returns device data status from investigation)
+    const aiResult = await generateITResponse(
       userMessage,
       history,
       workspace.id,
       userId,
     )
+    const aiResponse = aiResult.text
+    const hasDeviceData = aiResult.hasDeviceData
 
     // Clean structured blocks from the response
     const cleanResponse = aiResponse
@@ -391,46 +390,6 @@ async function postSlackMessage(
   }
 }
 
-/**
- * Get full device scan data for a user.
- */
-async function getDeviceScanData(workspaceId: string, slackUserId: string): Promise<any | null> {
-  const supabase = createAdminClient()
-  const { data } = await supabase
-    .from('device_scans' as any)
-    .select('*')
-    .eq('workspace_id', workspaceId)
-    .eq('slack_user_id', slackUserId)
-    .order('scanned_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  if (!data) return null
-
-  const row = data as any
-  // Only use scan data less than 7 days old
-  const age = Date.now() - new Date(row.scanned_at).getTime()
-  if (age > 7 * 24 * 60 * 60 * 1000) return null
-
-  // Quality check: browser-only scans have disk_total_gb from StorageManager
-  // (browser quota, not real disk) and ram_total_gb from navigator.deviceMemory
-  // but lack ram_available_gb, uptime_days, and top_processes.
-  // These shallow scans can't drive a real diagnosis — require at least one
-  // "deep" field that only comes from a real agent or enhanced scan.
-  const hasDeepData = (
-    row.ram_available_gb != null ||
-    row.uptime_days != null ||
-    (row.top_processes && row.top_processes.length > 0) ||
-    (row.raw_scan?.cpuScore != null) ||
-    (row.raw_scan?.speedTestDownloadMbps != null)
-  )
-  if (!hasDeepData) {
-    // Shallow scan — browser-only data, can't drive real diagnosis
-    return null
-  }
-
-  return row
-}
 
 /**
  * Detect if this is a troubleshooting/device issue that benefits from a scan.

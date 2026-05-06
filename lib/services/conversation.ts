@@ -22,12 +22,13 @@ export async function getThreadHistory(
 ): Promise<ConversationMessage[]> {
   const supabase = createAdminClient()
 
+  // Fetch the LAST N messages: order descending to get most recent, then reverse
   const { data, error } = await supabase
     .from('slack_conversations')
     .select('message_role, message_content')
     .eq('channel_id', channelId)
     .eq('thread_ts', threadTs)
-    .order('created_at', { ascending: true })
+    .order('created_at', { ascending: false })
     .limit(MAX_CONTEXT_MESSAGES)
 
   if (error) {
@@ -35,7 +36,8 @@ export async function getThreadHistory(
     return []
   }
 
-  return (data || []).map((m) => ({
+  // Reverse back to chronological order for the AI
+  return (data || []).reverse().map((m) => ({
     role: m.message_role as 'user' | 'assistant',
     content: m.message_content,
   }))

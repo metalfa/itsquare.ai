@@ -74,7 +74,7 @@ Keep it under 100 words. Be specific and actionable.`,
         content: `Issue: ${thread.topic}\nResolution: ${resolutionSummary}`,
       },
     ],
-    maxTokens: 200,
+    maxOutputTokens: 200,
   })
 
   // Store as a knowledge document
