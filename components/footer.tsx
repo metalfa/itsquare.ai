@@ -3,14 +3,12 @@ import Link from "next/link"
 const policyLinks = [
   { href: "/terms", label: "Terms of Service" },
   { href: "/privacy", label: "Privacy Policy" },
-  { href: "/sub-processors", label: "Sub-Processors" },
   { href: "/security", label: "Security" },
 ]
 
 const productLinks = [
   { href: "#pricing", label: "Pricing" },
   { href: "/docs", label: "Documentation" },
-  { href: "/support", label: "Support" },
   { href: "/contact", label: "Contact" },
 ]
 
@@ -26,10 +24,10 @@ export function Footer() {
           </p>
           <div className="flex flex-col gap-1 text-[11px] text-[#C3C6D7] font-mono">
             <Link
-              href="mailto:brucelee@itsquare.ai"
+              href="mailto:support@itsquare.ai"
               className="hover:text-primary transition-colors"
             >
-              brucelee@itsquare.ai
+              support@itsquare.ai
             </Link>
           </div>
         </div>
