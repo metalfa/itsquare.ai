@@ -116,6 +116,9 @@ export function PricingSection() {
       <p className="text-center text-sm text-foreground-variant/60 mt-8">
         All plans include a 14-day free trial. No credit card required.
       </p>
+      <p className="text-center text-sm text-foreground-variant/60 mt-2 max-w-2xl mx-auto">
+        Note: ITSquare.AI runs as a Slack AI assistant, which requires a paid Slack plan to function.
+      </p>
     </section>
   )
 }

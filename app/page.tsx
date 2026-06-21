@@ -6,6 +6,7 @@ import { TrustBadges } from "@/components/trust-badges"
 import { ProcessSection } from "@/components/process-section"
 import { ComplianceSection } from "@/components/compliance-section"
 import { PricingSection } from "@/components/pricing-section"
+import { DisclosuresSection } from "@/components/disclosures-section"
 import { CTASection } from "@/components/cta-section"
 import { Footer } from "@/components/footer"
 
@@ -21,6 +22,7 @@ export default function Home() {
         <ProcessSection />
         <ComplianceSection />
         <PricingSection />
+        <DisclosuresSection />
         <CTASection />
       </main>
       <Footer />
