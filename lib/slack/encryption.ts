@@ -2,7 +2,8 @@ import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypt
 
 const ALGORITHM = 'aes-256-gcm'
 const IV_LENGTH = 16
-// Auth tag and salt lengths are fixed by AES-256-GCM (16 and 32 bytes)
+const AUTH_TAG_LENGTH = 16
+const SALT_LENGTH = 32
 
 function getEncryptionKey(): Buffer {
   const secret = process.env.SLACK_TOKEN_ENCRYPTION_KEY
