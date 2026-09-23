@@ -86,7 +86,28 @@ function Packet({ from, to, offset, color }: { from: number[]; to: number[]; off
   return <mesh ref={ref} rotation={[0, 0, Math.PI / 4]}><boxGeometry args={[0.11, 0.11, 0.11]} /><meshBasicMaterial color={color} /></mesh>
 }
 
-function HeroCanvas({ step, selected, setSelected }: { step: number; selected: number; setSelected: (index: number) => void }) { return <div className="hero-canvas"><Canvas orthographic shadows dpr={[1, 2]} camera={{ position: [14, 11, 14], zoom: 54, near: 0.1, far: 100 }} gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1 }} onPointerMissed={() => setSelected(-1)}><color attach="background" args={['#0d1318']} /><hemisphereLight args={['#eaf2f7','#7f878c',1.1]} /><directionalLight position={[12,18,8]} intensity={2.6} castShadow shadow-mapSize={[2048,2048]} shadow-bias={-0.0004} shadow-normalBias={0.02}><orthographicCamera attach="shadow-camera" args={[-14,14,14,-14,0.1,60]} /></directionalLight><Environment preset="city" environmentIntensity={0.25} /><PracticeScene step={step} selected={selected} setSelected={setSelected} /><OrbitControls enableZoom={false} enablePan={false} minPolarAngle={Math.PI/5} maxPolarAngle={Math.PI/2.35} enableDamping dampingFactor={0.06} autoRotate autoRotateSpeed={0.22} /></Canvas></div> }
+function HeroCanvas({ step, selected, setSelected }: { step: number; selected: number; setSelected: (index: number) => void }) {
+  const systems = [
+    { name: 'Internet A', label: 'Primary ISP', icon: '↯', tone: 'orange' },
+    { name: 'Internet B', label: 'Failover ISP', icon: '↯', tone: 'yellow' },
+    { name: 'Firewall', label: 'Threat prevention', icon: '▣', tone: 'red' },
+    { name: 'VLANs', label: '3 isolated zones', icon: '⌘', tone: 'teal' },
+    { name: 'Practice', label: 'Workstations + imaging', icon: '▤', tone: 'blue' },
+    { name: 'Backup', label: '3–2–1 recovery', icon: '◫', tone: 'violet' },
+    { name: 'MFA', label: 'Verified identities', icon: '✓', tone: 'green' },
+  ]
+  const active = Math.min(step, systems.length - 1)
+  return <div className="hero-canvas architecture-diagram" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '24px 28px 20px', background: '#0d171d' }} aria-label="Interactive dental practice security architecture">
+    <div className="diagram-topline" style={{ display: 'flex', justifyContent: 'space-between', color: '#78909a', fontSize: 9, letterSpacing: '.11em' }}><span>IT SQUARE / PRACTICE BLUEPRINT</span><span style={{ color: '#2dd4bf' }}>HIPAA CONTROL MAP</span></div>
+    <div className="diagram-intro"><strong>{step === 0 ? 'A dental practice, protected end to end.' : systems[active].name}</strong><span>{step === 0 ? 'Follow the path from the internet to patient care.' : systems[active].label}</span></div>
+    <div className="diagram-flow" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', alignItems: 'start', gap: 8, margin: '34px 0' }}>
+      {systems.map((system, index) => <button type="button" key={system.name} className={`system-node ${system.tone} ${index === active ? 'is-active' : ''} ${index <= step ? 'is-secured' : ''}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, border: 0, background: 'transparent', color: index <= step ? '#2dd4bf' : '#78909a', cursor: 'pointer', padding: '0 4px', minWidth: 0 }} onClick={() => setSelected(index)} aria-label={`${system.name}: ${system.label}`}>
+        <span className="system-icon">{system.icon}</span><span className="system-copy"><b>{system.name}</b><small>{system.label}</small></span><span className="system-state">{index <= step ? 'SECURED' : 'NEXT'}</span>
+      </button>)}
+    </div>
+    <div className="diagram-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,.09)', paddingTop: 14, color: '#78909a', fontSize: 9 }}><span><i className="legend-dot secured" />Protected layer</span><span><i className="legend-dot pending" />Click any layer to inspect</span><strong>{step === 6 ? 'PRACTICE READY' : `${step + 1} / 7 LAYERS INSTALLED`}</strong></div>
+  </div>
+}
 
 export function MarketingHome() {
   const [step, setStep] = useState(0); const [menuOpen, setMenuOpen] = useState(false); const [layer, setLayer] = useState(0); const [selectedNode, setSelectedNode] = useState(2)
