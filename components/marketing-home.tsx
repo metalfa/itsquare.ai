@@ -26,11 +26,11 @@ const layers = [
 ]
 
 const networkNodes = [
-  { label: 'Redundant internet', detail: 'Two independent circuits', position: [-3.6, 2.1, 0.2] as [number, number, number], color: '#ffad66' },
-  { label: 'Firewall', detail: 'Threats blocked at the edge', position: [-2.5, 0.95, 1.25] as [number, number, number], color: '#ff806f' },
-  { label: 'Practice server', detail: 'Hourly immutable backup', position: [0, 1.2, 0] as [number, number, number], color: '#2dd4bf' },
-  { label: '3-2-1 backup', detail: 'Three copies, two media, one off-site', position: [3, 2.45, -0.8] as [number, number, number], color: '#7dd3fc' },
-  { label: 'MFA + monitoring', detail: 'Human response 24/7', position: [3.5, 0.8, 1.3] as [number, number, number], color: '#c4b5fd' },
+  { label: 'Dual ISP handoff', detail: 'Two independent internet circuits', position: [-3.15, 0.18, -1.65] as [number, number, number], color: '#ffad66' },
+  { label: 'Next-gen firewall', detail: 'Inspects every connection at the edge', position: [-2.55, 0.42, 1.25] as [number, number, number], color: '#ff806f' },
+  { label: 'Clinical server', detail: 'Open Dental and imaging data', position: [0.15, 0.62, 0.95] as [number, number, number], color: '#2dd4bf' },
+  { label: '3-2-1 backup vault', detail: 'Immutable off-site recovery copy', position: [2.7, 0.42, -1.35] as [number, number, number], color: '#7dd3fc' },
+  { label: 'Identity + MFA', detail: 'Every sign-in verified and logged', position: [2.7, 0.5, 1.2] as [number, number, number], color: '#c4b5fd' },
 ]
 
 function NodeObject({ node, active }: { node: typeof networkNodes[number]; active: boolean }) {
@@ -71,8 +71,7 @@ function NetworkNode({ node, active, onSelect }: { node: typeof networkNodes[num
   useFrame((state) => { if (ref.current) ref.current.scale.setScalar(1 + (active ? Math.sin(state.clock.elapsedTime * 3) * 0.035 : 0)) })
   return <group ref={ref} position={node.position} onClick={(event) => { event.stopPropagation(); onSelect() }}>
     <NodeObject node={node} active={active} />
-    <mesh scale={active ? 1.45 : 1.15}><sphereGeometry args={[0.32, 16, 16]} /><meshBasicMaterial color={node.color} transparent opacity={active ? 0.1 : 0.045} /></mesh>
-    {active && <Html distanceFactor={8} position={[0, 0.72, 0]} center><div className="node-label"><strong>{node.label}</strong><span>{node.detail}</span></div></Html>}
+    {active && <Html distanceFactor={8} position={[0, 0.88, 0]} center><div className="node-label"><strong>{node.label}</strong><span>{node.detail}</span></div></Html>}
   </group>
 }
 
@@ -113,7 +112,7 @@ function DentalOffice({ secure }: { secure: boolean }) {
       <mesh><torusGeometry args={[0.5, 0.035, 10, 32]} /><meshBasicMaterial color="#2dd4bf" /></mesh>
       <Text position={[0, 0.08, 0]} fontSize={0.1} color="#d7fff5" anchorX="center" anchorY="middle">HIPAA READY</Text>
     </group>
-    <Text position={[-1.1, -0.02, 2.47]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.17} color="#9fb6bd" anchorX="center" anchorY="middle">DENTAL PRACTICE / SECURE FLOORPLAN</Text>
+    <Text position={[0, -0.02, 2.47]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.17} color="#9fb6bd" anchorX="center" anchorY="middle">DENTAL PRACTICE / SECURE NETWORK PLAN</Text>
   </group>
 }
 
@@ -134,7 +133,7 @@ function PracticeScene({ step, selected, setSelected }: { step: number; selected
 function Packet({ from, to, offset, color }: { from: number[]; to: number[]; offset: number; color: string }) {
   const ref = useRef<THREE.Mesh>(null)
   useFrame((state) => { if (ref.current) { const t = (state.clock.elapsedTime * 0.28 + offset) % 1; ref.current.position.lerpVectors(new THREE.Vector3(...from), new THREE.Vector3(...to), t) } })
-  return <mesh ref={ref}><sphereGeometry args={[0.055, 10, 10]} /><meshBasicMaterial color={color} /></mesh>
+  return <mesh ref={ref} rotation={[0, 0, Math.PI / 4]}><boxGeometry args={[0.11, 0.11, 0.11]} /><meshBasicMaterial color={color} /></mesh>
 }
 
 function HeroCanvas({ step, selected, setSelected }: { step: number; selected: number; setSelected: (index: number) => void }) { return <div className="hero-canvas"><Canvas shadows dpr={[1, 1.6]} camera={{ position: [8.8, 5.8, 9.8], fov: 35 }} gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.12 }} onPointerMissed={() => setSelected(-1)}><color attach="background" args={['#0b1821']} /><ambientLight intensity={0.6} /><directionalLight position={[5, 8, 4]} intensity={2.4} castShadow /><pointLight position={[-4, 3, -2]} intensity={14} color={step === 0 ? '#ff806f' : '#2dd4bf'} /><Environment preset="city" /><PracticeScene step={step} selected={selected} setSelected={setSelected} /><Sparkles count={38} scale={11} size={1.5} speed={0.2} color={step === 0 ? '#ff806f' : '#2dd4bf'} /><OrbitControls enableZoom={false} enablePan={false} minPolarAngle={0.72} maxPolarAngle={1.5} enableDamping autoRotate autoRotateSpeed={0.35} /><EffectComposer><Bloom intensity={0.65} luminanceThreshold={0.75} /><Vignette eskil={false} offset={0.2} darkness={0.62} /></EffectComposer></Canvas></div> }
