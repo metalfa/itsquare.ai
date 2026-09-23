@@ -5,3 +5,7 @@
 @layer base{*{border-color:var(--line)} }
 .accordion-trigger{display:flex}
 [ data-radix-collection-item ]{outline:none}
+.node-label{display:flex;flex-direction:column;gap:4px;min-width:148px;padding:10px 12px;border:1px solid rgba(125,239,220,.3);border-radius:10px;background:rgba(7,18,25,.9);box-shadow:0 12px 30px rgba(0,0,0,.25);color:var(--text);font:11px/1.25 monospace;pointer-events:none;backdrop-filter:blur(10px)}.node-label strong{font-family:Arial,Helvetica,sans-serif;font-size:12px}.node-label span{color:var(--muted)}
+@media(max-width:900px){.node-label{min-width:128px}.hero-canvas{min-height:430px}}
+@media(prefers-reduced-motion:reduce){.node-label{transition:none}}
+
