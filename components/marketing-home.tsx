@@ -26,11 +26,11 @@ const layers = [
 ]
 
 const networkNodes = [
-  { label: 'Front desk', detail: 'Encrypted workstation', position: [-3.4, 0.7, 1.2] as [number, number, number], color: '#ff806f' },
-  { label: 'Imaging', detail: 'Protected radiographs', position: [-2.7, 0.9, -1.5] as [number, number, number], color: '#ffad66' },
+  { label: 'Redundant internet', detail: 'Two independent circuits', position: [-3.6, 2.1, 0.2] as [number, number, number], color: '#ffad66' },
+  { label: 'Firewall', detail: 'Threats blocked at the edge', position: [-2.5, 0.95, 1.25] as [number, number, number], color: '#ff806f' },
   { label: 'Practice server', detail: 'Hourly immutable backup', position: [0, 1.2, 0] as [number, number, number], color: '#2dd4bf' },
-  { label: 'Cloud backup', detail: 'Recovery copy off-site', position: [2.9, 2.5, -0.8] as [number, number, number], color: '#7dd3fc' },
-  { label: 'Security team', detail: 'Human response 24/7', position: [3.5, 0.7, 1.4] as [number, number, number], color: '#c4b5fd' },
+  { label: '3-2-1 backup', detail: 'Three copies, two media, one off-site', position: [3, 2.45, -0.8] as [number, number, number], color: '#7dd3fc' },
+  { label: 'MFA + monitoring', detail: 'Human response 24/7', position: [3.5, 0.8, 1.3] as [number, number, number], color: '#c4b5fd' },
 ]
 
 function NetworkNode({ node, active, onSelect }: { node: typeof networkNodes[number]; active: boolean; onSelect: () => void }) {
@@ -63,6 +63,22 @@ function DentalOffice({ secure }: { secure: boolean }) {
       <RoundedBox args={[0.7, 0.95, 0.5]} radius={0.06}><meshPhysicalMaterial color="#526873" roughness={0.32} /></RoundedBox>
       <mesh position={[0, 0.55, 0]}><sphereGeometry args={[0.09, 16, 16]} /><meshBasicMaterial color={glow} /></mesh>
       <mesh position={[0, -0.15, 0]}><cylinderGeometry args={[0.12, 0.12, 0.45, 16]} /><meshPhysicalMaterial color="#91a5ad" metalness={0.6} /></mesh>
+    </group>
+    <group position={[-2.75, 0.02, -1.5]}>
+      <RoundedBox args={[1.65, 0.035, 1.25]} radius={0.08}><meshBasicMaterial color="#123b4a" transparent opacity={0.75} /></RoundedBox>
+      <Text position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.12} color="#7dd3fc" anchorX="center" anchorY="middle">PATIENT WI-FI</Text>
+    </group>
+    <group position={[2.05, 0.02, -1.5]}>
+      <RoundedBox args={[1.45, 0.035, 1.25]} radius={0.08}><meshBasicMaterial color="#183c39" transparent opacity={0.75} /></RoundedBox>
+      <Text position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.12} color="#65e6d0" anchorX="center" anchorY="middle">CLINICAL VLAN</Text>
+    </group>
+    <group position={[-2.7, 0.55, 1.5]}>
+      <RoundedBox args={[0.6, 0.55, 0.42]} radius={0.08}><meshPhysicalMaterial color="#263d49" metalness={0.65} roughness={0.25} /></RoundedBox>
+      <Text position={[0, 0.34, 0]} fontSize={0.1} color="#ff806f" anchorX="center" anchorY="middle">FIREWALL</Text>
+    </group>
+    <group position={[0.15, 0.96, 0.02]}>
+      <mesh><torusGeometry args={[0.5, 0.035, 10, 32]} /><meshBasicMaterial color="#2dd4bf" /></mesh>
+      <Text position={[0, 0.08, 0]} fontSize={0.1} color="#d7fff5" anchorX="center" anchorY="middle">HIPAA READY</Text>
     </group>
     <Text position={[-1.1, -0.02, 2.47]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.17} color="#9fb6bd" anchorX="center" anchorY="middle">DENTAL PRACTICE / SECURE FLOORPLAN</Text>
   </group>
