@@ -1,7 +1,7 @@
 'use client'
 
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Environment, Html, Line, OrbitControls, RoundedBox, Sparkles, Text } from '@react-three/drei'
+import { Edges, Environment, Html, Line, OrbitControls, RoundedBox, Sparkles, Text } from '@react-three/drei'
 import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useMemo, useRef, useState } from 'react'
@@ -34,36 +34,14 @@ const networkNodes = [
 ]
 
 function NodeObject({ node, active }: { node: typeof networkNodes[number]; active: boolean }) {
-  const glow = active ? 1.8 : 0.55
-  const metal = '#263b47'
-  if (node.label === 'Redundant internet') return <group>
-    <RoundedBox args={[0.72, 0.24, 0.5]} radius={0.06}><meshPhysicalMaterial color={metal} metalness={0.7} roughness={0.28} /></RoundedBox>
-    <mesh position={[0, 0.19, 0]}><boxGeometry args={[0.54, 0.06, 0.32]} /><meshPhysicalMaterial color="#172832" emissive={node.color} emissiveIntensity={glow} /></mesh>
-    {[-0.2, 0, 0.2].map((x) => <mesh key={x} position={[x, -0.16, 0.08]} rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[0.035, 0.035, 0.12, 12]} /><meshBasicMaterial color={node.color} /></mesh>)}
-    <Text position={[0, 0.35, 0]} fontSize={0.09} color={node.color} anchorX="center">ISP A + B</Text>
-  </group>
-  if (node.label === 'Firewall') return <group>
-    <RoundedBox args={[0.78, 0.38, 0.48]} radius={0.06}><meshPhysicalMaterial color={metal} metalness={0.72} roughness={0.22} /></RoundedBox>
-    <mesh position={[0, 0.04, 0.25]}><boxGeometry args={[0.48, 0.08, 0.025]} /><meshBasicMaterial color={node.color} /></mesh>
-    {[-0.24, -0.08, 0.08, 0.24].map((x) => <mesh key={x} position={[x, -0.08, 0.25]}><sphereGeometry args={[0.025, 10, 10]} /><meshBasicMaterial color={node.color} /></mesh>)}
-    <Text position={[0, 0.3, 0]} fontSize={0.085} color={node.color} anchorX="center">NGFW</Text>
-  </group>
-  if (node.label === 'Practice server') return <group>
-    <RoundedBox args={[0.72, 0.92, 0.5]} radius={0.055}><meshPhysicalMaterial color="#1d303b" metalness={0.7} roughness={0.2} /></RoundedBox>
-    {[0.27, 0.08, -0.11, -0.3].map((y) => <group key={y}><mesh position={[0, y, 0.26]}><boxGeometry args={[0.48, 0.055, 0.025]} /><meshPhysicalMaterial color="#101e26" /></mesh><mesh position={[-0.2, y, 0.275]}><sphereGeometry args={[0.018, 8, 8]} /><meshBasicMaterial color={node.color} /></mesh></group>)}
-    <Text position={[0, 0.58, 0]} fontSize={0.085} color={node.color} anchorX="center">SERVER</Text>
-  </group>
-  if (node.label === '3-2-1 backup') return <group>
-    <RoundedBox args={[0.66, 0.62, 0.52]} radius={0.06}><meshPhysicalMaterial color="#304753" metalness={0.48} roughness={0.25} /></RoundedBox>
-    {[0.15, -0.04, -0.23].map((y) => <mesh key={y} position={[0, y, 0.27]}><boxGeometry args={[0.43, 0.035, 0.025]} /><meshBasicMaterial color={node.color} /></mesh>)}
-    <Text position={[0, 0.4, 0]} fontSize={0.08} color={node.color} anchorX="center">3·2·1 NAS</Text>
-  </group>
-  return <group>
-    <RoundedBox args={[0.62, 0.7, 0.42]} radius={0.08}><meshPhysicalMaterial color="#293f4b" metalness={0.52} roughness={0.25} /></RoundedBox>
-    <mesh position={[0, 0.08, 0.225]}><boxGeometry args={[0.35, 0.34, 0.025]} /><meshPhysicalMaterial color="#101d25" emissive={node.color} emissiveIntensity={glow} /></mesh>
-    <mesh position={[0, 0.08, 0.245]}><circleGeometry args={[0.09, 24]} /><meshBasicMaterial color={node.color} /></mesh>
-    <Text position={[0, 0.48, 0]} fontSize={0.075} color={node.color} anchorX="center">MFA + SOC</Text>
-  </group>
+  const edge = '#1a1f24'
+  const accent = active ? node.color : '#607078'
+  const common = { color: '#c9ccce', roughness: 0.6, metalness: 0.08 }
+  if (node.label === 'Dual ISP handoff') return <group><mesh><boxGeometry args={[0.9, 0.24, 0.58]} /><meshStandardMaterial {...common} /></mesh><Edges threshold={15} color={edge} /><mesh position={[-0.22, 0.14, 0]}><boxGeometry args={[0.28, 0.05, 0.25]} /><meshStandardMaterial color={accent} /></mesh><mesh position={[0.22, 0.14, 0]}><boxGeometry args={[0.28, 0.05, 0.25]} /><meshStandardMaterial color={accent} /></mesh></group>
+  if (node.label === 'Next-gen firewall') return <group><mesh><boxGeometry args={[0.82, 0.42, 0.5]} /><meshStandardMaterial color="#3b464b" roughness={0.45} /></mesh><Edges threshold={15} color={edge} /><mesh position={[0, 0.06, 0.255]}><boxGeometry args={[0.48, 0.08, 0.03]} /><meshStandardMaterial color={accent} /></mesh></group>
+  if (node.label === 'Clinical server') return <group><mesh><boxGeometry args={[0.72, 1.05, 0.52]} /><meshStandardMaterial color="#566269" roughness={0.55} /></mesh><Edges threshold={15} color={edge} />{[0.3,0.08,-0.14,-0.36].map((y)=><mesh key={y} position={[0,y,0.27]}><boxGeometry args={[0.48,0.05,0.02]} /><meshStandardMaterial color={accent} /></mesh>)}</group>
+  if (node.label === '3-2-1 backup vault') return <group><mesh><boxGeometry args={[0.72, 0.62, 0.58]} /><meshStandardMaterial color="#a3aaad" roughness={0.7} /></mesh><Edges threshold={15} color={edge} />{[-0.18,0,0.18].map((y)=><mesh key={y} position={[0,y,0.3]}><boxGeometry args={[0.42,0.035,0.02]} /><meshStandardMaterial color={accent} /></mesh>)}</group>
+  return <group><mesh><boxGeometry args={[0.62, 0.72, 0.42]} /><meshStandardMaterial color="#c9ccce" roughness={0.65} /></mesh><Edges threshold={15} color={edge} /><mesh position={[0,0.08,0.22]}><boxGeometry args={[0.28,0.28,0.025]} /><meshStandardMaterial color={accent} /></mesh></group>
 }
 
 function NetworkNode({ node, active, onSelect }: { node: typeof networkNodes[number]; active: boolean; onSelect: () => void }) {
@@ -76,58 +54,30 @@ function NetworkNode({ node, active, onSelect }: { node: typeof networkNodes[num
 }
 
 function DentalOffice({ secure }: { secure: boolean }) {
-  const glow = secure ? '#2dd4bf' : '#ff806f'
-  return <group position={[0, -0.1, 0]}>
-    <RoundedBox args={[8.2, 0.35, 5.6]} radius={0.12} position={[0, -0.35, 0]}><meshPhysicalMaterial color="#12222d" roughness={0.48} metalness={0.3} /></RoundedBox>
-    <RoundedBox args={[7.5, 0.08, 4.9]} radius={0.08} position={[0, -0.12, 0]}><meshPhysicalMaterial color={secure ? '#103b3d' : '#3d2933'} transparent opacity={0.9} roughness={0.28} /></RoundedBox>
-    <group position={[-1.1, 0.38, 0.15]} rotation={[0, 0.08, -0.04]}>
-      <RoundedBox args={[2.2, 0.32, 1.15]} radius={0.18}><meshPhysicalMaterial color="#d7dfe2" roughness={0.28} /></RoundedBox>
-      <RoundedBox args={[1.35, 0.28, 0.7]} radius={0.16} position={[-0.55, 0.34, 0]} rotation={[0, 0, -0.18]}><meshPhysicalMaterial color="#b8c9cf" roughness={0.3} /></RoundedBox>
-      <RoundedBox args={[0.58, 0.22, 0.9]} radius={0.12} position={[0.95, 0.26, 0]} rotation={[0, 0, 0.16]}><meshPhysicalMaterial color="#c7d4d8" roughness={0.3} /></RoundedBox>
-      <mesh position={[-1.02, 0.08, 0]} rotation={[0, 0, -0.2]}><cylinderGeometry args={[0.12, 0.12, 1.1, 16]} /><meshPhysicalMaterial color="#344956" metalness={0.8} /></mesh>
-    </group>
-    <group position={[1.55, 0.72, -0.25]}>
-      <RoundedBox args={[1.25, 0.65, 0.78]} radius={0.08}><meshPhysicalMaterial color="#263d49" metalness={0.5} roughness={0.24} /></RoundedBox>
-      <mesh position={[0, 0.46, 0]} rotation={[0.05, 0, 0]}><boxGeometry args={[1.05, 0.62, 0.05]} /><meshPhysicalMaterial color="#172832" emissive={glow} emissiveIntensity={0.35} /></mesh>
-      <Text position={[0, 0.46, 0.04]} fontSize={0.11} color={glow} anchorX="center" anchorY="middle">PATIENT CHART</Text>
-    </group>
-    <group position={[2.5, 0.25, 0.65]}>
-      <RoundedBox args={[0.7, 0.95, 0.5]} radius={0.06}><meshPhysicalMaterial color="#526873" roughness={0.32} /></RoundedBox>
-      <mesh position={[0, 0.55, 0]}><sphereGeometry args={[0.09, 16, 16]} /><meshBasicMaterial color={glow} /></mesh>
-      <mesh position={[0, -0.15, 0]}><cylinderGeometry args={[0.12, 0.12, 0.45, 16]} /><meshPhysicalMaterial color="#91a5ad" metalness={0.6} /></mesh>
-    </group>
-    <group position={[-2.75, 0.02, -1.5]}>
-      <RoundedBox args={[1.65, 0.035, 1.25]} radius={0.08}><meshBasicMaterial color="#123b4a" transparent opacity={0.75} /></RoundedBox>
-      <Text position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.12} color="#7dd3fc" anchorX="center" anchorY="middle">PATIENT WI-FI</Text>
-    </group>
-    <group position={[2.05, 0.02, -1.5]}>
-      <RoundedBox args={[1.45, 0.035, 1.25]} radius={0.08}><meshBasicMaterial color="#183c39" transparent opacity={0.75} /></RoundedBox>
-      <Text position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.12} color="#65e6d0" anchorX="center" anchorY="middle">CLINICAL VLAN</Text>
-    </group>
-    <group position={[-2.7, 0.55, 1.5]}>
-      <RoundedBox args={[0.6, 0.55, 0.42]} radius={0.08}><meshPhysicalMaterial color="#263d49" metalness={0.65} roughness={0.25} /></RoundedBox>
-      <Text position={[0, 0.34, 0]} fontSize={0.1} color="#ff806f" anchorX="center" anchorY="middle">FIREWALL</Text>
-    </group>
-    <group position={[0.15, 0.96, 0.02]}>
-      <mesh><torusGeometry args={[0.5, 0.035, 10, 32]} /><meshBasicMaterial color="#2dd4bf" /></mesh>
-      <Text position={[0, 0.08, 0]} fontSize={0.1} color="#d7fff5" anchorX="center" anchorY="middle">HIPAA READY</Text>
-    </group>
-    <Text position={[0, -0.02, 2.47]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.17} color="#9fb6bd" anchorX="center" anchorY="middle">DENTAL PRACTICE / SECURE NETWORK PLAN</Text>
+  const wall = '#f2f1ee'
+  const line = '#1a1f24'
+  return <group>
+    <mesh position={[0,-0.28,0]} receiveShadow><boxGeometry args={[8.8,0.36,6.2]} /><meshStandardMaterial color="#cfccc6" roughness={0.95} /></mesh><Edges threshold={15} color={line} />
+    <mesh position={[0,-0.06,0]} receiveShadow><boxGeometry args={[8.1,0.08,5.5]} /><meshStandardMaterial color="#e4e2dd" roughness={0.85} /></mesh><Edges threshold={15} color={line} />
+    <mesh position={[-3.65,0.68,0]}><boxGeometry args={[0.14,1.5,5.5]} /><meshStandardMaterial color={wall} roughness={0.92} /></mesh><Edges threshold={15} color={line} />
+    <mesh position={[3.65,0.68,0]}><boxGeometry args={[0.14,1.5,5.5]} /><meshStandardMaterial color={wall} roughness={0.92} /></mesh><Edges threshold={15} color={line} />
+    <mesh position={[0,0.68,-2.68]}><boxGeometry args={[7.4,1.5,0.14]} /><meshStandardMaterial color={wall} roughness={0.92} /></mesh><Edges threshold={15} color={line} />
+    <group position={[-1.25,0.3,0.3]}><mesh><boxGeometry args={[2.2,0.22,1.12]} /><meshStandardMaterial color="#dcd8d0" roughness={0.8} /></mesh><Edges threshold={15} color={line} /><mesh position={[-0.55,0.22,0]} rotation={[0,0,-0.16]}><boxGeometry args={[1.3,0.18,0.7]} /><meshStandardMaterial color="#c9ccce" roughness={0.7} /></mesh><Edges threshold={15} color={line} /></group>
+    <group position={[1.55,0.34,0.35]}><mesh><boxGeometry args={[1.35,0.68,0.78]} /><meshStandardMaterial color="#dcd8d0" roughness={0.8} /></mesh><Edges threshold={15} color={line} /><mesh position={[0,0.45,0]}><boxGeometry args={[1.05,0.05,0.62]} /><meshStandardMaterial color="#afc7d1" roughness={0.05} transparent opacity={0.85} /></mesh><Edges threshold={15} color={line} /></group>
+    <group position={[2.55,0.38,-1.2]}><mesh><boxGeometry args={[0.7,0.9,0.48]} /><meshStandardMaterial color="#c9ccce" roughness={0.6} /></mesh><Edges threshold={15} color={line} /><mesh position={[0,0.53,0]}><boxGeometry args={[0.5,0.05,0.32]} /><meshStandardMaterial color="#7b9aa4" /></mesh></group>
+    <Text position={[-2.55,0.01,-1.55]} rotation={[-Math.PI/2,0,0]} fontSize={0.13} color="#47737b" anchorX="center">PATIENT WI-FI / VLAN 30</Text><Text position={[1.55,0.01,-1.55]} rotation={[-Math.PI/2,0,0]} fontSize={0.13} color="#2b8f86" anchorX="center">CLINICAL VLAN 10</Text>
+    <Text position={[0,0.03,2.78]} rotation={[-Math.PI/2,0,0]} fontSize={0.16} color="#1a1f24" anchorX="center">DENTAL PRACTICE / CUTAWAY PLAN</Text>
+    <Html position={[-2.7,1.65,1.2]} center><div className="arch-label"><b>NGFW / VLAN GATEWAY</b><span>segmented perimeter</span></div></Html><Html position={[1.6,1.65,0.4]} center><div className="arch-label"><b>CLINICAL WORKSTATION</b><span>encrypted endpoint + MFA</span></div></Html><Html position={[2.3,1.35,-1.2]} center><div className="arch-label"><b>3–2–1 BACKUP</b><span>hourly immutable copy</span></div></Html>
+    {secure && <Html position={[0,1.7,0]} center><div className="arch-label arch-label-accent"><b>HIPAA CONTROL PLANE</b><span>evidence · monitoring · recovery</span></div></Html>}
   </group>
 }
 
 function PracticeScene({ step, selected, setSelected }: { step: number; selected: number; setSelected: (index: number) => void }) {
   const group = useRef<THREE.Group>(null)
-  const packets = useMemo(() => Array.from({ length: 8 }, (_, index) => ({ offset: index / 8 })), [])
-  useFrame((state, delta) => { if (group.current) group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, Math.sin(state.clock.elapsedTime * 0.22) * 0.12, delta * 2) })
+  useFrame((state, delta) => { if (group.current) group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, Math.sin(state.clock.elapsedTime * 0.16) * 0.06, delta * 2) })
   const secure = step > 0
-  const connections = networkNodes.slice(0, 4).map((node) => [node.position, networkNodes[2].position] as [number[], number[]])
-  return <group ref={group} rotation={[0.12, -0.25, 0]}>
-    <DentalOffice secure={secure} />
-    {connections.map(([from, to], index) => <Line key={index} points={[from, to]} color={secure ? '#2dd4bf' : '#ff806f'} lineWidth={secure ? 1.4 : 0.8} transparent opacity={0.7} />)}
-    {packets.map((packet, index) => <Packet key={index} from={networkNodes[index % 2].position} to={networkNodes[2].position} offset={packet.offset} color={secure ? '#d7fff5' : '#ffb09e'} />)}
-    {networkNodes.map((node, index) => <NetworkNode key={node.label} node={node} active={selected === index} onSelect={() => setSelected(index)} />)}
-  </group>
+  const points = networkNodes.map((node) => node.position)
+  return <group ref={group} rotation={[0.08,-0.35,0]}><DentalOffice secure={secure} />{points.map((point,index)=><Line key={index} points={[point,[point[0],point[1]+0.12,point[2]]]} color={secure ? '#2b8f86' : '#a35c55'} lineWidth={0.9} transparent opacity={0.65} />)}{networkNodes.map((node,index)=><NetworkNode key={node.label} node={node} active={selected===index} onSelect={()=>setSelected(index)} />)}</group>
 }
 
 function Packet({ from, to, offset, color }: { from: number[]; to: number[]; offset: number; color: string }) {
@@ -136,7 +86,7 @@ function Packet({ from, to, offset, color }: { from: number[]; to: number[]; off
   return <mesh ref={ref} rotation={[0, 0, Math.PI / 4]}><boxGeometry args={[0.11, 0.11, 0.11]} /><meshBasicMaterial color={color} /></mesh>
 }
 
-function HeroCanvas({ step, selected, setSelected }: { step: number; selected: number; setSelected: (index: number) => void }) { return <div className="hero-canvas"><Canvas shadows dpr={[1, 1.6]} camera={{ position: [8.8, 5.8, 9.8], fov: 35 }} gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.12 }} onPointerMissed={() => setSelected(-1)}><color attach="background" args={['#0b1821']} /><ambientLight intensity={0.6} /><directionalLight position={[5, 8, 4]} intensity={2.4} castShadow /><pointLight position={[-4, 3, -2]} intensity={14} color={step === 0 ? '#ff806f' : '#2dd4bf'} /><Environment preset="city" /><PracticeScene step={step} selected={selected} setSelected={setSelected} /><Sparkles count={38} scale={11} size={1.5} speed={0.2} color={step === 0 ? '#ff806f' : '#2dd4bf'} /><OrbitControls enableZoom={false} enablePan={false} minPolarAngle={0.72} maxPolarAngle={1.5} enableDamping autoRotate autoRotateSpeed={0.35} /><EffectComposer><Bloom intensity={0.65} luminanceThreshold={0.75} /><Vignette eskil={false} offset={0.2} darkness={0.62} /></EffectComposer></Canvas></div> }
+function HeroCanvas({ step, selected, setSelected }: { step: number; selected: number; setSelected: (index: number) => void }) { return <div className="hero-canvas"><Canvas orthographic shadows dpr={[1, 2]} camera={{ position: [14, 11, 14], zoom: 54, near: 0.1, far: 100 }} gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1 }} onPointerMissed={() => setSelected(-1)}><color attach="background" args={['#0d1318']} /><hemisphereLight args={['#eaf2f7','#7f878c',1.1]} /><directionalLight position={[12,18,8]} intensity={2.6} castShadow shadow-mapSize={[2048,2048]} shadow-bias={-0.0004} shadow-normalBias={0.02}><orthographicCamera attach="shadow-camera" args={[-14,14,14,-14,0.1,60]} /></directionalLight><Environment preset="city" environmentIntensity={0.25} /><PracticeScene step={step} selected={selected} setSelected={setSelected} /><OrbitControls enableZoom={false} enablePan={false} minPolarAngle={Math.PI/5} maxPolarAngle={Math.PI/2.35} enableDamping dampingFactor={0.06} autoRotate autoRotateSpeed={0.22} /></Canvas></div> }
 
 export function MarketingHome() {
   const [step, setStep] = useState(0); const [menuOpen, setMenuOpen] = useState(false); const [layer, setLayer] = useState(0); const [selectedNode, setSelectedNode] = useState(2)
