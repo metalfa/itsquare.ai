@@ -33,13 +33,46 @@ const networkNodes = [
   { label: 'MFA + monitoring', detail: 'Human response 24/7', position: [3.5, 0.8, 1.3] as [number, number, number], color: '#c4b5fd' },
 ]
 
+function NodeObject({ node, active }: { node: typeof networkNodes[number]; active: boolean }) {
+  const glow = active ? 1.8 : 0.55
+  const metal = '#263b47'
+  if (node.label === 'Redundant internet') return <group>
+    <RoundedBox args={[0.72, 0.24, 0.5]} radius={0.06}><meshPhysicalMaterial color={metal} metalness={0.7} roughness={0.28} /></RoundedBox>
+    <mesh position={[0, 0.19, 0]}><boxGeometry args={[0.54, 0.06, 0.32]} /><meshPhysicalMaterial color="#172832" emissive={node.color} emissiveIntensity={glow} /></mesh>
+    {[-0.2, 0, 0.2].map((x) => <mesh key={x} position={[x, -0.16, 0.08]} rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[0.035, 0.035, 0.12, 12]} /><meshBasicMaterial color={node.color} /></mesh>)}
+    <Text position={[0, 0.35, 0]} fontSize={0.09} color={node.color} anchorX="center">ISP A + B</Text>
+  </group>
+  if (node.label === 'Firewall') return <group>
+    <RoundedBox args={[0.78, 0.38, 0.48]} radius={0.06}><meshPhysicalMaterial color={metal} metalness={0.72} roughness={0.22} /></RoundedBox>
+    <mesh position={[0, 0.04, 0.25]}><boxGeometry args={[0.48, 0.08, 0.025]} /><meshBasicMaterial color={node.color} /></mesh>
+    {[-0.24, -0.08, 0.08, 0.24].map((x) => <mesh key={x} position={[x, -0.08, 0.25]}><sphereGeometry args={[0.025, 10, 10]} /><meshBasicMaterial color={node.color} /></mesh>)}
+    <Text position={[0, 0.3, 0]} fontSize={0.085} color={node.color} anchorX="center">NGFW</Text>
+  </group>
+  if (node.label === 'Practice server') return <group>
+    <RoundedBox args={[0.72, 0.92, 0.5]} radius={0.055}><meshPhysicalMaterial color="#1d303b" metalness={0.7} roughness={0.2} /></RoundedBox>
+    {[0.27, 0.08, -0.11, -0.3].map((y) => <group key={y}><mesh position={[0, y, 0.26]}><boxGeometry args={[0.48, 0.055, 0.025]} /><meshPhysicalMaterial color="#101e26" /></mesh><mesh position={[-0.2, y, 0.275]}><sphereGeometry args={[0.018, 8, 8]} /><meshBasicMaterial color={node.color} /></mesh></group>)}
+    <Text position={[0, 0.58, 0]} fontSize={0.085} color={node.color} anchorX="center">SERVER</Text>
+  </group>
+  if (node.label === '3-2-1 backup') return <group>
+    <RoundedBox args={[0.66, 0.62, 0.52]} radius={0.06}><meshPhysicalMaterial color="#304753" metalness={0.48} roughness={0.25} /></RoundedBox>
+    {[0.15, -0.04, -0.23].map((y) => <mesh key={y} position={[0, y, 0.27]}><boxGeometry args={[0.43, 0.035, 0.025]} /><meshBasicMaterial color={node.color} /></mesh>)}
+    <Text position={[0, 0.4, 0]} fontSize={0.08} color={node.color} anchorX="center">3·2·1 NAS</Text>
+  </group>
+  return <group>
+    <RoundedBox args={[0.62, 0.7, 0.42]} radius={0.08}><meshPhysicalMaterial color="#293f4b" metalness={0.52} roughness={0.25} /></RoundedBox>
+    <mesh position={[0, 0.08, 0.225]}><boxGeometry args={[0.35, 0.34, 0.025]} /><meshPhysicalMaterial color="#101d25" emissive={node.color} emissiveIntensity={glow} /></mesh>
+    <mesh position={[0, 0.08, 0.245]}><circleGeometry args={[0.09, 24]} /><meshBasicMaterial color={node.color} /></mesh>
+    <Text position={[0, 0.48, 0]} fontSize={0.075} color={node.color} anchorX="center">MFA + SOC</Text>
+  </group>
+}
+
 function NetworkNode({ node, active, onSelect }: { node: typeof networkNodes[number]; active: boolean; onSelect: () => void }) {
   const ref = useRef<THREE.Group>(null)
-  useFrame((state) => { if (ref.current) ref.current.scale.setScalar(1 + (active ? Math.sin(state.clock.elapsedTime * 3) * 0.07 : 0)) })
+  useFrame((state) => { if (ref.current) ref.current.scale.setScalar(1 + (active ? Math.sin(state.clock.elapsedTime * 3) * 0.035 : 0)) })
   return <group ref={ref} position={node.position} onClick={(event) => { event.stopPropagation(); onSelect() }}>
-    <mesh><sphereGeometry args={[active ? 0.28 : 0.2, 24, 24]} /><meshPhysicalMaterial color={node.color} emissive={node.color} emissiveIntensity={active ? 2.2 : 0.8} roughness={0.2} metalness={0.2} /></mesh>
-    <mesh scale={active ? 1.8 : 1.35}><sphereGeometry args={[0.2, 16, 16]} /><meshBasicMaterial color={node.color} transparent opacity={0.08} /></mesh>
-    {active && <Html distanceFactor={8} position={[0, 0.55, 0]} center><div className="node-label"><strong>{node.label}</strong><span>{node.detail}</span></div></Html>}
+    <NodeObject node={node} active={active} />
+    <mesh scale={active ? 1.45 : 1.15}><sphereGeometry args={[0.32, 16, 16]} /><meshBasicMaterial color={node.color} transparent opacity={active ? 0.1 : 0.045} /></mesh>
+    {active && <Html distanceFactor={8} position={[0, 0.72, 0]} center><div className="node-label"><strong>{node.label}</strong><span>{node.detail}</span></div></Html>}
   </group>
 }
 
