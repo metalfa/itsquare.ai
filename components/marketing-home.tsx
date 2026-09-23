@@ -43,6 +43,31 @@ function NetworkNode({ node, active, onSelect }: { node: typeof networkNodes[num
   </group>
 }
 
+function DentalOffice({ secure }: { secure: boolean }) {
+  const glow = secure ? '#2dd4bf' : '#ff806f'
+  return <group position={[0, -0.1, 0]}>
+    <RoundedBox args={[8.2, 0.35, 5.6]} radius={0.12} position={[0, -0.35, 0]}><meshPhysicalMaterial color="#12222d" roughness={0.48} metalness={0.3} /></RoundedBox>
+    <RoundedBox args={[7.5, 0.08, 4.9]} radius={0.08} position={[0, -0.12, 0]}><meshPhysicalMaterial color={secure ? '#103b3d' : '#3d2933'} transparent opacity={0.9} roughness={0.28} /></RoundedBox>
+    <group position={[-1.1, 0.38, 0.15]} rotation={[0, 0.08, -0.04]}>
+      <RoundedBox args={[2.2, 0.32, 1.15]} radius={0.18}><meshPhysicalMaterial color="#d7dfe2" roughness={0.28} /></RoundedBox>
+      <RoundedBox args={[1.35, 0.28, 0.7]} radius={0.16} position={[-0.55, 0.34, 0]} rotation={[0, 0, -0.18]}><meshPhysicalMaterial color="#b8c9cf" roughness={0.3} /></RoundedBox>
+      <RoundedBox args={[0.58, 0.22, 0.9]} radius={0.12} position={[0.95, 0.26, 0]} rotation={[0, 0, 0.16]}><meshPhysicalMaterial color="#c7d4d8" roughness={0.3} /></RoundedBox>
+      <mesh position={[-1.02, 0.08, 0]} rotation={[0, 0, -0.2]}><cylinderGeometry args={[0.12, 0.12, 1.1, 16]} /><meshPhysicalMaterial color="#344956" metalness={0.8} /></mesh>
+    </group>
+    <group position={[1.55, 0.72, -0.25]}>
+      <RoundedBox args={[1.25, 0.65, 0.78]} radius={0.08}><meshPhysicalMaterial color="#263d49" metalness={0.5} roughness={0.24} /></RoundedBox>
+      <mesh position={[0, 0.46, 0]} rotation={[0.05, 0, 0]}><boxGeometry args={[1.05, 0.62, 0.05]} /><meshPhysicalMaterial color="#172832" emissive={glow} emissiveIntensity={0.35} /></mesh>
+      <Text position={[0, 0.46, 0.04]} fontSize={0.11} color={glow} anchorX="center" anchorY="middle">PATIENT CHART</Text>
+    </group>
+    <group position={[2.5, 0.25, 0.65]}>
+      <RoundedBox args={[0.7, 0.95, 0.5]} radius={0.06}><meshPhysicalMaterial color="#526873" roughness={0.32} /></RoundedBox>
+      <mesh position={[0, 0.55, 0]}><sphereGeometry args={[0.09, 16, 16]} /><meshBasicMaterial color={glow} /></mesh>
+      <mesh position={[0, -0.15, 0]}><cylinderGeometry args={[0.12, 0.12, 0.45, 16]} /><meshPhysicalMaterial color="#91a5ad" metalness={0.6} /></mesh>
+    </group>
+    <Text position={[-1.1, -0.02, 2.47]} rotation={[-Math.PI / 2, 0, 0]} fontSize={0.17} color="#9fb6bd" anchorX="center" anchorY="middle">DENTAL PRACTICE / SECURE FLOORPLAN</Text>
+  </group>
+}
+
 function PracticeScene({ step, selected, setSelected }: { step: number; selected: number; setSelected: (index: number) => void }) {
   const group = useRef<THREE.Group>(null)
   const packets = useMemo(() => Array.from({ length: 8 }, (_, index) => ({ offset: index / 8 })), [])
@@ -50,13 +75,9 @@ function PracticeScene({ step, selected, setSelected }: { step: number; selected
   const secure = step > 0
   const connections = networkNodes.slice(0, 4).map((node) => [node.position, networkNodes[2].position] as [number[], number[]])
   return <group ref={group} rotation={[0.12, -0.25, 0]}>
-    <RoundedBox args={[8.2, 0.35, 5.6]} radius={0.12} position={[0, -0.35, 0]}><meshPhysicalMaterial color="#12222d" roughness={0.48} metalness={0.3} /></RoundedBox>
-    <RoundedBox args={[7.5, 0.08, 4.9]} radius={0.08} position={[0, -0.12, 0]}><meshPhysicalMaterial color={secure ? '#103b3d' : '#3d2933'} transparent opacity={0.9} roughness={0.28} /></RoundedBox>
+    <DentalOffice secure={secure} />
     {connections.map(([from, to], index) => <Line key={index} points={[from, to]} color={secure ? '#2dd4bf' : '#ff806f'} lineWidth={secure ? 1.4 : 0.8} transparent opacity={0.7} />)}
     {packets.map((packet, index) => <Packet key={index} from={networkNodes[index % 2].position} to={networkNodes[2].position} offset={packet.offset} color={secure ? '#d7fff5' : '#ffb09e'} />)}
-    <mesh position={[0, 0.72, 0]} castShadow><boxGeometry args={[1.7, 1.15, 1.25]} /><meshPhysicalMaterial color="#223440" roughness={0.2} metalness={0.6} /></mesh>
-    <mesh position={[0, 0.75, 0.64]}><boxGeometry args={[1.05, 0.55, 0.02]} /><meshBasicMaterial color={secure ? '#2dd4bf' : '#ff806f'} /></mesh>
-    <Text position={[0, 1.18, 0]} fontSize={0.18} color="#d9ffff" anchorX="center" anchorY="middle">PRACTICE CORE</Text>
     {networkNodes.map((node, index) => <NetworkNode key={node.label} node={node} active={selected === index} onSelect={() => setSelected(index)} />)}
   </group>
 }
