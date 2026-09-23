@@ -9,18 +9,27 @@
 @media(max-width:900px){.node-label{min-width:128px}.hero-canvas{min-height:430px}}
 @media(prefers-reduced-motion:reduce){.node-label{transition:none}}
 
-/* Keep the findings legible without competing with the dental-office scene. */
+/* Architectural presentation: the scene reads like a secure practice plan, not a floating demo. */
+.hero-visual{background:linear-gradient(135deg,rgba(18,34,45,.38),transparent 42%);}
+.hero-canvas{position:relative;border-color:rgba(125,239,220,.18);border-radius:10px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.025),0 24px 70px rgba(0,0,0,.28);}
+.hero-canvas::before{content:'SECURE PRACTICE / SYSTEM ARCHITECTURE';position:absolute;left:18px;top:16px;z-index:1;color:rgba(215,255,245,.62);font:10px monospace;letter-spacing:.12em;pointer-events:none}
+.hero-canvas::after{content:'NORTH  ↑   SCALE  NTS';position:absolute;right:18px;bottom:16px;z-index:1;color:rgba(159,182,189,.55);font:9px monospace;letter-spacing:.08em;pointer-events:none}
+.scorecard{box-shadow:0 18px 45px rgba(0,0,0,.22);}
 @media(min-width:901px){
-  .hero-visual{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(430px,1fr) auto auto;gap:12px;padding-right:clamp(24px,4vw,64px)}
-  .hero-canvas{grid-column:1;grid-row:1;min-height:500px}
-  .scorecard{grid-column:1;grid-row:2;display:grid;grid-template-columns:150px minmax(0,1fr);align-items:center;gap:18px;padding:13px 16px;border-radius:12px}
-  .score-head{display:block}
-  .score-head .status{display:block;margin-top:4px;font-size:9px}
-  .findings-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 18px}
-  .finding{font-size:10px;line-height:1.25}
+  .hero-visual{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(500px,1fr) auto auto;gap:10px;padding:28px clamp(24px,4vw,64px) 34px 0}
+  .hero-canvas{grid-column:1;grid-row:1;min-height:520px}
+  .scorecard{grid-column:1;grid-row:2;display:grid;grid-template-columns:154px minmax(0,1fr);align-items:center;gap:22px;padding:12px 16px;border-radius:9px;background:rgba(10,20,27,.9)}
+  .score-head{display:block;border-right:1px solid var(--line);padding-right:18px}
+  .score-head .status{display:block;margin-top:5px;font-size:9px;letter-spacing:.1em}
+  .findings-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px 20px}
+  .finding{font-size:10px;line-height:1.25;color:#c4d0d6}
   .finding>span:last-child{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-  .step-controls{grid-column:1;grid-row:3;display:flex;gap:6px}
-  .step-controls button{flex:1}
+  .finding-icon{color:var(--red);opacity:.9}
+  .finding.cleared .finding-icon{color:var(--teal)}
+  .step-controls{grid-column:1;grid-row:3;display:flex;gap:5px;padding:0 2px}
+  .step-controls button{flex:1;border:1px solid transparent;border-radius:5px;color:var(--muted);background:transparent;padding:8px 6px;font:10px monospace;letter-spacing:.03em}
+  .step-controls button:hover{border-color:var(--line);color:var(--text)}
+  .step-controls button.active{border-color:rgba(45,212,191,.35);background:rgba(45,212,191,.08);color:var(--teal)}
 }
 @media(max-width:900px) and (min-width:721px){
   .hero-visual{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(430px,1fr) auto auto}
@@ -30,6 +39,7 @@
   .step-controls{grid-column:1;grid-row:3;display:flex}
 }
 @media(max-width:720px){
+  .hero-canvas{min-height:430px}
   .scorecard{padding:14px}
   .score-head{display:flex}
   .findings-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}
