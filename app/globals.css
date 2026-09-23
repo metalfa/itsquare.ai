@@ -9,3 +9,30 @@
 @media(max-width:900px){.node-label{min-width:128px}.hero-canvas{min-height:430px}}
 @media(prefers-reduced-motion:reduce){.node-label{transition:none}}
 
+/* Keep the findings legible without competing with the dental-office scene. */
+@media(min-width:901px){
+  .hero-visual{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(430px,1fr) auto auto;gap:12px;padding-right:clamp(24px,4vw,64px)}
+  .hero-canvas{grid-column:1;grid-row:1;min-height:500px}
+  .scorecard{grid-column:1;grid-row:2;display:grid;grid-template-columns:150px minmax(0,1fr);align-items:center;gap:18px;padding:13px 16px;border-radius:12px}
+  .score-head{display:block}
+  .score-head .status{display:block;margin-top:4px;font-size:9px}
+  .findings-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 18px}
+  .finding{font-size:10px;line-height:1.25}
+  .finding>span:last-child{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .step-controls{grid-column:1;grid-row:3;display:flex;gap:6px}
+  .step-controls button{flex:1}
+}
+@media(max-width:900px) and (min-width:721px){
+  .hero-visual{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(430px,1fr) auto auto}
+  .hero-canvas{grid-column:1;grid-row:1}
+  .scorecard{grid-column:1;grid-row:2;display:grid;grid-template-columns:140px 1fr;align-items:center}
+  .findings-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px}
+  .step-controls{grid-column:1;grid-row:3;display:flex}
+}
+@media(max-width:720px){
+  .scorecard{padding:14px}
+  .score-head{display:flex}
+  .findings-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px}
+  .finding{font-size:10px}
+}
+
