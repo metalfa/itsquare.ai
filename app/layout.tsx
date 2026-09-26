@@ -1,23 +1,14 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, JetBrains_Mono } from 'next/font/google'
+import { Archivo, Source_Serif_4 } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const inter = Inter({ 
-  subsets: ["latin"],
-  variable: '--font-inter',
-  display: 'swap',
-})
-
-const jetbrainsMono = JetBrains_Mono({ 
-  subsets: ["latin"],
-  variable: '--font-jetbrains-mono',
-  display: 'swap',
-})
+const archivo = Archivo({ subsets: ['latin'], variable: '--font-archivo', display: 'swap' })
+const sourceSerif = Source_Serif_4({ subsets: ['latin'], variable: '--font-source-serif', display: 'swap' })
 
 export const metadata: Metadata = {
-  title: 'ITSquare.AI | Your AI IT Support Team in Slack',
-  description: 'The smartest IT support agent lives in your Slack. Employees describe problems, AI solves them instantly. No tickets, no waiting, no frustration.',
+  title: 'IT Square — IT and HIPAA Compliance for Chicago Dental Practices',
+  description: 'Chicago-area dental offices. Network, workstations, security, backups, and the compliance work HIPAA requires — handled by one person who answers his own phone.',
   generator: 'v0.app',
   icons: {
     icon: [
@@ -39,7 +30,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0A0A0F',
+  themeColor: '#F8F9F8',
 }
 
 export default function RootLayout({
@@ -48,8 +39,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+    <html lang="en">
+      <body className={`${archivo.variable} ${sourceSerif.variable} antialiased`}>
         {children}
         <Analytics />
       </body>

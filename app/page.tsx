@@ -1,31 +1,57 @@
-import { Navbar } from "@/components/navbar"
-import { HeroSection } from "@/components/hero-section"
-import { ProblemSection } from "@/components/problem-section"
-import { SolutionSection } from "@/components/solution-section"
-import { TrustBadges } from "@/components/trust-badges"
-import { ProcessSection } from "@/components/process-section"
-import { ComplianceSection } from "@/components/compliance-section"
-import { PricingSection } from "@/components/pricing-section"
-import { DisclosuresSection } from "@/components/disclosures-section"
-import { CTASection } from "@/components/cta-section"
-import { Footer } from "@/components/footer"
+import { AssessmentForm } from '@/components/assessment-form'
+
+const findings = [
+  ['The backup has never been tested.', "There's usually a backup running somewhere. Almost nobody has ever tried restoring from it, which means nobody knows whether it works."],
+  ['The X-rays aren’t in the backup.', 'Practice management software keeps patient records in a database and images in a separate folder. Backups often cover one and miss the other, so a restore brings back charts with no radiographs.'],
+  ['Patient Wi-Fi and the practice network are the same network.', 'A phone in the waiting room can reach the server holding patient records. Separating them takes an afternoon and closes one of the biggest gaps in a typical office.'],
+  ['Everyone shares one login.', "When the front desk shares an account, the audit trail can't tell you who did what. HIPAA expects that it can."],
+  ['The annual security risk assessment was never done.', "It's required every year. Most practices have never had one."],
+]
+
+const assessmentGroups = [
+  ['Backup and recovery', ['Whether a backup exists and who set it up', 'Whether the patient database and the images folder are both covered', 'Whether a restore has ever been tested', 'Whether a copy exists outside the building', "How long you'd be down if the server failed this morning"]],
+  ['Network', ['Whether patient Wi-Fi is separated from the practice network', 'Firewall and router age and configuration', 'Whether anything is exposed to the internet for remote access', 'Whether default passwords are still in place']],
+  ['Workstations and accounts', ['Windows versions and whether updates are actually installing', 'Whether antivirus is real protection or an expired trial', 'Whether hard drives are encrypted', 'Shared logins and what happens when someone leaves', 'Multi-factor authentication on email']],
+  ['Compliance and documentation', ['Whether a security risk assessment has ever been completed', 'Whether staff security training is documented', 'Business associate agreements with vendors handling patient data', "Whether there's a written plan for what happens after an incident"]],
+]
+
+const services = [
+  ['Monitoring and maintenance', 'Every computer reports in continuously. Updates and security patches install on a schedule, overnight, so nothing interrupts the schedule.'],
+  ['Helpdesk', 'You call or email me. I connect remotely and fix it, usually in minutes.'],
+  ['Security', 'Microsoft 365 Business Premium for identity, device management, and email protection, with Huntress on top for around-the-clock threat monitoring by human analysts.'],
+  ['Backup and recovery', 'Image-based backups of the practice server, verified automatically, with an offsite copy. Tested restores on a schedule so we both know it works.'],
+  ['Network', 'Business-grade firewall, switching, and Wi-Fi, with patient traffic separated from practice traffic.'],
+  ['Compliance', 'Annual security risk assessment, documented staff training, written policies, and the paperwork that shows you did the work.'],
+]
+
+const fits = {
+  good: ['You own a dental practice in the Chicago area', 'You have somewhere between five and thirty people', 'Nobody in the building wants to be responsible for the technology', 'You want the compliance side handled properly rather than improvised', "You'd rather have one person who knows your practice than a call center"],
+  not: ['You need someone on site every day', "You're looking for the lowest hourly rate", 'You want one-off repairs rather than ongoing management', "You're outside the Chicago area", "You're not a dental practice — I've deliberately kept this narrow so I can be genuinely good at one thing"],
+}
+
+function Section({ id, title, intro, children, surface = false }: { id?: string; title: string; intro?: string; children: React.ReactNode; surface?: boolean }) {
+  return <section id={id} className={surface ? 'bg-[var(--surface)]' : ''}><div className="mx-auto max-w-[720px] px-6 py-24 sm:py-32"><h2 className="max-w-[12ch] font-sans text-4xl font-extrabold leading-[1.05] tracking-[-0.04em] text-[var(--ink)] sm:text-5xl">{title}</h2>{intro && <p className="mt-7 max-w-[42rem] text-xl leading-relaxed text-[var(--muted)]">{intro}</p>}{children}</div></section>
+}
+
+function RuleList({ items }: { items: string[][] }) {
+  return <div className="mt-12 border-t border-[var(--hairline)]">{items.map(([title, body]) => <div key={title} className="border-b border-[var(--hairline)] py-7"><h3 className="font-sans text-lg font-bold tracking-[-0.02em] text-[var(--ink)]">{title}</h3><p className="mt-2 text-lg leading-relaxed text-[var(--muted)]">{body}</p></div>)}</div>
+}
 
 export default function Home() {
-  return (
-    <>
-      <Navbar />
-      <main className="grid-bg min-h-screen pt-20">
-        <HeroSection />
-        <ProblemSection />
-        <SolutionSection />
-        <TrustBadges />
-        <ProcessSection />
-        <ComplianceSection />
-        <PricingSection />
-        <DisclosuresSection />
-        <CTASection />
-      </main>
-      <Footer />
-    </>
-  )
+  const jsonLd = { '@context': 'https://schema.org', '@type': 'LocalBusiness', name: 'IT Square', description: 'IT and HIPAA compliance for Chicago-area dental offices.', areaServed: ['Chicago', 'Cook County', 'DuPage County', 'Lake County'], serviceType: ['Managed IT services', 'HIPAA security risk assessments'] }
+  return <>
+    <header className="mx-auto flex max-w-[920px] items-center justify-between px-6 py-7"><a href="#top" className="font-sans text-lg font-extrabold tracking-[-0.04em] text-[var(--ink)]">IT Square</a><a href="#booking" className="font-sans text-sm font-semibold text-[var(--accent)] underline decoration-[var(--hairline)] underline-offset-4 hover:decoration-[var(--accent)]">Book an assessment</a></header>
+    <main id="top">
+      <section className="mx-auto max-w-[920px] px-6 pb-20 pt-20 sm:pb-28 sm:pt-32"><div className="max-w-[720px] animate-[quiet-in_700ms_ease-out_both]"><p className="mb-7 font-sans text-sm font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">Chicago · Dental practices only</p><h1 className="max-w-[13ch] font-sans text-5xl font-extrabold leading-[0.98] tracking-[-0.05em] text-[var(--ink)] sm:text-7xl">IT and HIPAA compliance for dental practices.</h1><p className="mt-8 max-w-[40rem] text-xl leading-relaxed text-[var(--muted)] sm:text-2xl">Chicago-area dental offices. Network, workstations, security, backups, and the compliance work HIPAA requires — handled by one person who answers his own phone.</p><a href="#booking" className="mt-10 inline-block bg-[var(--accent)] px-6 py-4 font-sans text-sm font-bold text-white transition hover:bg-[#0a4743] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2">Book a free HIPAA assessment</a><p className="mt-4 max-w-[30rem] text-base leading-relaxed text-[var(--muted)]">Ninety minutes on site. You keep the written report whether or not you hire me.</p></div><div className="mt-20 border-t border-[var(--hairline)] pt-5 font-sans text-sm text-[var(--muted)]">Owner-operated. Dental practices only. Chicago and the surrounding suburbs.</div></section>
+      <Section title="What I find in most dental offices" intro="These are the five things I find in nearly every practice I walk into. Not scare tactics — just what's usually true."><RuleList items={findings} /></Section>
+      <Section title="What the free assessment covers" intro="Ninety minutes on site. I look at everything below, then come back with a written report in plain English — what I found, what it means, and what fixing it involves. You keep the report whether or not we work together. There's no obligation and I won't chase you afterward." surface><div className="mt-12 grid gap-x-10 gap-y-10 sm:grid-cols-2">{assessmentGroups.map(([title, bullets]) => <div key={title as string}><h3 className="font-sans text-lg font-bold text-[var(--ink)]">{title as string}</h3><ul className="mt-4 flex flex-col gap-3 text-lg leading-relaxed text-[var(--muted)]">{(bullets as string[]).map((bullet) => <li key={bullet} className="border-l-2 border-[var(--accent)] pl-4">{bullet}</li>)}</ul></div>)}</div></Section>
+      <Section title="If you want me to handle it" intro="Flat monthly fee per employee. No hourly billing — you shouldn't have to decide whether a problem is worth calling about. Here's exactly what's in it, including the vendors, because you should know what you're paying for."><RuleList items={services} /></Section>
+      <Section title="What it costs" intro="Most IT companies won't tell you this until they've been to your office. Here are real numbers." surface><dl className="mt-12 border-t border-[var(--hairline)]">{[['HIPAA security risk assessment', 'Free. No obligation.'], ['Managed service', '$150 to $250 per employee per month depending on what’s included. A ten-person practice typically lands between $1,800 and $2,300 a month.'], ['Network installation', 'One-time project, typically $4,000 to $6,000 including hardware, for a practice that needs the whole thing rebuilt.'], ['Minimum engagement', '$1,500 a month. Below that I can’t deliver the level of service that makes this worth it for either of us.']].map(([term, definition]) => <div key={term} className="grid gap-2 border-b border-[var(--hairline)] py-6 sm:grid-cols-[0.8fr_1.2fr] sm:gap-8"><dt className="font-sans text-base font-bold text-[var(--ink)]">{term}</dt><dd className="text-lg leading-relaxed text-[var(--muted)]">{definition}</dd></div>)}</dl><p className="mt-8 text-lg leading-relaxed text-[var(--muted)]">Your actual number depends on what you have. The assessment is how we both find out.</p></Section>
+      <Section title="Whether this is a fit"><div className="mt-12 grid gap-12 border-t border-[var(--hairline)] pt-7 sm:grid-cols-2"><div><h3 className="font-sans text-lg font-bold text-[var(--ink)]">Probably a good fit</h3><ul className="mt-5 flex flex-col gap-4 text-lg leading-relaxed text-[var(--muted)]">{fits.good.map((item) => <li key={item}>{item}</li>)}</ul></div><div><h3 className="font-sans text-lg font-bold text-[var(--ink)]">Probably not a fit</h3><ul className="mt-5 flex flex-col gap-4 text-lg leading-relaxed text-[var(--muted)]">{fits.not.map((item) => <li key={item}>{item}</li>)}</ul></div></div></Section>
+      <Section title="Who you'd actually be working with" intro="I'm Faycal. I run IT Square myself, which means the person who assesses your practice is the person who does the work and the person who picks up the phone."><div className="mt-8 flex flex-col gap-6 text-lg leading-relaxed text-[var(--muted)]"><p>My background is hands-on: computer and printer repair, network cabling, racking and configuring equipment, and field work on telematics systems. I moved to Chicago four years ago and built this company here.</p><p>I run a full dental practice environment in my own lab — a Windows server running Open Dental with a test database and image library, two workstations connected to it, segmented network, and a backup system I break and restore on purpose. When you describe a problem, there's a good chance I've already caused that exact problem deliberately and fixed it.</p><p>I'm early in building this business, which I'd rather say plainly than dress up. What it means for you: you get the owner's attention, direct access, and someone with something to prove.</p></div></Section>
+      <section id="booking" className="bg-[var(--ink)] text-[var(--background)]"><div className="mx-auto max-w-[720px] px-6 py-24 sm:py-32"><h2 className="max-w-[12ch] font-sans text-4xl font-extrabold leading-[1.05] tracking-[-0.04em] sm:text-5xl">Book the assessment</h2><p className="mt-7 max-w-[40rem] text-xl leading-relaxed text-[#d6ded8]">Ninety minutes, on site, free. Tell me a bit about your practice and I'll get back to you within one business day.</p><div className="mt-12 bg-[var(--background)] p-6 text-[var(--ink)] sm:p-10"><AssessmentForm /></div></div></section>
+    </main>
+    <footer className="mx-auto max-w-[920px] border-t border-[var(--hairline)] px-6 py-10"><p className="font-sans text-sm font-semibold text-[var(--ink)]">IT Square — IT and HIPAA compliance for dental practices.</p><p className="mt-3 text-base text-[var(--muted)]">Email and phone to be added before publishing · Chicago, Illinois.</p><p className="mt-8 font-sans text-xs text-[var(--muted)]">© {new Date().getFullYear()} IT Square</p></footer>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+  </>
 }
