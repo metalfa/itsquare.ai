@@ -1,62 +1,71 @@
 import Link from "next/link"
-import { ArrowUpRight, Check, ChevronRight, Cloud, Network, ShieldCheck } from "lucide-react"
+import { ArrowUpRight, Check, ChevronRight, Cloud, LockKeyhole, Network, Radio, ShieldCheck, Sparkles, Zap } from "lucide-react"
 
 const services = [
-  { icon: ShieldCheck, title: "Security that gets used", text: "Practical controls, organized accounts, and clear next steps. No fear-based theater." },
-  { icon: Cloud, title: "Microsoft 365, organized", text: "The right access for the right people, with onboarding and offboarding that actually gets done." },
-  { icon: Network, title: "Support that follows through", text: "One accountable point of contact for the daily problems that steal your team’s attention." },
+  { icon: ShieldCheck, number: "01", title: "Cybersecurity", text: "A calm, always-on security layer that keeps your people, devices, and data protected." },
+  { icon: Cloud, number: "02", title: "Cloud & infrastructure", text: "Modern foundations built for speed, resilience, and the way your team works now." },
+  { icon: Network, number: "03", title: "Managed IT", text: "Strategic technology leadership and human support without the enterprise overhead." },
 ]
 
-const steps = [
-  ["01", "Talk through your situation", "We learn how your team works, what keeps going wrong, and what you want to improve."],
-  ["02", "Agree on the work and cost", "You get a defined scope, responsibilities, and pricing before anything begins."],
-  ["03", "Put a repeatable service in place", "We document your setup, address agreed priorities, and establish a service that holds up."],
+const stats = [
+  ["24/7", "threat monitoring"],
+  ["15 min", "average response"],
+  ["99.9%", "network uptime"],
 ]
 
 export default function Home() {
   return (
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
-      <header className="border-b border-border bg-background">
+      <div className="noise" />
+      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-10">
           <Link href="/" className="group flex items-center gap-3" aria-label="ITSquare home">
             <span className="logo-mark" aria-hidden="true"><span>IT</span></span>
-            <span className="text-lg font-bold tracking-[-0.06em]">ITSquare<span className="text-primary">.AI</span></span>
+            <span className="text-lg font-semibold tracking-[-0.04em]">ITSquare<span className="text-primary">.AI</span></span>
           </Link>
-          <nav className="hidden items-center gap-8 text-sm font-medium text-muted-foreground md:flex" aria-label="Main navigation">
-            <a href="#services" className="transition-colors hover:text-foreground">What we do</a>
-            <a href="#how-it-works" className="transition-colors hover:text-foreground">How it works</a>
-            <a href="#about" className="transition-colors hover:text-foreground">About</a>
+          <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex" aria-label="Main navigation">
+            <a href="#services" className="transition-colors hover:text-foreground">Services</a>
+            <a href="#approach" className="transition-colors hover:text-foreground">Our approach</a>
+            <a href="#about" className="transition-colors hover:text-foreground">About us</a>
           </nav>
-          <a href="mailto:bensassi.faysel@itsquare.ai" className="inline-flex items-center gap-2 rounded-full bg-foreground px-4 py-2.5 text-sm font-bold text-background transition-transform hover:-translate-y-0.5">Start a conversation <ArrowUpRight className="size-4" /></a>
+          <a href="mailto:bensassi.faysel@itsquare.ai" className="hidden items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2.5 text-sm font-medium text-primary transition-all hover:border-primary hover:bg-primary/20 sm:flex">
+            Start a conversation <ArrowUpRight className="size-4" />
+          </a>
         </div>
       </header>
 
-      <section className="hero-grid relative border-b border-border px-6 pb-20 pt-16 lg:px-10 lg:pb-28 lg:pt-24">
-        <div className="mx-auto max-w-7xl">
-          <p className="eyebrow">Managed IT support for Chicago small businesses</p>
-          <h1 className="display-heading mt-7 max-w-6xl">Intelligent<br />Infrastructure<br />Services for<br /><span className="gradient-type">People + Progress</span></h1>
-          <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_0.65fr] lg:items-end">
-            <p className="max-w-2xl text-xl leading-8 text-muted-foreground lg:text-2xl">Your business needs your attention. Your IT shouldn&apos;t keep taking it. ITSquare helps Chicago small businesses manage everyday IT, protect employee accounts, and keep Microsoft 365 organized.</p>
-            <div className="flex flex-col gap-4 lg:items-start"><a href="mailto:bensassi.faysel@itsquare.ai" className="group inline-flex w-fit items-center gap-3 rounded-full bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground transition-transform hover:-translate-y-0.5">Book a 15-minute IT conversation <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></a><span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">No pitch. Just a useful first conversation.</span></div>
+      <section className="relative mx-auto max-w-7xl px-6 pb-24 pt-24 lg:px-10 lg:pb-32 lg:pt-32">
+        <div className="orb orb-one" /><div className="orb orb-two" />
+        <div className="grid items-end gap-16 lg:grid-cols-[1.15fr_.85fr]">
+          <div className="relative z-10">
+            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+              <span className="live-dot" /> Technology, handled differently
+            </div>
+            <h1 className="max-w-4xl text-5xl font-semibold leading-[0.98] tracking-[-0.07em] sm:text-7xl lg:text-[6.8rem]">Your unfair<br /><span className="text-primary">tech advantage.</span></h1>
+            <p className="mt-8 max-w-xl text-lg leading-8 text-muted-foreground">We make technology feel simple. A brilliant team for your IT, security, and cloud — so you can focus on building what matters.</p>
+            <div className="mt-10 flex flex-wrap items-center gap-4">
+              <a href="mailto:bensassi.faysel@itsquare.ai" className="group inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5">Talk to an expert <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></a>
+              <a href="#services" className="inline-flex items-center gap-2 px-2 py-3.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">Explore our services <ChevronRight className="size-4" /></a>
+            </div>
+          </div>
+          <div className="relative hidden min-h-[390px] lg:block" aria-label="Live infrastructure status">
+            <div className="tech-panel absolute inset-0 rounded-3xl border border-border bg-card/60 p-6 shadow-2xl shadow-primary/5">
+              <div className="flex items-center justify-between border-b border-border pb-5"><div className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><Radio className="size-3 text-primary" /> LIVE SYSTEMS VIEW</div><span className="text-xs text-primary">ALL OPERATIONAL</span></div>
+              <div className="grid h-[250px] place-items-center"><div className="radar"><span /><span /><span /><div className="radar-core"><Zap className="size-5" /></div></div></div>
+              <div className="grid grid-cols-3 gap-3 border-t border-border pt-5">{stats.map(([value, label]) => <div key={label}><div className="text-xl font-semibold tracking-tight">{value}</div><div className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div></div>)}</div>
+            </div>
           </div>
         </div>
-        <div className="hero-orb" aria-hidden="true" />
       </section>
 
-      <section className="border-b border-border px-6 py-20 lg:px-10 lg:py-28"><div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-[.9fr_1.1fr] lg:items-start"><div><p className="eyebrow">The honest version</p><h2 className="section-heading mt-5">You shouldn&apos;t have to become the office IT person.</h2></div><div className="max-w-xl text-lg leading-8 text-muted-foreground"><p>A login problem interrupts someone&apos;s morning. A new employee starts without the right access. A backup exists, but nobody knows whether it can restore your files.</p><p className="mt-6">Small issues add up—and you&apos;re left coordinating the fixes. We give you a clear point of contact for support, maintenance, and practical security improvements.</p><div className="mt-8 flex items-center gap-3 text-sm font-bold text-foreground"><span className="inline-flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground"><Check className="size-4" /></span> Clear accountability, without the enterprise overhead.</div></div></div></section>
+      <section id="services" className="border-y border-border bg-card/30 px-6 py-24 lg:px-10 lg:py-32"><div className="mx-auto max-w-7xl"><div className="mb-14 flex flex-col justify-between gap-6 md:flex-row md:items-end"><div><p className="eyebrow">What we do</p><h2 className="mt-4 max-w-2xl text-4xl font-semibold tracking-[-0.06em] sm:text-6xl">The team behind<br /><span className="text-muted-foreground">your best work.</span></h2></div><p className="max-w-xs text-sm leading-6 text-muted-foreground">Deep expertise, clear communication, and a little bit of magic in every system we touch.</p></div><div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-3">{services.map(({ icon: Icon, number, title, text }) => <article key={title} className="group bg-background p-8 transition-colors hover:bg-primary/[0.06] lg:p-10"><div className="flex items-start justify-between"><Icon className="size-6 text-primary" /><span className="font-mono text-xs text-muted-foreground">{number}</span></div><h3 className="mt-20 text-2xl font-semibold tracking-tight">{title}</h3><p className="mt-4 text-sm leading-7 text-muted-foreground">{text}</p><div className="mt-8 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary opacity-0 transition-opacity group-hover:opacity-100">Learn more <ArrowUpRight className="size-3" /></div></article>)}</div></div></section>
 
-      <section id="services" className="bg-foreground px-6 py-20 text-background lg:px-10 lg:py-28"><div className="mx-auto max-w-7xl"><div className="flex flex-col justify-between gap-8 md:flex-row md:items-end"><div><p className="eyebrow text-primary">What we do</p><h2 className="section-heading mt-5 max-w-3xl">Support for the way your team works.</h2></div><p className="max-w-sm text-sm leading-7 text-background/60">The useful stuff, handled consistently. No overloaded service list. No mystery box.</p></div><div className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-background/20 bg-background/20 md:grid-cols-3">{services.map(({ icon: Icon, title, text }) => <article key={title} className="group bg-foreground p-8 transition-colors hover:bg-background/10 lg:p-10"><Icon className="size-7 text-primary" /><h3 className="mt-20 text-2xl font-bold tracking-tight">{title}</h3><p className="mt-4 text-sm leading-7 text-background/60">{text}</p><ChevronRight className="mt-8 size-5 text-primary transition-transform group-hover:translate-x-1" /></article>)}</div></div></section>
+      <section id="approach" className="mx-auto grid max-w-7xl gap-16 px-6 py-24 lg:grid-cols-[.9fr_1.1fr] lg:px-10 lg:py-32"><div><p className="eyebrow">A better way forward</p><h2 className="mt-4 text-4xl font-semibold tracking-[-0.06em] sm:text-6xl">Less firefighting.<br /><span className="text-primary">More creating.</span></h2></div><div className="grid gap-8 sm:grid-cols-2"><div className="border-t border-border pt-5"><Sparkles className="size-5 text-primary" /><h3 className="mt-8 text-xl font-semibold">Human by default</h3><p className="mt-3 text-sm leading-7 text-muted-foreground">No ticket mazes. No jargon. Just smart people who know your business and pick up the phone.</p></div><div className="border-t border-border pt-5"><LockKeyhole className="size-5 text-primary" /><h3 className="mt-8 text-xl font-semibold">Proactive by design</h3><p className="mt-3 text-sm leading-7 text-muted-foreground">We spot the signal before it becomes a problem, turning technology from a cost center into momentum.</p></div></div></section>
 
-      <section id="how-it-works" className="mx-auto max-w-7xl px-6 py-20 lg:px-10 lg:py-28"><div className="grid gap-14 lg:grid-cols-[.8fr_1.2fr]"><div><p className="eyebrow">Start with a clear picture</p><h2 className="section-heading mt-5">A straightforward way to get started.</h2><p className="mt-6 max-w-md text-lg leading-8 text-muted-foreground">Our paid Microsoft 365 &amp; IT Baseline Review examines your accounts, devices, access controls, and backup arrangements. You get prioritized findings, recommended next steps, and a clear proposal.</p><a href="mailto:bensassi.faysel@itsquare.ai" className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline">Discuss a baseline review <ArrowUpRight className="size-4" /></a></div><div className="divide-y divide-border border-y border-border">{steps.map(([number, title, text]) => <div key={number} className="grid gap-4 py-7 sm:grid-cols-[60px_1fr]"><span className="font-mono text-sm text-primary">{number}</span><div><h3 className="text-xl font-bold">{title}</h3><p className="mt-2 max-w-lg text-sm leading-7 text-muted-foreground">{text}</p></div></div>)}</div></div></section>
-
-      <section id="about" className="border-t border-border bg-primary px-6 py-20 text-primary-foreground lg:px-10 lg:py-28"><div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[1.1fr_.9fr] lg:items-end"><div><p className="eyebrow text-primary-foreground/70">Meet Faycal, founder of ITSquare.</p><h2 className="section-heading mt-5 max-w-3xl">Technical enough to solve it. Human enough to explain it.</h2></div><div className="text-base leading-8 text-primary-foreground/80"><p>I&apos;m based in Chicago, and I enjoy solving technical problems—especially the recurring ones that waste people&apos;s time.</p><p className="mt-5">I started ITSquare to bring that approach to small businesses: understand the problem, explain the options clearly, and build a practical way to keep it from coming back.</p></div></div></section>
-
-      <section className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-20 lg:flex-row lg:items-end lg:justify-between lg:px-10 lg:py-24"><div><p className="eyebrow">No hard sell</p><h2 className="section-heading mt-5 max-w-3xl">Let&apos;s talk about what your team needs.</h2><p className="mt-5 max-w-xl text-lg leading-8 text-muted-foreground">Whether you&apos;re dealing with recurring problems or considering a change of provider, we can start with a short conversation.</p></div><a href="mailto:bensassi.faysel@itsquare.ai" className="inline-flex w-fit shrink-0 items-center gap-3 rounded-full bg-foreground px-6 py-3.5 text-sm font-bold text-background transition-transform hover:-translate-y-0.5">Book a 15-minute IT conversation <ArrowUpRight className="size-4" /></a></section>
-      <footer className="border-t border-border px-6 py-8 lg:px-10"><div className="mx-auto flex max-w-7xl flex-col gap-4 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between"><span>© {new Date().getFullYear()} ITSquare. Intelligent infrastructure for people with work to do.</span><a href="mailto:bensassi.faysel@itsquare.ai" className="transition-colors hover:text-foreground">bensassi.faysel@itsquare.ai</a></div></footer>
+      <section id="about" className="relative overflow-hidden border-t border-border bg-primary px-6 py-24 text-primary-foreground lg:px-10 lg:py-28"><div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-10 md:flex-row md:items-end"><div><p className="eyebrow text-primary-foreground/70">Ready when you are</p><h2 className="mt-5 max-w-2xl text-4xl font-semibold leading-tight tracking-[-0.06em] sm:text-6xl">Bring us your<br />hardest problem.</h2></div><a href="mailto:bensassi.faysel@itsquare.ai" className="inline-flex items-center gap-3 rounded-full bg-background px-6 py-3.5 text-sm font-semibold text-foreground transition-transform hover:-translate-y-0.5">Let&apos;s talk <ArrowUpRight className="size-4" /></a></div></section>
+      <footer className="mx-auto flex max-w-7xl flex-col gap-5 px-6 py-8 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between lg:px-10"><span>© {new Date().getFullYear()} ITSquare. Technology, handled differently.</span><div className="flex items-center gap-5"><span className="inline-flex items-center gap-2"><Check className="size-3 text-primary" /> Secure by design</span><a href="mailto:bensassi.faysel@itsquare.ai" className="transition-colors hover:text-foreground">bensassi.faysel@itsquare.ai</a></div></footer>
     </main>
   )
 }
 
-export function generateMetadata() { return { title: "ITSquare | Managed IT for Chicago small businesses", description: "Practical managed IT support, Microsoft 365 organization, and security improvements for Chicago small businesses." } }
-
-
+export function generateMetadata() { return { title: "ITSquare | Your unfair tech advantage", description: "Managed IT, cybersecurity, and cloud expertise for ambitious businesses." } }
