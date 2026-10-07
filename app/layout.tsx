@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "ITSquare | Your unfair tech advantage",
+  title: "ITSquare | Good IT without the theater",
   description: "Managed IT, cybersecurity, and cloud expertise for ambitious businesses.",
 }
 
