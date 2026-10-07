@@ -30,7 +30,7 @@ export default function ContactPage() {
               href="mailto:bensassi.faysel@itsquare.ai"
               className="text-foreground-variant hover:text-primary transition-colors"
             >
-              brucelee@itsquare.ai
+              bensassi.faysel@itsquare.ai
             </Link>
           </div>
 
