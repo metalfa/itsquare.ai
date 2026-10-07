@@ -24,14 +24,15 @@ export function Navbar() {
         >
           <span
             aria-hidden="true"
-            className="relative grid size-9 place-items-center overflow-hidden border border-primary/40 bg-primary/10 shadow-[0_0_24px_-8px_var(--primary)] transition-all duration-300 group-hover:border-primary group-hover:bg-primary/15 group-hover:shadow-[0_0_28px_-6px_var(--primary)]"
+            className="relative grid size-9 place-items-center overflow-hidden rounded-[11px] border border-primary/50 bg-[#10131d] shadow-[0_0_26px_-8px_var(--primary)] transition-all duration-300 group-hover:-rotate-3 group-hover:border-primary group-hover:shadow-[0_0_34px_-6px_var(--primary)]"
           >
-            <span className="absolute inset-1 border border-primary/25" />
-            <span className="absolute left-2 top-2 size-1.5 bg-primary shadow-[0_0_8px_var(--primary)]" />
-            <span className="absolute bottom-2 right-2 size-1.5 bg-secondary shadow-[0_0_8px_var(--secondary)]" />
-            <span className="absolute left-[9px] top-[11px] h-px w-4 origin-left rotate-45 bg-primary/80" />
-            <span className="absolute bottom-[11px] right-[9px] h-px w-4 origin-right rotate-45 bg-secondary/80" />
-            <span className="font-mono text-[10px] font-bold tracking-[-0.12em] text-primary">IS</span>
+            <span className="absolute -right-2 -top-2 size-6 rounded-full bg-primary/20 blur-md" />
+            <span className="absolute inset-[5px] rounded-[7px] border border-primary/25" />
+            <span className="absolute left-[7px] top-[7px] size-1.5 rounded-full bg-primary shadow-[0_0_9px_var(--primary)]" />
+            <span className="absolute bottom-[7px] right-[7px] size-1.5 rounded-full bg-secondary shadow-[0_0_9px_var(--secondary)]" />
+            <span className="absolute left-[9px] top-[10px] h-px w-3.5 rotate-45 bg-primary/80" />
+            <span className="absolute bottom-[10px] right-[9px] h-px w-3.5 rotate-45 bg-secondary/80" />
+            <span className="relative font-mono text-[10px] font-black tracking-[-0.16em] text-primary">IS</span>
           </span>
           <span className="flex items-baseline gap-1.5 leading-none">
             <span className="text-[1.05rem] font-semibold tracking-[-0.04em]">ITSquare</span>
