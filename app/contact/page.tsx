@@ -27,10 +27,10 @@ export default function ContactPage() {
               <h3 className="font-bold">Email</h3>
             </div>
             <Link 
-              href="mailto:brucelee@itsquare.ai"
+              href="mailto:bensassi.faysel@itsquare.ai"
               className="text-foreground-variant hover:text-primary transition-colors"
             >
-              brucelee@itsquare.ai
+              bensassi.faysel@itsquare.ai
             </Link>
           </div>
 
