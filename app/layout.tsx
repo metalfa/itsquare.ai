@@ -16,8 +16,8 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'ITSquare.AI | Your AI IT Support Team in Slack',
-  description: 'The smartest IT support agent lives in your Slack. Employees describe problems, AI solves them instantly. No tickets, no waiting, no frustration.',
+  title: 'ITSquare.AI | Intelligent IT for ambitious businesses',
+  description: 'ITSquare.AI combines human expertise, intelligent automation, and relentless security to make technology a force for growth.',
   generator: 'v0.app',
   icons: {
     icon: [

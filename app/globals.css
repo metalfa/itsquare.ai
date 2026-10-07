@@ -9,55 +9,46 @@
  */
 
 :root {
-  /* Surface Hierarchy - Tonal Layering */
-  --background: #0a0a0f;
-  --surface: #131318;
-  --surface-container-lowest: #0e0e13;
-  --surface-container-low: #1b1b20;
-  --surface-container: #1f1f25;
-  --surface-container-high: #2a292f;
-  --surface-container-highest: #35343a;
-  
-  /* On-Surface Colors */
-  --foreground: #e4e1e9;
-  --foreground-variant: #c3c6d7;
-  
-  /* Primary - Electric Blue */
-  --primary: #b4c5ff;
-  --primary-container: #2563eb;
-  --primary-foreground: #ffffff;
-  
-  /* Secondary - Amber */
-  --secondary: #1a7907;
-  --secondary-container: #1a7907;
-  --secondary-foreground: #4d2600;
-  
-  /* Outline & Ghost Borders */
-  --outline: #8d90a0;
-  --outline-variant: #434655;
-  
-  /* Card & Popover */
-  --card: #1b1b20;
-  --card-foreground: #e4e1e9;
-  --popover: #1f1f25;
-  --popover-foreground: #e4e1e9;
-  
-  /* Muted */
-  --muted: #2a292f;
-  --muted-foreground: #c3c6d7;
-  
-  /* Accent */
-  --accent: #2a292f;
-  --accent-foreground: #b4c5ff;
-  
-  /* Destructive */
+  /* Enterprise calm: ink, paper, and a precise signal blue */
+  --background: #0d1117;
+  --surface: #111821;
+  --surface-container-lowest: #090d12;
+  --surface-container-low: #151e28;
+  --surface-container: #1a2530;
+  --surface-container-high: #22303d;
+  --surface-container-highest: #2a3b4a;
+
+  --foreground: #f2f6f8;
+  --foreground-variant: #a8b7c2;
+
+  --primary: #70c6ff;
+  --primary-container: #70c6ff;
+  --primary-foreground: #07131d;
+
+  --secondary: #89d3b1;
+  --secondary-container: #173d35;
+  --secondary-foreground: #071e17;
+
+  --outline: #8fa4b4;
+  --outline-variant: #354754;
+
+  --card: #111821;
+  --card-foreground: #f2f6f8;
+  --popover: #1a2530;
+  --popover-foreground: #f2f6f8;
+
+  --muted: #17212b;
+  --muted-foreground: #a8b7c2;
+
+  --accent: #1f2e3b;
+  --accent-foreground: #70c6ff;
+
   --destructive: #ffb4ab;
   --destructive-foreground: #690005;
-  
-  /* Borders & Inputs */
-  --border: rgba(67, 70, 85, 0.15);
-  --input: #0e0e13;
-  --ring: #b4c5ff;
+
+  --border: rgba(143, 164, 180, 0.18);
+  --input: #111821;
+  --ring: #70c6ff;
   
   /* Charts */
   --chart-1: #b4c5ff;
