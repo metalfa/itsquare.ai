@@ -7,7 +7,7 @@ export const sanityClient = createClient({
   projectId: sanityProjectId,
   dataset: sanityDataset,
   apiVersion: "2026-10-13",
-  useCdn: true,
+  useCdn: false,
 })
 
 export const sanityWriteClient = createClient({
