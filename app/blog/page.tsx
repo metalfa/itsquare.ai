@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { getStaticPosts } from "@/lib/static-blog"
+import { getSanityPosts } from "@/lib/sanity"
 import { ArrowUpRight, BookOpen } from "lucide-react"
 
 export const metadata = {
@@ -8,7 +8,7 @@ export const metadata = {
 }
 
 export default async function BlogPage() {
-  const posts = getStaticPosts()
+  const posts = await getSanityPosts(12)
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -20,7 +20,7 @@ export default async function BlogPage() {
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">Clear guidance on security, cloud operations, Microsoft 365, and building a calmer technology environment.</p>
         </header>
         {posts.length === 0 ? (
-          <section className="mt-20 border-t border-border py-12 text-muted-foreground">New insights are being prepared. Check back soon.</section>
+          <section className="mt-20 border-t border-border py-12 text-muted-foreground">Your first insight is ready to be added in Sanity Studio.</section>
         ) : (
           <section className="mt-20 grid gap-6 border-t border-border pt-8 md:grid-cols-2 lg:grid-cols-3">
             {posts.map((post) => (
