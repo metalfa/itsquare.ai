@@ -37,7 +37,7 @@ export default function Home() {
 
       <section className="relative mx-auto max-w-7xl px-5 pb-20 pt-16 sm:px-6 sm:pt-20 lg:px-10 lg:pb-28 lg:pt-24">
         <div className="orb orb-one" /><div className="orb orb-two" />
-        <div className="grid items-start gap-12 lg:grid-cols-[1.08fr_.92fr] lg:items-end lg:gap-14">
+        <div className="grid items-start gap-12 lg:grid-cols-[1.08fr_.92fr] lg:items-start lg:gap-14">
           <div className="relative z-10">
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1.5 text-xs font-medium text-muted-foreground">
               <span className="live-dot" /> Managed IT for Chicago small businesses
@@ -50,7 +50,7 @@ export default function Home() {
             </div>
           </div>
           <div className="relative hidden min-h-[390px] lg:block" aria-label="ITSquare managed IT service flow">
-            <div className="tech-panel service-map absolute inset-0 overflow-hidden rounded-3xl border border-border bg-card/60 p-6 shadow-2xl shadow-primary/5">
+            <div className="tech-panel service-map absolute inset-x-0 top-10 bottom-auto min-h-[390px] overflow-hidden rounded-3xl border border-border bg-card/60 p-6 shadow-2xl shadow-primary/5">
               <div className="flex items-center justify-between border-b border-border pb-5"><div className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><Radio className="size-3 text-primary" /> HOW WE KEEP THINGS MOVING</div><span className="inline-flex items-center gap-2 text-xs text-primary"><span className="live-dot" /> MONITORED</span></div>
               <div className="service-map__stage" aria-hidden="true">
                 <div className="service-map__line service-map__line--one" /><div className="service-map__line service-map__line--two" /><div className="service-map__line service-map__line--three" />
