@@ -17,6 +17,7 @@ export default function Home() {
   return (
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
       <div className="noise" />
+      <div className="water-bg" aria-hidden="true" />
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-10">
           <Link href="/" className="group flex items-center gap-3" aria-label="ITSquare home">
