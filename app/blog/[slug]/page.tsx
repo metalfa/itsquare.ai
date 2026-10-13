@@ -1,6 +1,8 @@
 import Link from "next/link"
-import { PortableText } from "@portabletext/react"
+import Image from "next/image"
 import { getSanityPost } from "@/lib/sanity"
+import { BlogPostContent } from "@/components/blog-post-content"
+import { EmailSecurityDiagram } from "@/components/email-security-diagram"
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -9,13 +11,27 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <article className="mx-auto max-w-3xl px-6 py-12 md:py-20">
+      <article className="mx-auto max-w-6xl px-6 py-8 md:px-10 md:py-12">
         <Link href="/blog" className="text-sm text-muted-foreground transition-colors hover:text-primary">← All insights</Link>
-        <p className="mt-16 font-mono text-xs uppercase tracking-[0.16em] text-primary">{post.publishedAt ? new Date(post.publishedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "Insight"}</p>
-        <h1 className="mt-5 text-balance text-5xl font-semibold tracking-tight md:text-7xl">{post.title}</h1>
-        {post.excerpt && <p className="mt-7 text-xl leading-relaxed text-muted-foreground">{post.excerpt.replace(/<[^>]+>/g, "")}</p>}
-        <div className="prose prose-invert mt-14 max-w-none prose-headings:tracking-tight prose-a:text-primary">
-          {post.body && <PortableText value={post.body as never} />}
+        <div className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-end">
+          <header>
+            <p className="font-mono text-xs uppercase tracking-[0.16em] text-primary">{post.publishedAt ? new Date(post.publishedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "Insight"}</p>
+            <h1 className="mt-5 max-w-4xl text-balance text-4xl font-semibold leading-[1.05] tracking-tight md:text-6xl lg:text-7xl">{post.title}</h1>
+            {post.excerpt && <p className="mt-7 max-w-3xl text-pretty text-xl leading-8 text-muted-foreground">{post.excerpt.replace(/<[^>]+>/g, "")}</p>}
+          </header>
+          <aside className="rounded-2xl border border-border bg-card p-5 text-sm leading-6 text-muted-foreground">
+            <p className="font-mono text-xs uppercase tracking-[0.14em] text-primary">Security brief</p>
+            <p className="mt-3">A password reset is containment, not the complete recovery plan. Use this checklist to close the paths an attacker may have left open.</p>
+          </aside>
+        </div>
+        <div className="relative mt-12 aspect-[16/7] overflow-hidden rounded-2xl border border-border bg-card">
+          <Image src="/images/hacked-email-hero.png" alt="Illustration of a business email account being secured after a compromise" fill priority className="object-cover" sizes="(max-width: 1024px) 100vw, 1200px" />
+        </div>
+        <div className="mx-auto mt-14 max-w-3xl">
+          <EmailSecurityDiagram />
+          <div className="space-y-6">
+            {post.body && <BlogPostContent value={post.body} />}
+          </div>
         </div>
       </article>
     </main>
