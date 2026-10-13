@@ -45,7 +45,7 @@ export default function Home() {
             <h1 className="max-w-4xl text-[clamp(3.25rem,10vw,5.25rem)] font-semibold leading-[0.94] tracking-[-0.07em] sm:text-7xl lg:text-[clamp(4.5rem,6.3vw,6rem)]">Your business needs your attention.<br /><span className="text-primary">Your IT shouldn&apos;t.</span></h1>
             <p className="mt-8 max-w-xl text-lg leading-8 text-muted-foreground">ITSquare helps Chicago small businesses manage everyday IT, protect employee accounts, and keep Microsoft 365 organized—with a clear monthly service plan.</p>
             <div className="mt-10 flex flex-wrap items-center gap-4">
-              <a href="mailto:bensassi.faysel@itsquare.ai?subject=15-minute%20IT%20conversation" className="group inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5">Book a 15-minute IT conversation <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></a>
+              <a href="https://calendly.com/bensassi-faysel/discovery-call" target="_blank" rel="noreferrer" className="group inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5">Book a 15-minute IT conversation <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></a>
               <a href="#services" className="inline-flex items-center gap-2 px-2 py-3.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">See how we help <ChevronRight className="size-4" /></a>
             </div>
           </div>
