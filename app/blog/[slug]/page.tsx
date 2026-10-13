@@ -1,10 +1,10 @@
 import Link from "next/link"
-import { getSanityPost } from "@/lib/sanity"
+import { getStaticPost } from "@/lib/static-blog"
 import { BlogPostContent } from "@/components/blog-post-content"
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const post = await getSanityPost(slug)
+  const post = getStaticPost(slug)
   const theme = slug.includes("hacked-email") ? "email" : slug.includes("business-domain") ? "domain" : slug.includes("move-offices") ? "office" : slug.includes("social-media") ? "social" : slug.includes("shared-logins") ? "shared" : slug.includes("vendor-breach") ? "vendor" : undefined
   const brief = theme === "domain" ? "A domain is business infrastructure. Keep registrar, DNS, renewal, and recovery control inside the company." : theme === "office" ? "An office move is an IT dependency exercise: stage the network, protect the cutover, and verify every service before reopening." : theme === "social" ? "Social accounts are business systems. Protect administrators, recovery channels, connected apps, and the brand they represent." : theme === "shared" ? "Shared credentials remove accountability. Replace them with named identities, role-based access, and auditable recovery." : theme === "vendor" ? "A vendor breach notice is the start of your investigation. Establish scope, evidence, containment, and follow-up ownership." : "A password reset is containment, not the complete recovery plan. Use this checklist to close the paths an attacker may have left open."
   if (!post) return <main className="mx-auto max-w-3xl px-6 py-24"><p>Insight not found.</p><Link href="/blog" className="mt-6 inline-block text-primary">Back to insights</Link></main>

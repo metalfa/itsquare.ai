@@ -14,8 +14,14 @@ function getComponents(theme?: DiagramTheme): PortableTextComponents {
           "Why a New Password May Not Remove Every Form of Access",
           "Find the Registrar and Map the Control Path",
           "How to Move Offices Without Disrupting Your IT",
+          "Build the move around dependencies",
           "How to Secure a Compromised Email Account",
           "How to Reduce the Risk of Another Compromise",
+          "What ownership really means",
+          "Recover in the right order",
+          "Replace the password with identity",
+          "Ask precise questions",
+          "Define what must come back first",
         ].includes(heading)
         return <>{diagramHeading && theme && <BlogPostDiagram theme={theme} />}<h2 className="mt-16 scroll-mt-24 border-t border-border pt-8 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">{children}</h2></>
       },
