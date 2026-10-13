@@ -32,7 +32,7 @@ export function Navbar() {
             <span className="absolute bottom-[7px] right-[7px] size-1.5 rounded-full bg-secondary shadow-[0_0_9px_var(--secondary)]" />
             <span className="absolute left-[9px] top-[10px] h-px w-3.5 rotate-45 bg-primary/80" />
             <span className="absolute bottom-[10px] right-[9px] h-px w-3.5 rotate-45 bg-secondary/80" />
-            <span className="relative font-mono text-[10px] font-black tracking-[-0.16em] text-primary">IS</span>
+            <span className="relative font-mono text-[10px] font-black tracking-[-0.16em] text-primary">IT<sup className="ml-px text-[7px] align-super tracking-normal">2</sup></span>
           </span>
           <span className="flex items-baseline gap-1.5 leading-none">
             <span className="text-[1.05rem] font-semibold tracking-[-0.04em]">ITSquare</span>
