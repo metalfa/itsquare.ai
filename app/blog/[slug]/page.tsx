@@ -1,5 +1,4 @@
 import Link from "next/link"
-import Image from "next/image"
 import { getSanityPost } from "@/lib/sanity"
 import { BlogPostContent } from "@/components/blog-post-content"
 import { EmailSecurityDiagram } from "@/components/email-security-diagram"
@@ -23,9 +22,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             <p className="font-mono text-xs uppercase tracking-[0.14em] text-primary">Security brief</p>
             <p className="mt-3">A password reset is containment, not the complete recovery plan. Use this checklist to close the paths an attacker may have left open.</p>
           </aside>
-        </div>
-        <div className="relative mt-12 aspect-[16/7] overflow-hidden rounded-2xl border border-border bg-card">
-          <Image src="/images/hacked-email-hero.png" alt="Illustration of a business email account being secured after a compromise" fill priority className="object-cover" sizes="(max-width: 1024px) 100vw, 1200px" />
         </div>
         <div className="mx-auto mt-14 max-w-3xl">
           <EmailSecurityDiagram />
