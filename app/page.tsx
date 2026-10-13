@@ -19,7 +19,7 @@ export default function Home() {
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
       <div className="noise" />
       <div className="water-bg" aria-hidden="true" />
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/95 backdrop-blur-xl">
         <div className="mx-auto flex h-[4.5rem] max-w-7xl items-center justify-between px-5 sm:h-20 sm:px-6 lg:px-10">
           <Link href="/" className="group flex items-center gap-3" aria-label="ITSquare home">
             <span className="logo-mark" aria-hidden="true"><span>IT<sup>2</sup></span></span>

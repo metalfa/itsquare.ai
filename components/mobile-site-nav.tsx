@@ -1,5 +1,6 @@
 "use client"
 
+import { createPortal } from "react-dom"
 import { useState } from "react"
 import Link from "next/link"
 import { Menu, X, ArrowUpRight } from "lucide-react"
@@ -26,9 +27,9 @@ export function MobileSiteNav() {
       >
         {open ? <X className="size-5" aria-hidden="true" /> : <Menu className="size-5" aria-hidden="true" />}
       </button>
-      {open && (
-        <div id="mobile-site-menu" className="absolute inset-x-0 top-full border-b border-border bg-background/95 px-5 py-5 shadow-2xl shadow-background/40 backdrop-blur-xl">
-          <nav aria-label="Mobile navigation" className="flex flex-col gap-1">
+      {open && typeof document !== "undefined" && createPortal(
+        <div id="mobile-site-menu" style={{ backgroundColor: "var(--background)" }} className="fixed inset-x-0 top-[4.5rem] z-[9999] h-[calc(100dvh-4.5rem)] overflow-y-auto border-t border-border px-5 py-6 shadow-2xl shadow-black/60 [isolation:isolate]">
+          <nav aria-label="Mobile navigation" className="mx-auto flex max-w-lg flex-col gap-2">
             {links.map((link) => (
               <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className="rounded-xl px-4 py-3.5 text-base font-medium text-muted-foreground transition-colors hover:bg-card hover:text-foreground">
                 {link.label}
@@ -38,7 +39,8 @@ export function MobileSiteNav() {
               Start a conversation <ArrowUpRight className="size-4" aria-hidden="true" />
             </a>
           </nav>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )
