@@ -49,11 +49,17 @@ export default function Home() {
               <a href="#services" className="inline-flex items-center gap-2 px-2 py-3.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">See how we help <ChevronRight className="size-4" /></a>
             </div>
           </div>
-          <div className="relative hidden min-h-[390px] lg:block" aria-label="Live infrastructure status">
-            <div className="tech-panel absolute inset-0 rounded-3xl border border-border bg-card/60 p-6 shadow-2xl shadow-primary/5">
-              <div className="flex items-center justify-between border-b border-border pb-5"><div className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><Radio className="size-3 text-primary" /> LIVE SYSTEMS VIEW</div><span className="text-xs text-primary">ALL OPERATIONAL</span></div>
-              <div className="grid h-[250px] place-items-center"><div className="radar"><span /><span /><span /><div className="radar-core"><Zap className="size-5" /></div></div></div>
-              <div className="grid grid-cols-3 gap-3 border-t border-border pt-5">{stats.map(([value, label]) => <div key={label}><div className="text-xl font-semibold tracking-tight">{value}</div><div className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div></div>)}</div>
+          <div className="relative hidden min-h-[390px] lg:block" aria-label="ITSquare managed IT service flow">
+            <div className="tech-panel service-map absolute inset-0 overflow-hidden rounded-3xl border border-border bg-card/60 p-6 shadow-2xl shadow-primary/5">
+              <div className="flex items-center justify-between border-b border-border pb-5"><div className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><Radio className="size-3 text-primary" /> HOW WE KEEP THINGS MOVING</div><span className="inline-flex items-center gap-2 text-xs text-primary"><span className="live-dot" /> MONITORED</span></div>
+              <div className="service-map__stage" aria-hidden="true">
+                <div className="service-map__line service-map__line--one" /><div className="service-map__line service-map__line--two" /><div className="service-map__line service-map__line--three" />
+                <div className="service-map__core"><Zap className="size-5" /><span>ITSquare<br /><small>one clear owner</small></span></div>
+                <div className="service-node service-node--support"><span className="service-node__icon">01</span><span>Support<br /><small>people unstuck</small></span></div>
+                <div className="service-node service-node--secure"><span className="service-node__icon">02</span><span>Secure<br /><small>access in order</small></span></div>
+                <div className="service-node service-node--steady"><span className="service-node__icon">03</span><span>Maintain<br /><small>systems steady</small></span></div>
+              </div>
+              <div className="flex items-center justify-between border-t border-border pt-5 text-[10px] uppercase tracking-[.18em] text-muted-foreground"><span>One team to call</span><span className="text-primary">Less IT noise</span></div>
             </div>
           </div>
         </div>
