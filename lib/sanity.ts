@@ -31,7 +31,7 @@ export type SanityBlogPost = {
 
 export async function getSanityPosts(limit = 6) {
   return sanityClient.fetch<SanityBlogPost[]>(
-    `*[_type == "blogPost" && defined(slug.current) && (!defined(publishedAt) || publishedAt <= now())] | order(publishedAt desc)[0...$limit]{_id,title,"slug": slug.current,excerpt,body,publishedAt,sourceUrl}`,
+    `*[_type == "blogPost" && defined(slug) && (!defined(publishedAt) || publishedAt <= now())] | order(publishedAt desc)[0...$limit]{_id,title,slug,excerpt,body,publishedAt,sourceUrl}`,
     { limit },
     { next: { revalidate: 300, tags: ["blog-posts"] } },
   )
@@ -39,7 +39,7 @@ export async function getSanityPosts(limit = 6) {
 
 export async function getSanityPost(slug: string) {
   return sanityClient.fetch<SanityBlogPost | null>(
-    `*[_type == "blogPost" && slug.current == $slug][0]{_id,title,"slug": slug.current,excerpt,body,publishedAt,sourceUrl}`,
+    `*[_type == "blogPost" && slug == $slug][0]{_id,title,slug,excerpt,body,publishedAt,sourceUrl}`,
     { slug },
     { next: { revalidate: 300, tags: ["blog-posts", `blog-post-${slug}`] } },
   )
