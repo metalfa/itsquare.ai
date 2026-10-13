@@ -19,7 +19,7 @@ export default function Home() {
       <div className="noise" />
       <div className="water-bg" aria-hidden="true" />
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-10">
+        <div className="mx-auto flex h-[4.5rem] max-w-7xl items-center justify-between px-5 sm:h-20 sm:px-6 lg:px-10">
           <Link href="/" className="group flex items-center gap-3" aria-label="ITSquare home">
             <span className="logo-mark" aria-hidden="true"><span>IT</span></span>
             <span className="text-lg font-semibold tracking-[-0.04em]">ITSquare<span className="text-primary">.AI</span></span>
@@ -35,14 +35,14 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="relative mx-auto max-w-7xl px-6 pb-24 pt-24 lg:px-10 lg:pb-32 lg:pt-32">
+      <section className="relative mx-auto max-w-7xl px-5 pb-20 pt-16 sm:px-6 sm:pt-20 lg:px-10 lg:pb-28 lg:pt-24">
         <div className="orb orb-one" /><div className="orb orb-two" />
-        <div className="grid items-end gap-16 lg:grid-cols-[1.15fr_.85fr]">
+        <div className="grid items-start gap-12 lg:grid-cols-[1.08fr_.92fr] lg:items-end lg:gap-14">
           <div className="relative z-10">
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1.5 text-xs font-medium text-muted-foreground">
               <span className="live-dot" /> Managed IT for Chicago small businesses
             </div>
-            <h1 className="max-w-4xl text-5xl font-semibold leading-[0.98] tracking-[-0.07em] sm:text-7xl lg:text-[6.8rem]">Your business needs your attention.<br /><span className="text-primary">Your IT shouldn&apos;t.</span></h1>
+            <h1 className="max-w-4xl text-[clamp(3.25rem,10vw,5.25rem)] font-semibold leading-[0.94] tracking-[-0.07em] sm:text-7xl lg:text-[clamp(4.5rem,6.3vw,6rem)]">Your business needs your attention.<br /><span className="text-primary">Your IT shouldn&apos;t.</span></h1>
             <p className="mt-8 max-w-xl text-lg leading-8 text-muted-foreground">ITSquare helps Chicago small businesses manage everyday IT, protect employee accounts, and keep Microsoft 365 organized—with a clear monthly service plan.</p>
             <div className="mt-10 flex flex-wrap items-center gap-4">
               <a href="mailto:bensassi.faysel@itsquare.ai?subject=15-minute%20IT%20conversation" className="group inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5">Book a 15-minute IT conversation <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></a>
