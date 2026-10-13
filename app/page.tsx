@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { ArrowUpRight, Check, ChevronRight, Cloud, LockKeyhole, Network, Radio, ShieldCheck, Sparkles, Zap } from "lucide-react"
+import { MobileSiteNav } from "@/components/mobile-site-nav"
 
 const services = [
   { icon: ShieldCheck, number: "01", title: "Everyday IT support", text: "Business-hours help for covered computers, Microsoft 365, and office technology—with clear updates on what happens next." },
@@ -30,9 +31,12 @@ export default function Home() {
             <a href="#about" className="transition-colors hover:text-foreground">About us</a>
             <Link href="/blog" className="transition-colors hover:text-foreground">Insights</Link>
           </nav>
-          <a href="mailto:bensassi.faysel@itsquare.ai" className="hidden items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2.5 text-sm font-medium text-primary transition-all hover:border-primary hover:bg-primary/20 sm:flex">
-            Start a conversation <ArrowUpRight className="size-4" />
-          </a>
+          <div className="hidden items-center gap-4 sm:flex">
+            <a href="mailto:bensassi.faysel@itsquare.ai" className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2.5 text-sm font-medium text-primary transition-all hover:border-primary hover:bg-primary/20">
+              Start a conversation <ArrowUpRight className="size-4" />
+            </a>
+          </div>
+          <MobileSiteNav />
         </div>
       </header>
 
