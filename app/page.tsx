@@ -19,7 +19,7 @@ export default function Home() {
       <div className="noise" />
       <div className="water-bg" aria-hidden="true" />
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-10">
+        <div className="mx-auto flex h-[4.5rem] max-w-7xl items-center justify-between px-5 sm:h-20 sm:px-6 lg:px-10">
           <Link href="/" className="group flex items-center gap-3" aria-label="ITSquare home">
             <span className="logo-mark" aria-hidden="true"><span>IT</span></span>
             <span className="text-lg font-semibold tracking-[-0.04em]">ITSquare<span className="text-primary">.AI</span></span>
@@ -35,25 +35,31 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="relative mx-auto max-w-7xl px-6 pb-24 pt-24 lg:px-10 lg:pb-32 lg:pt-32">
+      <section className="relative mx-auto max-w-7xl px-5 pb-20 pt-16 sm:px-6 sm:pt-20 lg:px-10 lg:pb-28 lg:pt-24">
         <div className="orb orb-one" /><div className="orb orb-two" />
-        <div className="grid items-end gap-16 lg:grid-cols-[1.15fr_.85fr]">
+        <div className="grid items-start gap-12 lg:grid-cols-[1.08fr_.92fr] lg:items-start lg:gap-14">
           <div className="relative z-10">
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1.5 text-xs font-medium text-muted-foreground">
               <span className="live-dot" /> Managed IT for Chicago small businesses
             </div>
-            <h1 className="max-w-4xl text-5xl font-semibold leading-[0.98] tracking-[-0.07em] sm:text-7xl lg:text-[6.8rem]">Your business needs your attention.<br /><span className="text-primary">Your IT shouldn&apos;t.</span></h1>
+            <h1 className="max-w-4xl text-[clamp(3.25rem,10vw,5.25rem)] font-semibold leading-[0.94] tracking-[-0.07em] sm:text-7xl lg:text-[clamp(4.5rem,6.3vw,6rem)]">Your business needs your attention.<br /><span className="text-primary">Your IT shouldn&apos;t.</span></h1>
             <p className="mt-8 max-w-xl text-lg leading-8 text-muted-foreground">ITSquare helps Chicago small businesses manage everyday IT, protect employee accounts, and keep Microsoft 365 organized—with a clear monthly service plan.</p>
             <div className="mt-10 flex flex-wrap items-center gap-4">
-              <a href="mailto:bensassi.faysel@itsquare.ai?subject=15-minute%20IT%20conversation" className="group inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5">Book a 15-minute IT conversation <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></a>
+              <a href="https://calendly.com/bensassi-faysel/discovery-call" target="_blank" rel="noreferrer" className="group inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5">Book a 15-minute IT conversation <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></a>
               <a href="#services" className="inline-flex items-center gap-2 px-2 py-3.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">See how we help <ChevronRight className="size-4" /></a>
             </div>
           </div>
-          <div className="relative hidden min-h-[390px] lg:block" aria-label="Live infrastructure status">
-            <div className="tech-panel absolute inset-0 rounded-3xl border border-border bg-card/60 p-6 shadow-2xl shadow-primary/5">
-              <div className="flex items-center justify-between border-b border-border pb-5"><div className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><Radio className="size-3 text-primary" /> LIVE SYSTEMS VIEW</div><span className="text-xs text-primary">ALL OPERATIONAL</span></div>
-              <div className="grid h-[250px] place-items-center"><div className="radar"><span /><span /><span /><div className="radar-core"><Zap className="size-5" /></div></div></div>
-              <div className="grid grid-cols-3 gap-3 border-t border-border pt-5">{stats.map(([value, label]) => <div key={label}><div className="text-xl font-semibold tracking-tight">{value}</div><div className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div></div>)}</div>
+          <div className="relative hidden min-h-[390px] lg:block" aria-label="ITSquare managed IT service flow">
+            <div className="tech-panel service-map absolute inset-x-0 top-10 bottom-auto min-h-[390px] overflow-hidden rounded-3xl border border-border bg-card/60 p-6 shadow-2xl shadow-primary/5">
+              <div className="flex items-center justify-between border-b border-border pb-5"><div className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><Radio className="size-3 text-primary" /> HOW WE KEEP THINGS MOVING</div><span className="inline-flex items-center gap-2 text-xs text-primary"><span className="live-dot" /> MONITORED</span></div>
+              <div className="service-map__stage" aria-hidden="true">
+                <div className="service-map__line service-map__line--one" /><div className="service-map__line service-map__line--two" /><div className="service-map__line service-map__line--three" />
+                <div className="service-map__core"><Zap className="size-5" /><span>ITSquare<br /><small>one clear owner</small></span></div>
+                <div className="service-node service-node--support"><span className="service-node__icon">01</span><span>Support<br /><small>people unstuck</small></span></div>
+                <div className="service-node service-node--secure"><span className="service-node__icon">02</span><span>Secure<br /><small>access in order</small></span></div>
+                <div className="service-node service-node--steady"><span className="service-node__icon">03</span><span>Maintain<br /><small>systems steady</small></span></div>
+              </div>
+              <div className="flex items-center justify-between border-t border-border pt-5 text-[10px] uppercase tracking-[.18em] text-muted-foreground"><span>One team to call</span><span className="text-primary">Less IT noise</span></div>
             </div>
           </div>
         </div>
