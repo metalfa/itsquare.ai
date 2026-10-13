@@ -20,19 +20,15 @@ export function Navbar() {
         <Link
           href="/"
           aria-label="ITSquare.AI home"
-          className="group flex items-center gap-3 text-[#E4E1E9]"
+          className="group flex items-center gap-2.5 text-[#E4E1E9]"
         >
           <span
             aria-hidden="true"
-            className="relative grid size-9 place-items-center overflow-hidden rounded-[11px] border border-primary/50 bg-[#10131d] shadow-[0_0_26px_-8px_var(--primary)] transition-all duration-300 group-hover:-rotate-3 group-hover:border-primary group-hover:shadow-[0_0_34px_-6px_var(--primary)]"
+            className="logo-mark group-hover:border-primary"
           >
-            <span className="absolute -right-2 -top-2 size-6 rounded-full bg-primary/20 blur-md" />
-            <span className="absolute inset-[5px] rounded-[7px] border border-primary/25" />
-            <span className="absolute left-[7px] top-[7px] size-1.5 rounded-full bg-primary shadow-[0_0_9px_var(--primary)]" />
-            <span className="absolute bottom-[7px] right-[7px] size-1.5 rounded-full bg-secondary shadow-[0_0_9px_var(--secondary)]" />
-            <span className="absolute left-[9px] top-[10px] h-px w-3.5 rotate-45 bg-primary/80" />
-            <span className="absolute bottom-[10px] right-[9px] h-px w-3.5 rotate-45 bg-secondary/80" />
-            <span className="relative font-mono text-[10px] font-black tracking-[-0.16em] text-primary">IS</span>
+            <span className="logo-mark__frame" />
+            <span className="logo-mark__glint" />
+            <span className="relative z-10 font-mono text-[11px] font-black tracking-[-0.12em] text-primary">IT<sup className="ml-px text-[7px] align-super tracking-normal">2</sup></span>
           </span>
           <span className="flex items-baseline gap-1.5 leading-none">
             <span className="text-[1.05rem] font-semibold tracking-[-0.04em]">ITSquare</span>

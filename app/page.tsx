@@ -21,7 +21,7 @@ export default function Home() {
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-[4.5rem] max-w-7xl items-center justify-between px-5 sm:h-20 sm:px-6 lg:px-10">
           <Link href="/" className="group flex items-center gap-3" aria-label="ITSquare home">
-            <span className="logo-mark" aria-hidden="true"><span>IT</span></span>
+            <span className="logo-mark" aria-hidden="true"><span>IT<sup>2</sup></span></span>
             <span className="text-lg font-semibold tracking-[-0.04em]">ITSquare<span className="text-primary">.AI</span></span>
           </Link>
           <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex" aria-label="Main navigation">
@@ -51,15 +51,15 @@ export default function Home() {
           </div>
           <div className="relative hidden min-h-[390px] lg:block" aria-label="ITSquare managed IT service flow">
             <div className="tech-panel service-map absolute inset-x-0 top-10 bottom-auto min-h-[390px] overflow-hidden rounded-3xl border border-border bg-card/60 p-6 shadow-2xl shadow-primary/5">
-              <div className="flex items-center justify-between border-b border-border pb-5"><div className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><Radio className="size-3 text-primary" /> HOW WE KEEP THINGS MOVING</div><span className="inline-flex items-center gap-2 text-xs text-primary"><span className="live-dot" /> MONITORED</span></div>
-              <div className="service-map__stage" aria-hidden="true">
+              <div className="flex items-center justify-between border-b border-border pb-5"><div className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><Radio className="size-3 text-primary" /> YOUR IT OPERATING SYSTEM</div><span className="inline-flex items-center gap-2 text-xs text-primary"><span className="live-dot" /> HEALTHY BY DESIGN</span></div>
+              <div className="service-map__stage" aria-label="Support, security, and maintenance converge through one accountable IT partner">
                 <div className="service-map__line service-map__line--one" /><div className="service-map__line service-map__line--two" /><div className="service-map__line service-map__line--three" />
-                <div className="service-map__core"><Zap className="size-5" /><span>ITSquare<br /><small>one clear owner</small></span></div>
-                <div className="service-node service-node--support"><span className="service-node__icon">01</span><span>Support<br /><small>people unstuck</small></span></div>
-                <div className="service-node service-node--secure"><span className="service-node__icon">02</span><span>Secure<br /><small>access in order</small></span></div>
-                <div className="service-node service-node--steady"><span className="service-node__icon">03</span><span>Maintain<br /><small>systems steady</small></span></div>
+                <div className="service-map__core"><Zap className="size-5" /><span>ITSquare<br /><small>one accountable partner</small></span></div>
+                <div className="service-node service-node--support"><span className="service-node__icon">01</span><span>Unblock<br /><small>fast human support</small></span></div>
+                <div className="service-node service-node--secure"><span className="service-node__icon">02</span><span>Protect<br /><small>secure by default</small></span></div>
+                <div className="service-node service-node--steady"><span className="service-node__icon">03</span><span>Advance<br /><small>systems that improve</small></span></div>
               </div>
-              <div className="flex items-center justify-between border-t border-border pt-5 text-[10px] uppercase tracking-[.18em] text-muted-foreground"><span>One team to call</span><span className="text-primary">Less IT noise</span></div>
+              <div className="flex items-center justify-between border-t border-border pt-5 text-[10px] uppercase tracking-[.18em] text-muted-foreground"><span>Built for momentum</span><span className="text-primary">Quietly resilient</span></div>
             </div>
           </div>
         </div>
