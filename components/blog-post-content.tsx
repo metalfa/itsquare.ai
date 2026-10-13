@@ -1,12 +1,17 @@
 "use client"
 
 import { PortableText, type PortableTextComponents } from "@portabletext/react"
+import { EmailSecurityDiagram } from "@/components/email-security-diagram"
 
 type BlogPostContentProps = { value: unknown }
 
 const components: PortableTextComponents = {
   block: {
-    h2: ({ children }) => <h2 className="mt-16 scroll-mt-24 border-t border-border pt-8 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">{children}</h2>,
+    h2: ({ children, value }) => {
+      const heading = value?.children?.map((child) => ("text" in child ? child.text ?? "" : "")).join("") ?? ""
+      const diagram = heading === "Why a New Password May Not Remove Every Form of Access" ? "access" : heading === "How to Secure a Compromised Email Account" ? "threat" : heading === "How to Reduce the Risk of Another Compromise" ? "recovery" : null
+      return <>{diagram && <EmailSecurityDiagram variant={diagram} />}<h2 className="mt-16 scroll-mt-24 border-t border-border pt-8 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">{children}</h2></>
+    },
     h3: ({ children }) => <h3 className="mt-10 text-xl font-semibold tracking-tight text-foreground md:text-2xl">{children}</h3>,
     normal: ({ children }) => <p className="text-pretty text-lg leading-8 text-foreground/80 md:text-xl md:leading-9">{children}</p>,
   },

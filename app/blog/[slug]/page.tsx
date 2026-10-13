@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { getSanityPost } from "@/lib/sanity"
 import { BlogPostContent } from "@/components/blog-post-content"
-import { EmailSecurityDiagram } from "@/components/email-security-diagram"
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -24,10 +23,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           </aside>
         </div>
         <div className="mx-auto mt-14 max-w-3xl">
-          <EmailSecurityDiagram />
-          <div className="space-y-6">
-            {post.body && <BlogPostContent value={post.body} />}
-          </div>
+          {post.body && <BlogPostContent value={post.body} />}
         </div>
       </article>
     </main>
