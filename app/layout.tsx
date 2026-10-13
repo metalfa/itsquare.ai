@@ -8,8 +8,8 @@ export const metadata: Metadata = {
   generator: "Next.js",
   keywords: ["managed IT", "cybersecurity", "Microsoft 365", "Chicago MSP"],
   icons: {
-    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
-    shortcut: "/favicon.svg",
+    icon: [{ url: "/favicon.svg?v=2", type: "image/svg+xml" }],
+    shortcut: "/favicon.svg?v=2",
   },
   openGraph: {
     title: "ITSquare | Managed IT for Chicago small businesses",
