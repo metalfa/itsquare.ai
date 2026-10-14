@@ -38,7 +38,15 @@ export const domainOwnershipPost = {
   readTime: "11 min read",
 }
 
-export const blogPosts = [officeMovePost, socialMediaPost, sharedLoginsPost, vendorBreachPost, domainOwnershipPost]
+export const hackedEmailPost = {
+  slug: "how-hackers-keep-access-to-your-email-after-a-password-change",
+  title: "How Hackers Keep Access to Your Email After You Change the Password",
+  excerpt: "A password reset is only the first move. Sessions, forwarding rules, connected apps, delegates, and recovery methods can keep an intruder connected.",
+  date: "December 15, 2026",
+  readTime: "13 min read",
+}
+
+export const blogPosts = [officeMovePost, socialMediaPost, sharedLoginsPost, vendorBreachPost, domainOwnershipPost, hackedEmailPost]
 
 export const officeMoveSections = [
   { heading: "Involve IT before the move date is set", paragraphs: ["Tell your IT provider as soon as the new location becomes a serious option. A site that looks ready may still have unusable cabling, restricted provider access, poor power, or nowhere secure for network equipment.", "Confirm building access rules, internet availability, cabling requirements, and equipment space before the lease and renovation decisions are locked in."] },
@@ -50,6 +58,18 @@ export const officeMoveSections = [
   { heading: "Choose a clear cutover order", paragraphs: ["Agree what comes back first: internet, firewall, identity, phones, core applications, then secondary equipment. Avoid unrelated system changes during the cutover so problems remain easy to isolate.", "Tell staff when systems may be unavailable and confirm any remote-work setup before the old office is disconnected."] },
   { heading: "Test before the first morning", paragraphs: ["Test from the places and devices employees will use: sign in, make calls, join a video meeting, print, scan, access files, process a payment, and verify alarms and door systems.", "One laptop beside the router is not a test of the office. Leave time to fix issues before the doors open."] },
   { heading: "Close the old office safely", paragraphs: ["Inspect cupboards, ceiling spaces, server rooms, and desks before returning the keys. Remove equipment, labels, paperwork, and network details.", "Wipe or securely dispose of devices that will not be reused, then update asset records, diagrams, monitoring, supplier contacts, and the new address."] },
+]
+
+export const hackedEmailSections = [
+  { heading: "A password change is only the first move", paragraphs: ["Changing the password blocks sign-ins that still rely on the old password. It does not necessarily remove an active browser session, a forwarding rule, a connected application, mailbox delegation, or a recovery method added while the attacker was inside.", "Email needs special care because it is connected to password resets for accounting, storage, social media, and other business systems. Someone who can still read the inbox may be able to reach those accounts too."] },
+  { heading: "An existing session may still work", paragraphs: ["Email services use sessions so your browser and apps do not ask for the password every time. A session or token can remain valid until it expires or is revoked separately.", "Ask your administrator to use the provider’s controls to revoke sessions, reset sign-in cookies, sign out everywhere, or remove active tokens. If malware may be present, begin recovery from another device."] },
+  { heading: "Forwarding rules can keep sending copies", paragraphs: ["An attacker can create a rule that forwards every new message—or only messages containing words such as invoice, payment, bank, or password reset. Selective rules are harder to notice because most email continues arriving normally.", "Check forwarding addresses, inbox rules, filters, hidden rules, and folders that may be hiding warnings or replies. Review these settings through the business administration tools, not only the employee’s inbox."] },
+  { heading: "A connected app may still have permission", paragraphs: ["OAuth apps can access approved parts of an account without storing the password. A convincing fake app may receive permission to read mail, files, contacts, or forwarding settings.", "Review every connected application. Remove anything the business does not recognize, use, or approve, and check the organization behind the app and the exact permissions it received."] },
+  { heading: "Delegates and sending permissions are separate", paragraphs: ["A delegate may access a mailbox with their own account, so changing the mailbox owner’s password does not automatically remove that access. Send As or Send on Behalf permissions also need review.", "List every person and group with access, confirm why they need it, and remove anything nobody can explain."] },
+  { heading: "Check recovery and sign-in methods", paragraphs: ["An attacker may add a phone number, recovery email, authenticator app, passkey, or security key. These methods could help them return later or approve another sign-in.", "Compare registered devices, recovery details, MFA methods, passkeys, and security keys with the account owner. Remove anything unfamiliar before returning the account."] },
+  { heading: "Secure the account in the right order", paragraphs: ["Temporarily suspend or disable the account while sessions and tokens are revoked. Set a unique password through a trusted channel, then review mailbox settings, app access, delegates, devices, and recovery methods.", "Do not send the new password to the affected mailbox. Remove older app passwords, inspect POP and IMAP access where relevant, and require MFA before the employee signs in again."] },
+  { heading: "Find out what happened", paragraphs: ["Review Sent, Deleted, Drafts, Junk, and Archive folders for messages the employee did not write, payment changes, password resets, or replies they never saw. Check sign-in logs, audit records, email traces, and security alerts.", "If fraudulent messages were sent, contact recipients through a trusted channel. For payment changes, contact the bank or payment provider immediately using an official number."] },
+  { heading: "Reduce the chance of another compromise", paragraphs: ["Require MFA for every account, prefer passkeys or security keys where available, limit automatic external forwarding, and control which third-party apps employees can connect.", "Treat unexpected MFA prompts, unfamiliar sign-in alerts, mailbox changes, and messages sent without the user’s knowledge as incidents worth reporting immediately."] },
 ]
 
 export const domainOwnershipSections = [
@@ -105,5 +125,6 @@ export function getBlogPost(slug: string) {
   if (slug === sharedLoginsPost.slug) return sharedLoginsPost
   if (slug === vendorBreachPost.slug) return vendorBreachPost
   if (slug === domainOwnershipPost.slug) return domainOwnershipPost
+  if (slug === hackedEmailPost.slug) return hackedEmailPost
   return undefined
 }
