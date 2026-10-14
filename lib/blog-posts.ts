@@ -22,7 +22,15 @@ export const sharedLoginsPost = {
   readTime: "10 min read",
 }
 
-export const blogPosts = [officeMovePost, socialMediaPost, sharedLoginsPost]
+export const vendorBreachPost = {
+  slug: "what-to-ask-after-a-vendor-data-breach",
+  title: "What to Ask a Software Vendor After a Data Breach",
+  excerpt: "A vendor breach notice is the beginning of your investigation. Ask precise questions, protect connected systems, and keep a clear record of what your business does next.",
+  date: "December 1, 2026",
+  readTime: "12 min read",
+}
+
+export const blogPosts = [officeMovePost, socialMediaPost, sharedLoginsPost, vendorBreachPost]
 
 export const officeMoveSections = [
   { heading: "Involve IT before the move date is set", paragraphs: ["Tell your IT provider as soon as the new location becomes a serious option. A site that looks ready may still have unusable cabling, restricted provider access, poor power, or nowhere secure for network equipment.", "Confirm building access rules, internet availability, cabling requirements, and equipment space before the lease and renovation decisions are locked in."] },
@@ -34,6 +42,19 @@ export const officeMoveSections = [
   { heading: "Choose a clear cutover order", paragraphs: ["Agree what comes back first: internet, firewall, identity, phones, core applications, then secondary equipment. Avoid unrelated system changes during the cutover so problems remain easy to isolate.", "Tell staff when systems may be unavailable and confirm any remote-work setup before the old office is disconnected."] },
   { heading: "Test before the first morning", paragraphs: ["Test from the places and devices employees will use: sign in, make calls, join a video meeting, print, scan, access files, process a payment, and verify alarms and door systems.", "One laptop beside the router is not a test of the office. Leave time to fix issues before the doors open."] },
   { heading: "Close the old office safely", paragraphs: ["Inspect cupboards, ceiling spaces, server rooms, and desks before returning the keys. Remove equipment, labels, paperwork, and network details.", "Wipe or securely dispose of devices that will not be reused, then update asset records, diagrams, monitoring, supplier contacts, and the new address."] },
+]
+
+export const vendorBreachSections = [
+  { heading: "A breach notice is not the whole answer", paragraphs: ["The first email from a software vendor often arrives while its investigation is still moving. It may say a system was accessed or that the incident has been contained, but it may not yet explain what that means for your business.", "Do not wait for a polished final report before asking sensible questions. Confirm the notice, save it, and start building the facts your team needs."] },
+  { heading: "First, make sure the notice is genuine", paragraphs: ["Real breach announcements create perfect cover for fake password-reset messages and fraudulent support calls. Open the vendor through its normal website or customer portal instead of using links in an unexpected email.", "Save the original notice and attachments after you confirm it. Your IT provider, insurer, legal adviser, or privacy contact may need the exact wording later."] },
+  { heading: "Ask whether your business was affected", paragraphs: ["Ask the vendor to classify your account as confirmed affected, possibly affected, confirmed not affected, or still under investigation. That last answer is not the same as safe—it means the review is unfinished.", "Ask when a clearer answer is expected and what precautions the vendor recommends while the investigation continues."] },
+  { heading: "Build the timeline and understand the access", paragraphs: ["Ask when unauthorized activity began, when it was detected, and when affected systems were contained. Then ask whether the intruder could view, copy, change, delete, or use the information to contact customers.", "The vendor’s announcement date is only one point in the timeline. Your IT provider may need the full window to review sign-ins, file transfers, account changes, invoices, or messages."] },
+  { heading: "Ask exactly what information was involved", paragraphs: ["“Customer information may have been affected” is too broad to guide a response. Ask about contact details, payroll data, payment records, files, messages, usernames, password hashes, API keys, access tokens, and encryption keys.", "Also ask whether the vendor’s logs show information being viewed or copied, whether the logs cover the full period, and how much of the answer is confirmed versus still unknown."] },
+  { heading: "Check passwords, tokens, and connected systems", paragraphs: ["Modern services connect to email, accounting, payment, storage, backup, and single-sign-on systems. Ask whether any API keys, certificates, tokens, integrations, or active sessions need to be revoked or replaced.", "Make changes with your IT provider where possible. Rotating the wrong key can interrupt a critical integration, while leaving the right key active can leave the door open."] },
+  { heading: "Ask what the vendor has done and what remains", paragraphs: ["“Contained” usually means the vendor has stopped the activity it knows about—not that every repair is finished. Ask whether it disabled accounts, revoked sessions, patched the weakness, rebuilt systems, replaced keys, or brought in independent investigators.", "Ask what work remains, whether the service is currently considered safe, and when permanent fixes will be complete."] },
+  { heading: "Get customer-specific actions in writing", paragraphs: ["Ask for instructions that apply to your account: updates, password resets, log reviews, transaction checks, integration changes, or employee warnings about related phishing.", "Request a named incident contact, the official update channel, and the expected cadence. Keep the notice, every question and answer, decisions, owners, and timestamps in one incident folder."] },
+  { heading: "Decide who else needs to be involved", paragraphs: ["Your IT provider can scope technical actions, but a breach may also involve your cyber insurer, legal or privacy adviser, senior leadership, communications team, customers, employees, or regulators.", "Requirements vary by location, contract, and the type of information involved. Get appropriate advice early rather than making a notification decision from a vendor email alone."] },
+  { heading: "Use the final report to improve the relationship", paragraphs: ["When the investigation closes, ask for a final explanation of what happened, what information was involved, how the weakness was fixed, and what the vendor changed.", "Then review your supplier agreement: incident contacts, reporting timescales, evidence, customer updates, and responsibilities should be clear before the next incident—not negotiated during it."] },
 ]
 
 export const sharedLoginSections = [
@@ -62,5 +83,6 @@ export function getBlogPost(slug: string) {
   if (slug === officeMovePost.slug) return officeMovePost
   if (slug === socialMediaPost.slug) return socialMediaPost
   if (slug === sharedLoginsPost.slug) return sharedLoginsPost
+  if (slug === vendorBreachPost.slug) return vendorBreachPost
   return undefined
 }
