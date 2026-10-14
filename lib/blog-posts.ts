@@ -30,7 +30,15 @@ export const vendorBreachPost = {
   readTime: "12 min read",
 }
 
-export const blogPosts = [officeMovePost, socialMediaPost, sharedLoginsPost, vendorBreachPost]
+export const domainOwnershipPost = {
+  slug: "how-to-make-sure-your-business-owns-its-domain-name",
+  title: "How to Make Sure Your Business Owns Its Domain Name",
+  excerpt: "Your website and email can work perfectly while domain control sits with a former employee, web designer, or supplier. Here is the practical ownership check every business should run.",
+  date: "December 8, 2026",
+  readTime: "11 min read",
+}
+
+export const blogPosts = [officeMovePost, socialMediaPost, sharedLoginsPost, vendorBreachPost, domainOwnershipPost]
 
 export const officeMoveSections = [
   { heading: "Involve IT before the move date is set", paragraphs: ["Tell your IT provider as soon as the new location becomes a serious option. A site that looks ready may still have unusable cabling, restricted provider access, poor power, or nowhere secure for network equipment.", "Confirm building access rules, internet availability, cabling requirements, and equipment space before the lease and renovation decisions are locked in."] },
@@ -42,6 +50,18 @@ export const officeMoveSections = [
   { heading: "Choose a clear cutover order", paragraphs: ["Agree what comes back first: internet, firewall, identity, phones, core applications, then secondary equipment. Avoid unrelated system changes during the cutover so problems remain easy to isolate.", "Tell staff when systems may be unavailable and confirm any remote-work setup before the old office is disconnected."] },
   { heading: "Test before the first morning", paragraphs: ["Test from the places and devices employees will use: sign in, make calls, join a video meeting, print, scan, access files, process a payment, and verify alarms and door systems.", "One laptop beside the router is not a test of the office. Leave time to fix issues before the doors open."] },
   { heading: "Close the old office safely", paragraphs: ["Inspect cupboards, ceiling spaces, server rooms, and desks before returning the keys. Remove equipment, labels, paperwork, and network details.", "Wipe or securely dispose of devices that will not be reused, then update asset records, diagrams, monitoring, supplier contacts, and the new address."] },
+]
+
+export const domainOwnershipSections = [
+  { heading: "Why domain control matters", paragraphs: ["A domain is quiet infrastructure until it expires, stops resolving, or points somewhere it should not. It helps customers find your website and tells email services where business messages should go.", "Your website host and Microsoft 365 or Google Workspace subscription can still be active while the domain account behind them is controlled by the wrong person. That is why ownership deserves a deliberate check."] },
+  { heading: "Find the company holding the registration", paragraphs: ["Start with ICANN Lookup for most generic domains, or the relevant registry lookup for a country-code domain. Record the registrar, expiry date, status, and nameservers.", "The registrar, DNS provider, website host, and email platform may be separate. That is normal. What matters is that your team knows which company handles each service and how to recover it."] },
+  { heading: "Check the registrar account—not just the website", paragraphs: ["Access to WordPress, a website builder, or a hosting dashboard does not automatically give you control of the registration. Sign in to the registrar account and confirm the domain is visible there.", "Check that the business can update contact details, payment, renewal settings, nameservers, and transfer approvals without relying on a former employee or supplier."] },
+  { heading: "Make the business the account owner", paragraphs: ["Use a company-controlled address and recovery method. Registration details should identify the business rather than a web designer, agency, employee, or unrelated supplier.", "Privacy services can hide details from public lookup results, so a blank public record is not proof of a problem. Check the private registrar records and service agreement instead."] },
+  { heading: "Protect recovery and renewal", paragraphs: ["Use a unique password, strong MFA, a business-managed payment method, and automatic renewal. Keep a calendar reminder before expiry because cards expire and renewal emails can go to an old address.", "At least two trusted people should know which registrar is used and how recovery works. Give them separate administrator accounts where possible, or store a single credential in the company password manager."] },
+  { heading: "Check who controls DNS", paragraphs: ["Nameservers point to the provider that manages DNS. DNS tells the internet where to find your website and where to deliver email, so a compromised DNS account can redirect visitors or interfere with mail.", "Record the DNS provider, approved users, recovery process, and important records. Ask your IT provider to monitor significant DNS changes."] },
+  { heading: "Secure the registrar account", paragraphs: ["Remove former employees, agencies, and providers that no longer need access. Turn on alerts for renewals, contact changes, DNS changes, and transfers.", "Enable the registrar’s transfer lock where appropriate. It can help prevent an unauthorized transfer, but it is not a replacement for MFA and good recovery details."] },
+  { heading: "If a supplier controls the domain", paragraphs: ["Ask for the registrar, expiry date, registered holder, nameservers, and the process for moving the domain into a company-controlled account before ending the relationship.", "Moving the registration does not normally require moving the website or email. Keep the current nameservers in place and monitor both services during the change to avoid an outage."] },
+  { heading: "Review ownership every year", paragraphs: ["Confirm the registrar, expiry date, payment method, auto-renewal, registration details, recovery options, MFA, transfer lock, nameservers, DNS provider, and account users.", "Repeat the check when an IT provider, web agency, marketing supplier, or privileged employee changes. Keep credentials and recovery codes in the company password manager—not in the review document."] },
 ]
 
 export const vendorBreachSections = [
@@ -84,5 +104,6 @@ export function getBlogPost(slug: string) {
   if (slug === socialMediaPost.slug) return socialMediaPost
   if (slug === sharedLoginsPost.slug) return sharedLoginsPost
   if (slug === vendorBreachPost.slug) return vendorBreachPost
+  if (slug === domainOwnershipPost.slug) return domainOwnershipPost
   return undefined
 }
