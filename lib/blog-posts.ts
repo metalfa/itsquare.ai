@@ -38,6 +38,27 @@ export const domainOwnershipPost = {
   readTime: "11 min read",
 }
 
+export const backupRecoveryPost = {
+  slug: "simple-backup-and-recovery-plans-for-small-business",
+  title: "Simple Backup and Recovery Plans Every Small Business Needs",
+  excerpt: "A practical way to protect business data with layered backups, recovery targets, tested restores, and a team that knows what to do next.",
+  date: "December 22, 2026",
+  readTime: "12 min read",
+}
+
+export const backupRecoverySections = [
+  { heading: "Backups are a business capability", paragraphs: ["A lost file is inconvenient. Lost customer records, financial data, shared files, or email can stop a small business from operating. Hardware failure, accidental deletion, ransomware, and office damage all create the same question: what can you restore, and how quickly?", "You do not need an enterprise budget to build a useful plan. You do need more than one copy, more than one location, and a recovery process that has been tested before an emergency."] },
+  { heading: "Start with the data that keeps work moving", paragraphs: ["List the systems your business depends on: files, email, accounting, customer records, line-of-business applications, websites, configurations, and credentials. For each one, record the owner, backup method, retention period, and restore process.", "Prioritize the data that would stop operations first. A plan becomes usable when people know what must return before everything else."] },
+  { heading: "Use a layered backup strategy", paragraphs: ["Keep a primary copy for daily work, an off-site copy for fire, theft, and local disasters, and a separate recovery layer for fast restores. Version history helps recover from accidental overwrites and files encrypted before a problem is noticed.", "Cloud storage can be useful, but synchronization is not the same as an independent backup. A deletion or ransomware event can synchronize to every connected device unless your backup has protected versions."] },
+  { heading: "Know your storage limits", paragraphs: ["Backups can fail quietly when storage fills up. Review capacity monthly, enable alerts before the limit, remove unnecessary duplicates, and keep a buffer for unexpected growth.", "Do not treat a green status icon as proof that every important system is protected. Check the scope of the job and whether recent restore points actually exist."] },
+  { heading: "Automate the schedule", paragraphs: ["Manual backups depend on someone remembering at exactly the right time. Automate daily protection for mission-critical data, weekly protection for larger systems, and longer retention for archives.", "Run jobs outside the busiest work periods where possible, but alert a named owner when a job fails. An ignored failure turns a backup system into false confidence."] },
+  { heading: "Define RPO and RTO", paragraphs: ["Your recovery point objective asks how much recent work the business can afford to lose. Your recovery time objective asks how long critical work can remain unavailable.", "Set both targets per system, not as one vague company number. A file share, accounting system, and email platform may need different recovery priorities."] },
+  { heading: "Test restores, not just backup jobs", paragraphs: ["A successful backup report does not prove that the files are complete, usable, or recoverable by the people who need them. Run a restore drill at least quarterly.", "Measure how long recovery takes, check permissions and application dependencies, record what failed, and update the runbook. Practice turns a backup into a recovery capability."] },
+  { heading: "Keep one recovery layer local", paragraphs: ["Cloud storage protects against local disasters, but downloading large datasets during an outage can be slow. A secure local copy can shorten recovery for the systems that need to return first.", "Encrypt local devices, restrict physical access, rotate media, and keep at least one copy disconnected or otherwise protected from ordinary administrator access."] },
+  { heading: "Train the people around the plan", paragraphs: ["Employees should know where business data belongs, how to report a suspicious message, who owns recovery decisions, and what they should not attempt during an incident.", "Keep a short emergency checklist with contacts, system priorities, vendor details, and the first actions. Review it after staffing, supplier, or system changes."] },
+  { heading: "Review the plan on a rhythm", paragraphs: ["At least quarterly, confirm backup scope, storage headroom, retention, alerts, restore results, account access, and recovery contacts. Repeat the review after a major application, office, or supplier change.", "The best backup plan is not the most complicated one. It is the one your team can explain, test, and use under pressure."] },
+]
+
 export const hackedEmailPost = {
   slug: "how-hackers-keep-access-to-your-email-after-a-password-change",
   title: "How Hackers Keep Access to Your Email After You Change the Password",
@@ -46,7 +67,7 @@ export const hackedEmailPost = {
   readTime: "13 min read",
 }
 
-export const blogPosts = [officeMovePost, socialMediaPost, sharedLoginsPost, vendorBreachPost, domainOwnershipPost, hackedEmailPost]
+export const blogPosts = [officeMovePost, socialMediaPost, sharedLoginsPost, vendorBreachPost, domainOwnershipPost, hackedEmailPost, backupRecoveryPost]
 
 export const officeMoveSections = [
   { heading: "Involve IT before the move date is set", paragraphs: ["Tell your IT provider as soon as the new location becomes a serious option. A site that looks ready may still have unusable cabling, restricted provider access, poor power, or nowhere secure for network equipment.", "Confirm building access rules, internet availability, cabling requirements, and equipment space before the lease and renovation decisions are locked in."] },
@@ -126,5 +147,6 @@ export function getBlogPost(slug: string) {
   if (slug === vendorBreachPost.slug) return vendorBreachPost
   if (slug === domainOwnershipPost.slug) return domainOwnershipPost
   if (slug === hackedEmailPost.slug) return hackedEmailPost
+  if (slug === backupRecoveryPost.slug) return backupRecoveryPost
   return undefined
 }
