@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { ArrowUpRight, Check, ChevronRight, Cloud, LockKeyhole, Network, Radio, ShieldCheck, Sparkles, Zap } from "lucide-react"
-import { MobileSiteNav } from "@/components/mobile-site-nav"
 
 const services = [
   { icon: ShieldCheck, number: "01", title: "Everyday IT support", text: "Business-hours help for covered computers, Microsoft 365, and office technology—with clear updates on what happens next." },
@@ -19,7 +18,7 @@ export default function Home() {
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
       <div className="noise" />
       <div className="water-bg" aria-hidden="true" />
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-background/95 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-[4.5rem] max-w-7xl items-center justify-between px-5 sm:h-20 sm:px-6 lg:px-10">
           <Link href="/" className="group flex items-center gap-3" aria-label="ITSquare home">
             <span className="logo-mark" aria-hidden="true"><span>IT<sup>2</sup></span></span>
@@ -29,14 +28,10 @@ export default function Home() {
             <a href="#services" className="transition-colors hover:text-foreground">Services</a>
             <a href="#approach" className="transition-colors hover:text-foreground">Our approach</a>
             <a href="#about" className="transition-colors hover:text-foreground">About us</a>
-            <Link href="/blog" className="transition-colors hover:text-foreground">Insights</Link>
           </nav>
-          <div className="hidden items-center gap-4 sm:flex">
-            <a href="mailto:bensassi.faysel@itsquare.ai" className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2.5 text-sm font-medium text-primary transition-all hover:border-primary hover:bg-primary/20">
-              Start a conversation <ArrowUpRight className="size-4" />
-            </a>
-          </div>
-          <MobileSiteNav />
+          <a href="mailto:bensassi.faysel@itsquare.ai" className="hidden items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2.5 text-sm font-medium text-primary transition-all hover:border-primary hover:bg-primary/20 sm:flex">
+            Start a conversation <ArrowUpRight className="size-4" />
+          </a>
         </div>
       </header>
 
