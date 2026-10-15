@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { AnimatedTechBackground } from "@/components/animated-tech-background"
 import { ArrowUpRight, Check, ChevronDown, ShieldCheck, Cloud, DatabaseBackup, Network, Cpu } from "lucide-react"
 
 const services = [
@@ -15,7 +16,7 @@ const stats = [["99.4", "% CSAT rating"], ["25+", "years of experience"], ["4,00
 export default function Home() {
   return (
     <main className="min-h-screen overflow-hidden text-foreground">
-      <div className="neuron-stars" aria-hidden="true" />
+      <AnimatedTechBackground /><div className="neuron-stars" aria-hidden="true" />
       <header className="relative z-20 border-b border-border/70 bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 text-[11px] text-muted-foreground sm:px-8 lg:px-10">
           <div className="hidden items-center gap-6 sm:flex"><a href="tel:+19094181410" className="hover:text-foreground">Sales: (909) 418-1410</a><a href="mailto:bensassi.faysel@itsquare.ai" className="hover:text-foreground">Email</a><a href="https://calendly.com/bensassi-faysel/discovery-call" target="_blank" rel="noreferrer" className="hover:text-foreground">Book a call</a></div>
