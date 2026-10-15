@@ -24,8 +24,9 @@ export function AnimatedTechBackground() {
 
     const resize = () => {
       const ratio = Math.min(window.devicePixelRatio || 1, 2)
-      width = window.innerWidth
-      height = window.innerHeight
+      const parent = canvas.parentElement
+      width = parent?.clientWidth || window.innerWidth
+      height = parent?.clientHeight || window.innerHeight
       canvas.width = width * ratio
       canvas.height = height * ratio
       canvas.style.width = `${width}px`

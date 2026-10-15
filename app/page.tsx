@@ -16,7 +16,6 @@ const stats = [["99.4", "% CSAT rating"], ["25+", "years of experience"], ["4,00
 export default function Home() {
   return (
     <main className="min-h-screen overflow-hidden text-foreground">
-      <AnimatedTechBackground /><div className="neuron-stars" aria-hidden="true" />
       <header className="relative z-20 border-b border-border/70 bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 text-[11px] text-muted-foreground sm:px-8 lg:px-10">
           <div className="hidden items-center gap-6 sm:flex"><a href="tel:+19094181410" className="hover:text-foreground">Sales: (909) 418-1410</a><a href="mailto:bensassi.faysel@itsquare.ai" className="hover:text-foreground">Email</a><a href="https://calendly.com/bensassi-faysel/discovery-call" target="_blank" rel="noreferrer" className="hover:text-foreground">Book a call</a></div>
@@ -32,7 +31,7 @@ export default function Home() {
         </div>
       </header>
 
-      <section className="relative z-10 mx-auto flex min-h-[670px] max-w-7xl flex-col items-center justify-center px-5 py-24 text-center sm:px-8 lg:min-h-[720px] lg:px-10">
+      <section className="relative z-10 mx-auto flex min-h-[670px] max-w-7xl flex-col items-center justify-center overflow-hidden px-5 py-24 text-center sm:px-8 lg:min-h-[720px] lg:px-10"><AnimatedTechBackground />
         <div className="mb-8 flex items-center gap-3 text-xs font-semibold uppercase tracking-[.25em] text-primary"><span className="live-dot" /> ITSQUARE.AI</div>
         <h1 className="max-w-5xl text-balance text-5xl font-semibold leading-[.97] tracking-[-.07em] sm:text-7xl lg:text-[6.3rem]">When operations stop,<br /><span className="text-primary">revenue stops.</span></h1>
         <p className="mt-8 max-w-2xl text-lg leading-8 text-muted-foreground">ITSquare provides managed IT, cybersecurity, and infrastructure support for growing companies. Proactive. Predictable. Built around the way your team works.</p>
