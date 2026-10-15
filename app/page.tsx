@@ -14,7 +14,7 @@ const stats = [["99.4", "% CSAT rating"], ["25+", "years of experience"], ["4,00
 
 export default function Home() {
   return (
-    <main className="min-h-screen overflow-hidden bg-background text-foreground">
+    <main className="min-h-screen overflow-hidden text-foreground">
       <div className="neuron-stars" aria-hidden="true" />
       <header className="relative z-20 border-b border-border/70 bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 text-[11px] text-muted-foreground sm:px-8 lg:px-10">
