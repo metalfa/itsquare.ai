@@ -22,18 +22,8 @@ export function Navbar() {
           aria-label="ITSquare.AI home"
           className="group flex items-center gap-2.5 text-[#E4E1E9]"
         >
-          <span
-            aria-hidden="true"
-            className="logo-mark group-hover:border-primary"
-          >
-            <span className="logo-mark__frame" />
-            <span className="logo-mark__glint" />
-            <span className="relative z-10 font-mono text-[11px] font-black tracking-[-0.12em] text-primary">IT<sup className="ml-px text-[7px] align-super tracking-normal">2</sup></span>
-          </span>
-          <span className="flex items-baseline gap-1.5 leading-none">
-            <span className="text-[1.05rem] font-semibold tracking-[-0.04em]">ITSquare</span>
-            <span className="font-mono text-[0.7rem] font-semibold tracking-[0.12em] text-primary transition-colors duration-300 group-hover:text-secondary">.AI</span>
-          </span>
+          <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Official%20LOGO-pOaejfmKw7B90FBKcD7pmugfUMjNBc.png" alt="ITSquare" className="size-10 rounded-lg object-cover" />
+          <span className="text-[1.05rem] font-semibold tracking-[-0.04em]">ITSquare<span className="font-mono text-[0.7rem] tracking-[0.12em] text-primary">.AI</span></span>
         </Link>
 
         {/* Desktop Navigation */}
