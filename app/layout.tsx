@@ -8,8 +8,8 @@ export const metadata: Metadata = {
   generator: "Next.js",
   keywords: ["managed IT", "cybersecurity", "Microsoft 365", "Chicago MSP"],
   icons: {
-    icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Official%20LOGO-pOaejfmKw7B90FBKcD7pmugfUMjNBc.png",
-    shortcut: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Official%20LOGO-pOaejfmKw7B90FBKcD7pmugfUMjNBc.png",
+    icon: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/facebook-profile-picture-720-iBgH7aH0uxAuY29fjVX2eyZjG5oS45.png",
+    shortcut: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/facebook-profile-picture-720-iBgH7aH0uxAuY29fjVX2eyZjG5oS45.png",
   },
   openGraph: {
     title: "ITSquare | Managed IT for Chicago small businesses",

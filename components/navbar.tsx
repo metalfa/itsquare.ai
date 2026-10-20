@@ -22,7 +22,7 @@ export function Navbar() {
           aria-label="ITSquare.AI home"
           className="group flex items-center gap-2.5 text-[#E4E1E9]"
         >
-          <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Official%20LOGO-pOaejfmKw7B90FBKcD7pmugfUMjNBc.png" alt="ITSquare" className="size-10 rounded-lg object-cover" />
+          <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/facebook-profile-picture-720-iBgH7aH0uxAuY29fjVX2eyZjG5oS45.png" alt="ITSquare" className="size-10 rounded-lg object-cover" />
           <span className="text-[1.05rem] font-semibold tracking-[-0.04em]">ITSquare<span className="font-mono text-[0.7rem] tracking-[0.12em] text-primary">.AI</span></span>
         </Link>
 
