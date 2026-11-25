@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, CalendarDays, ClipboardCheck, FileCheck2, Handshake, LockKeyhole, ShieldCheck } from "lucide-react"
 import { BookCallLink, FAQList, JsonLd, RiskAssessmentLink } from "@/components/site-elements"
@@ -78,7 +79,7 @@ export default function HomePage() {
 
     <section className="section section--soft">
       <div className="container founder-card">
-        <div className="founder-photo-placeholder" role="img" aria-label="Founder photo placeholder for Faycal Ben Sassi"><span>FB</span><small>Founder photo to be added</small></div>
+        <Image className="founder-photo" src="/faycal-ben-sassi.png" alt="Faycal Ben Sassi, founder of IT Square" width={1200} height={1650} priority sizes="(max-width: 767px) 100vw, 210px" />
         <div><p className="eyebrow">Local, hands-on experience</p><h2 className="section-title">Faycal Ben Sassi</h2><p className="body-copy mt-4">Faycal is based in Chicago and has 15 years of hands-on IT experience as an independent contractor, including networking, cabling, systems, and field support. He holds the AWS Certified Cloud Practitioner credential and the Google Cybersecurity Professional Certificate.</p><p className="body-copy mt-4">He focuses on independent practices because busy teams need practical IT support without having to translate every technical decision themselves. His aim is to make the work clear, documented, and accountable.</p><div className="hero__actions"><BookCallLink /></div></div>
       </div>
     </section>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Image from "next/image"
 import type { ComponentType } from "react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
@@ -78,7 +79,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         <nav className="article-toc mt-10" aria-label="Table of contents"><h2>In this guide</h2><ul>{content.sections.map(({ heading }) => <li key={heading}><a href={`#${headingId(heading)}`}>{heading}</a></li>)}</ul></nav>
         <div className="article-diagram"><Diagram /></div>
         <div className="article-body">{content.sections.map(({ heading, paragraphs }) => <section key={heading} id={headingId(heading)}><h2>{heading}</h2>{paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</section>)}</div>
-        <aside className="author-box mt-12"><div className="author-box__avatar" role="img" aria-label="Founder photo to be added for Faycal Ben Sassi">FB</div><div><strong>Faycal Ben Sassi</strong><p>Founder of IT Square. Chicago-based, with 15 years of hands-on IT experience. Founder photo to be added.</p><div className="mt-3"><BookCallLink /></div></div></aside>
+        <aside className="author-box mt-12"><Image className="author-box__avatar" src="/faycal-ben-sassi.png" alt="Faycal Ben Sassi, founder of IT Square" width={1200} height={1650} sizes="52px" /><div><strong>Faycal Ben Sassi</strong><p>Founder of IT Square. Chicago-based, with 15 years of hands-on IT experience.</p><div className="mt-3"><BookCallLink /></div></div></aside>
       </div>
     </article>
     <section className="section section--soft"><div className="container"><div className="section-intro"><div><p className="eyebrow">Keep learning</p><h2 className="section-title">Related guides</h2></div><Link href="/blog" className="font-semibold text-primary">All insights <ArrowRight aria-hidden="true" className="ml-1 inline size-4" /></Link></div><div className="article-related">{relatedPosts.map((related) => <Link key={related.slug} href={`/blog/${related.slug}`}>{related.title}<span className="mt-2 block text-xs font-normal text-muted-foreground">{related.category} · {related.readTime}</span></Link>)}</div></div></section>

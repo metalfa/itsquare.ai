@@ -38,7 +38,7 @@ export function SiteFooter() {
       </div>
       <div className="site-footer__bottom">
         <span>© {new Date().getFullYear()} IT Square LLC</span>
-        <Link href="/privacy">Privacy Policy</Link>
+        <div className="flex gap-5"><Link href="/privacy">Privacy Policy</Link><Link href="/terms">Terms of Use</Link></div>
       </div>
     </footer>
   )
