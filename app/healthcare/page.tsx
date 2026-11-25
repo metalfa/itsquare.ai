@@ -256,7 +256,7 @@ export default function HealthcarePage() {
           <h2 className="mt-4 max-w-3xl text-3xl font-semibold tracking-[-0.06em] sm:text-5xl">Have a client who can&apos;t pass the application?</h2>
           <p className="mt-5 max-w-3xl text-sm leading-7 text-muted-foreground sm:text-base">When a medical or dental practice gets stuck on MFA, EDR, backups or the HIPAA risk analysis, send them to us. We close the gaps and hand back documentation they can use for underwriting. We stay on the IT side and never touch the insurance.</p>
         </div>
-        <a href="mailto:bensassi.faysel@itsquare.ai?subject=Practice%20referral" className="inline-flex items-center justify-center gap-3 rounded-full border border-primary/40 bg-primary/10 px-6 py-3.5 text-sm font-semibold text-primary transition-colors hover:border-primary hover:bg-primary/20">
+        <a href="/contact?subject=Practice%20referral" className="inline-flex items-center justify-center gap-3 rounded-full border border-primary/40 bg-primary/10 px-6 py-3.5 text-sm font-semibold text-primary transition-colors hover:border-primary hover:bg-primary/20">
           Refer a practice <ArrowUpRight aria-hidden="true" className="size-4" />
         </a>
       </section>
