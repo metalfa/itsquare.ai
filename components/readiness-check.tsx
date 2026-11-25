@@ -37,7 +37,9 @@ const questionGroups = [
 type Answer = "yes" | "no" | "unsure"
 type Answers = Record<string, Answer>
 
-const questions = questionGroups.flatMap((group) => group.questions)
+type Question = (typeof questionGroups)[number]["questions"][number]
+
+const questions: readonly Question[] = questionGroups.flatMap<Question>((group) => group.questions)
 
 function getBand(score: number) {
   if (score >= 10) return { label: "Ready", tone: "ready", description: "Your answers show several useful safeguards are in place. Keep the documentation current and review changes." }
