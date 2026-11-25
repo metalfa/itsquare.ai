@@ -1,82 +1,101 @@
+import Image from "next/image"
 import Link from "next/link"
-import { ArrowUpRight, Check, ChevronRight, Cloud, LockKeyhole, Network, Radio, ShieldCheck, Sparkles, Zap } from "lucide-react"
+import { ArrowRight, CalendarDays, ClipboardCheck, FileCheck2, Handshake, LockKeyhole, ShieldCheck } from "lucide-react"
+import { BookCallLink, FAQList, JsonLd, RiskAssessmentLink } from "@/components/site-elements"
+import { blogPosts } from "@/lib/blog-posts"
+import { businessSchema, controls, homeFaqs } from "@/lib/site-content"
 
-const services = [
-  { icon: ShieldCheck, number: "01", title: "Everyday IT support", text: "Business-hours help for covered computers, Microsoft 365, and office technology—with clear updates on what happens next." },
-  { icon: Cloud, number: "02", title: "Account & access control", text: "Organized setup, approved permissions, and clean offboarding when people join, change roles, or leave." },
-  { icon: Network, number: "03", title: "Maintenance that gets done", text: "Device updates, security checks, and backup monitoring—tracked, followed through, and explained plainly." },
-]
-
-const stats = [
-  ["15–40", "employee teams"],
-  ["M365", "account clarity"],
-  ["1", "clear point of contact"],
-]
-
-export default function Home() {
-  return (
-    <main className="min-h-screen overflow-hidden bg-background text-foreground">
-      <div className="noise" />
-      <div className="water-bg" aria-hidden="true" />
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-[4.5rem] max-w-7xl items-center justify-between px-5 sm:h-20 sm:px-6 lg:px-10">
-          <Link href="/" className="group flex items-center gap-3" aria-label="ITSquare home">
-<img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/facebook-profile-picture-720-iBgH7aH0uxAuY29fjVX2eyZjG5oS45.png" alt="ITSquare" className="size-10 rounded-lg object-cover" />
-          <span className="text-lg font-semibold tracking-[-0.04em]">ITSquare<span className="text-primary">.AI</span></span>
-          </Link>
-          <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex" aria-label="Main navigation">
-            <a href="#services" className="transition-colors hover:text-foreground">Services</a>
-            <a href="#approach" className="transition-colors hover:text-foreground">Our approach</a>
-            <a href="#about" className="transition-colors hover:text-foreground">About us</a>
-            <Link href="/blog" className="transition-colors hover:text-foreground">Insights</Link>
-            <Link href="/healthcare" className="transition-colors hover:text-foreground">Healthcare</Link>
-          </nav>
-          <div className="flex items-center gap-3"><Link href="/blog" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:hidden">Insights</Link><a href="https://calendly.com/bensassi-faysel/discovery-call" target="_blank" rel="noopener noreferrer" className="hidden items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2.5 text-sm font-medium text-primary transition-all hover:border-primary hover:bg-primary/20 sm:flex">
-            Start a conversation <ArrowUpRight className="size-4" />
-          </a></div>
-        </div>
-      </header>
-
-      <section className="relative mx-auto max-w-7xl px-5 pb-20 pt-16 sm:px-6 sm:pt-20 lg:px-10 lg:pb-28 lg:pt-24">
-        <div className="orb orb-one" /><div className="orb orb-two" />
-        <div className="grid items-start gap-12 lg:grid-cols-[1.08fr_.92fr] lg:items-start lg:gap-14">
-          <div className="relative z-10">
-            <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1.5 text-xs font-medium text-muted-foreground">
-              <span className="live-dot" /> Managed IT for Chicago small businesses
-            </div>
-            <h1 className="max-w-4xl text-[clamp(3.25rem,10vw,5.25rem)] font-semibold leading-[0.94] tracking-[-0.07em] sm:text-7xl lg:text-[clamp(4.5rem,6.3vw,6rem)]">Your business needs your attention.<br /><span className="text-primary">Your IT shouldn&apos;t.</span></h1>
-            <p className="mt-8 max-w-xl text-lg leading-8 text-muted-foreground">ITSquare helps Chicago small businesses manage everyday IT, protect employee accounts, and keep Microsoft 365 organized—with a clear monthly service plan.</p>
-            <div className="mt-10 flex flex-wrap items-center gap-4">
-              <a href="https://calendly.com/bensassi-faysel/discovery-call" target="_blank" rel="noreferrer" className="group inline-flex items-center gap-3 rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground transition-transform hover:-translate-y-0.5">Book a 15-minute IT conversation <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></a>
-              <a href="#services" className="inline-flex items-center gap-2 px-2 py-3.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">See how we help <ChevronRight className="size-4" /></a>
-            </div>
-          </div>
-          <div className="relative hidden min-h-[390px] lg:block" aria-label="ITSquare managed IT service flow">
-            <div className="tech-panel service-map absolute inset-x-0 top-10 bottom-auto min-h-[390px] overflow-hidden rounded-3xl border border-border bg-card/60 p-6 shadow-2xl shadow-primary/5">
-              <div className="flex items-center justify-between border-b border-border pb-5"><div className="flex items-center gap-2 text-xs font-medium text-muted-foreground"><Radio className="size-3 text-primary" /> YOUR IT OPERATING SYSTEM</div><span className="inline-flex items-center gap-2 text-xs text-primary"><span className="live-dot" /> HEALTHY BY DESIGN</span></div>
-              <div className="service-map__stage" aria-label="Support, security, and maintenance converge through one accountable IT partner">
-                <div className="service-map__line service-map__line--one" /><div className="service-map__line service-map__line--two" /><div className="service-map__line service-map__line--three" />
-                <div className="service-map__core"><Zap className="size-5" /><span>ITSquare<br /><small>one accountable partner</small></span></div>
-                <div className="service-node service-node--support"><span className="service-node__icon">01</span><span>Unblock<br /><small>fast human support</small></span></div>
-                <div className="service-node service-node--secure"><span className="service-node__icon">02</span><span>Protect<br /><small>secure by default</small></span></div>
-                <div className="service-node service-node--steady"><span className="service-node__icon">03</span><span>Advance<br /><small>systems that improve</small></span></div>
-              </div>
-              <div className="flex items-center justify-between border-t border-border pt-5 text-[10px] uppercase tracking-[.18em] text-muted-foreground"><span>Built for momentum</span><span className="text-primary">Quietly resilient</span></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="services" className="border-y border-border bg-card/30 px-6 py-24 lg:px-10 lg:py-32"><div className="mx-auto max-w-7xl"><div className="mb-14 flex flex-col justify-between gap-6 md:flex-row md:items-end"><div><p className="eyebrow">What we do</p><h2 className="mt-4 max-w-2xl text-4xl font-semibold tracking-[-0.06em] sm:text-6xl">Support for the way<br /><span className="text-muted-foreground">your team works.</span></h2></div><p className="max-w-xs text-sm leading-6 text-muted-foreground">A clear point of contact for support, routine maintenance, and practical security improvements.</p></div><div className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-3">{services.map(({ icon: Icon, number, title, text }) => <article key={title} className="group bg-background p-8 transition-colors hover:bg-primary/[0.06] lg:p-10"><div className="flex items-start justify-between"><Icon className="size-6 text-primary" /><span className="font-mono text-xs text-muted-foreground">{number}</span></div><h3 className="mt-20 text-2xl font-semibold tracking-tight">{title}</h3><p className="mt-4 text-sm leading-7 text-muted-foreground">{text}</p><div className="mt-8 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary opacity-0 transition-opacity group-hover:opacity-100">Learn more <ArrowUpRight className="size-3" /></div></article>)}</div></div></section>
-
-      <section id="approach" className="mx-auto grid max-w-7xl gap-16 px-6 py-24 lg:grid-cols-[.9fr_1.1fr] lg:px-10 lg:py-32"><div><p className="eyebrow">A straightforward way to start</p><h2 className="mt-4 text-4xl font-semibold tracking-[-0.06em] sm:text-6xl">Understand the setup.<br /><span className="text-primary">Then improve it.</span></h2></div><div className="grid gap-8 sm:grid-cols-2"><div className="border-t border-border pt-5"><Sparkles className="size-5 text-primary" /><h3 className="mt-8 text-xl font-semibold">Start with a clear picture</h3><p className="mt-3 text-sm leading-7 text-muted-foreground">Our paid Microsoft 365 &amp; IT Baseline Review examines accounts, devices, access controls, and backup arrangements. You get prioritized findings and practical next steps.</p></div><div className="border-t border-border pt-5"><LockKeyhole className="size-5 text-primary" /><h3 className="mt-8 text-xl font-semibold">No theater. No surprises.</h3><p className="mt-3 text-sm leading-7 text-muted-foreground">We define the scope, responsibilities, and cost before work begins. Onboarding is explained upfront, and projects are quoted separately.</p></div></div></section>
-
-      <section id="insights" className="border-t border-border bg-card/30 px-6 py-24 lg:px-10 lg:py-28"><div className="mx-auto flex max-w-7xl flex-col justify-between gap-10 md:flex-row md:items-end"><div><p className="eyebrow">From the journal</p><h2 className="mt-4 max-w-2xl text-4xl font-semibold tracking-[-0.06em] sm:text-6xl">Practical thinking for <span className="text-primary">the workday.</span></h2><p className="mt-5 max-w-xl leading-7 text-muted-foreground">Clear guidance for the decisions that make business IT easier to run, secure, and recover.</p></div><Link href="/blog" className="inline-flex items-center gap-2 text-sm font-semibold text-primary">Browse all insights <ArrowUpRight className="size-4" /></Link></div><div className="mx-auto mt-12 max-w-7xl rounded-3xl border border-border bg-background p-6 sm:p-8"><p className="eyebrow">Latest guide</p><div className="mt-5 flex flex-col justify-between gap-6 md:flex-row md:items-end"><div><h3 className="max-w-2xl text-2xl font-semibold tracking-tight sm:text-3xl">How to move offices without disrupting your IT</h3><p className="mt-3 max-w-2xl leading-7 text-muted-foreground">A visual runbook for internet, Wi-Fi, phones, backups, equipment, and the first morning in a new space.</p></div><Link href="/blog/move-offices-without-disrupting-it" className="inline-flex shrink-0 items-center gap-2 rounded-full border border-primary/40 px-5 py-3 text-sm font-semibold text-primary hover:bg-primary/10">Read the guide <ArrowUpRight className="size-4" /></Link></div></div></section>
-
-      <section id="about" className="relative overflow-hidden border-t border-border bg-primary px-6 py-24 text-primary-foreground lg:px-10 lg:py-28"><div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-10 md:flex-row md:items-end"><div><p className="eyebrow text-primary-foreground/70">Meet Faycal, founder of ITSquare</p><h2 className="mt-5 max-w-2xl text-4xl font-semibold leading-tight tracking-[-0.06em] sm:text-6xl">Your team has work to do.<br />Let&apos;s keep IT out of the way.</h2><p className="mt-6 max-w-xl text-base leading-7 text-primary-foreground/80">I&apos;m based in Chicago, and I enjoy solving the recurring technical problems that waste people&apos;s time. I started ITSquare to make support practical, clear, and accountable.</p></div><a href="https://calendly.com/bensassi-faysel/discovery-call" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-3 rounded-full bg-background px-6 py-3.5 text-sm font-semibold text-foreground transition-transform hover:-translate-y-0.5">Book a 15-minute conversation <ArrowUpRight className="size-4" /></a></div></section>
-      <footer className="mx-auto flex max-w-7xl flex-col gap-5 px-6 py-8 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between lg:px-10"><span>© {new Date().getFullYear()} ITSquare. Practical IT support for Chicago small businesses.</span><div className="flex items-center gap-5"><span className="inline-flex items-center gap-2"><Check className="size-3 text-primary" /> Clear by design</span><a href="mailto:bensassi.faysel@itsquare.ai" className="transition-colors hover:text-foreground">bensassi.faysel@itsquare.ai</a></div></footer>
-    </main>
-  )
+export const metadata = {
+  title: "Healthcare IT & Cybersecurity for Chicago Practices",
+  description: "IT Square helps independent Chicago medical and dental practices prepare for cyber insurance, document HIPAA safeguards, and recover from IT problems.",
+  alternates: { canonical: "/" },
 }
 
-export function generateMetadata() { return { title: "ITSquare | Managed IT for Chicago small businesses", description: "Practical managed IT support for Chicago small businesses. Microsoft 365, account access, maintenance, and security with a clear monthly plan." } }
+const concerns = [
+  { quote: "Our cyber insurance renewal asks about MFA and EDR, and I don’t know what to answer.", answer: "We explain the questions, review the controls, and help you document what is in place." },
+  { quote: "We signed something about HIPAA years ago. I’m not sure we’re covered.", answer: "Start with a written risk analysis that shows your current gaps and what to address." },
+  { quote: "If our system goes down, we can’t see patients.", answer: "We help test backups and write down the steps and contacts your team needs." },
+  { quote: "Our office manager handles IT on top of everything else.", answer: "One accountable IT partner can take routine support and security work off their plate." },
+]
+
+const steps = [
+  { title: "15-minute call", text: "Tell us how your practice works and what your insurer is asking for." },
+  { title: "Risk assessment", text: "Get a written review, ranked gaps, insurance questionnaire support, and a fixed-price plan." },
+  { title: "Ongoing protection", text: "Put agreed controls in place, keep them documented, and review them each month." },
+]
+
+export default function HomePage() {
+  const latestPosts = [...blogPosts].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3)
+  return <main className="page-shell">
+    <JsonLd data={businessSchema} />
+    <JsonLd data={{ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: homeFaqs.map(({ question, answer }) => ({ "@type": "Question", name: question, acceptedAnswer: { "@type": "Answer", text: answer } })) }} />
+    <section className="hero">
+      <div className="container hero-grid">
+        <div className="hero__content">
+          <p className="eyebrow">IT and cybersecurity for Chicago medical and dental offices</p>
+          <h1 className="display-title">Pass your cyber insurance renewal. Prove HIPAA compliance. Stay open if you&apos;re attacked.</h1>
+          <p className="lead">IT Square is the local IT partner for independent practices with 5 to 50 staff. We put the security controls insurers and HIPAA ask for in place, document them, and stay accountable every month.</p>
+          <div className="hero__actions"><BookCallLink /><RiskAssessmentLink /></div>
+          <div className="trust-line"><span>Based in Chicago</span><span>Onsite and remote support</span><span>Founder-led</span></div>
+        </div>
+        <aside className="hero-panel" aria-label="What IT Square helps your practice prepare">
+          <div className="hero-panel__heading"><strong>Protection you can show on paper</strong><span>One accountable partner</span></div>
+          {controls.map((control) => <div className="hero-panel__item" key={control.short}><small>{control.short}</small><strong>{control.title}</strong></div>)}
+          <p className="hero-panel__note">A clear plan for security, records, and recovery. Insurance decisions remain with your insurer.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section className="section section--soft" aria-labelledby="familiar-heading">
+      <div className="container">
+        <div className="section-intro"><div><p className="eyebrow">For the people running the practice</p><h2 className="section-title" id="familiar-heading">Sound familiar?</h2></div><p>These are everyday questions, not a reason to feel behind. There is a practical next step for each one.</p></div>
+        <div className="grid-2">{concerns.map(({ quote, answer }) => <article className="quote-card" key={quote}><blockquote>“{quote}”</blockquote><p>{answer}</p></article>)}</div>
+      </div>
+    </section>
+
+    <section className="section" id="controls">
+      <div className="container">
+        <div className="section-intro"><div><p className="eyebrow">Clear answers for renewal questions</p><h2 className="section-title">The five things insurers check</h2></div><p>These safeguards also help protect patient information and give your team a clearer plan.</p></div>
+        <div className="grid-5">{controls.map(({ short, title, term, how }) => <article className="card" key={short}><span className="card-label">{short}</span><h3 className="mt-5">{title}</h3><p>{term}</p><p><strong className="text-foreground">How we handle it:</strong> {how}</p></article>)}</div>
+        <Link href="/healthcare" className="inline-flex items-center gap-2 mt-8 font-semibold text-primary">See the full approach <ArrowRight aria-hidden="true" className="size-4" /></Link>
+      </div>
+    </section>
+
+    <section className="section section--soft">
+      <div className="container">
+        <div className="section-intro"><div><p className="eyebrow">A straightforward start</p><h2 className="section-title">How it works</h2></div><p>Start with a conversation. Decide what makes sense after you understand the findings.</p></div>
+        <div className="grid-3">{steps.map((step, index) => <article className="numbered-step" key={step.title}><span>0{index + 1}</span><h3>{step.title}</h3><p>{step.text}</p></article>)}</div>
+      </div>
+    </section>
+
+    <section className="section">
+      <div className="container">
+        <div className="price-card grid-2 items-center gap-8">
+          <div><p className="eyebrow">A clear first step</p><h2 className="section-title">HIPAA Risk Assessment</h2><p className="price">From $1,500</p><p className="body-copy mt-3">$1,500 for practices with fewer than 10 staff. Up to $3,000 for larger practices. Credited toward onboarding if you continue within 30 days.</p></div>
+          <div><ul className="checklist"><li><FileCheck2 aria-hidden="true" /> Written HIPAA risk analysis</li><li><ClipboardCheck aria-hidden="true" /> Ranked list of security gaps</li><li><ShieldCheck aria-hidden="true" /> Cyber insurance questionnaire answers</li><li><LockKeyhole aria-hidden="true" /> Fixed-price plan to close the gaps</li></ul><div className="mt-7"><RiskAssessmentLink /></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section className="section section--soft">
+      <div className="container founder-card">
+        <Image className="founder-photo" src="/faycal-ben-sassi.png" alt="Faycal Ben Sassi, founder of IT Square" width={1200} height={1650} priority sizes="(max-width: 767px) 100vw, 210px" />
+        <div><p className="eyebrow">Local, hands-on experience</p><h2 className="section-title">Faycal Ben Sassi</h2><p className="body-copy mt-4">Faycal is based in Chicago and has 15 years of hands-on IT experience as an independent contractor, including networking, cabling, systems, and field support. He holds the AWS Certified Cloud Practitioner credential and the Google Cybersecurity Professional Certificate.</p><p className="body-copy mt-4">He focuses on independent practices because busy teams need practical IT support without having to translate every technical decision themselves. His aim is to make the work clear, documented, and accountable.</p><div className="hero__actions"><BookCallLink /></div></div>
+      </div>
+    </section>
+
+    <section className="section">
+      <div className="container cta-band"><div><p className="eyebrow">For insurance brokers and practice advisors</p><h2>Have a client who can’t meet cyber insurance requirements?</h2><p>We work on the IT side, close documented gaps, and return information the practice can share with its broker.</p></div><Link href="/partners" className="button button--primary">For Brokers &amp; Advisors <ArrowRight aria-hidden="true" /></Link></div>
+    </section>
+
+    <section className="section section--soft">
+      <div className="container"><div className="section-intro"><div><p className="eyebrow">Practical guidance</p><h2 className="section-title">Insights for busy teams</h2></div><Link href="/blog" className="font-semibold text-primary">Browse all insights <ArrowRight aria-hidden="true" className="ml-1 inline size-4" /></Link></div><div className="grid-3">{latestPosts.map((post) => <article className="post-card" key={post.slug}><div className="post-meta"><span>{post.category}</span><span>{post.date}</span></div><h2>{post.title}</h2><p>{post.excerpt}</p><Link className="post-card__link" href={`/blog/${post.slug}`}>Read the guide <ArrowRight aria-hidden="true" /></Link></article>)}</div></div>
+    </section>
+
+    <section className="section">
+      <div className="container grid-2 items-start gap-10"><div><p className="eyebrow">Good questions, clear answers</p><h2 className="section-title">Before we talk</h2><p className="body-copy mt-4">Not sure where to start? These are the questions practice owners ask first.</p></div><FAQList items={homeFaqs} /></div>
+    </section>
+
+    <section className="section section--soft"><div className="container cta-band"><div><p className="eyebrow">A calmer renewal starts with a clear picture</p><h2>Your next renewal shouldn’t be a scramble.</h2><p>Talk through your questions with a local IT partner. No pressure to commit to ongoing service.</p></div><BookCallLink /></div></section>
+  </main>
+}

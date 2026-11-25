@@ -11,7 +11,7 @@ export function VendorBreachDiagrams() {
     <div className="my-12 space-y-5">
       <figure className="rounded-3xl border border-primary/30 bg-primary/5 p-5 md:p-8">
         <figcaption className="flex flex-wrap items-center justify-between gap-3"><span className="font-semibold">The first-response question map</span><span className="font-mono text-xs uppercase tracking-[0.14em] text-primary">Ask before acting</span></figcaption>
-        <div className="mt-7 grid gap-3 md:grid-cols-3">{questions.map(([number, title, detail]) => <div key={number} className="rounded-2xl border border-border bg-card p-5"><span className="font-mono text-xs text-primary">{number}</span><h3 className="mt-4 font-semibold">{title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p></div>)}</div>
+        <div className="mt-7 grid gap-3 md:grid-cols-3">{questions.map(([number, title, detail]) => <div key={number} className="rounded-2xl border border-border bg-card p-5"><span className="font-mono text-xs text-primary">{number}</span><h2 className="mt-4 font-semibold">{title}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p></div>)}</div>
       </figure>
       <figure className="rounded-3xl border border-border bg-card p-5 md:p-8">
         <figcaption className="flex items-center justify-between gap-3"><span className="font-semibold">From vendor notice to business decision</span><span className="font-mono text-xs uppercase tracking-[0.14em] text-primary">Response flow</span></figcaption>

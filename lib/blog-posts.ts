@@ -4,6 +4,7 @@ export const officeMovePost = {
   excerpt: "An office move is not just a furniture problem. Here is a practical runbook for getting internet, phones, Wi-Fi, systems, and backups ready before your team arrives.",
   date: "November 12, 2026",
   readTime: "8 min read",
+  category: "Office IT",
 }
 
 export const socialMediaPost = {
@@ -12,6 +13,7 @@ export const socialMediaPost = {
   excerpt: "Your social accounts are business systems. Keep ownership, recovery, permissions, connected apps, and advertising access under control before a hacker tests them.",
   date: "November 18, 2026",
   readTime: "9 min read",
+  category: "Security",
 }
 
 export const sharedLoginsPost = {
@@ -20,6 +22,7 @@ export const sharedLoginsPost = {
   excerpt: "Shared passwords feel convenient until you need to investigate an action, remove one person, or prove who accessed sensitive information. Here is a safer path to named access.",
   date: "November 24, 2026",
   readTime: "10 min read",
+  category: "Security",
 }
 
 export const vendorBreachPost = {
@@ -28,6 +31,7 @@ export const vendorBreachPost = {
   excerpt: "A vendor breach notice is the beginning of your investigation. Ask precise questions, protect connected systems, and keep a clear record of what your business does next.",
   date: "December 1, 2026",
   readTime: "12 min read",
+  category: "Security",
 }
 
 export const domainOwnershipPost = {
@@ -36,6 +40,7 @@ export const domainOwnershipPost = {
   excerpt: "Your website and email can work perfectly while domain control sits with a former employee, web designer, or supplier. Here is the practical ownership check every business should run.",
   date: "December 8, 2026",
   readTime: "11 min read",
+  category: "Office IT",
 }
 
 export const backupRecoveryPost = {
@@ -44,6 +49,7 @@ export const backupRecoveryPost = {
   excerpt: "A practical way to protect business data with layered backups, recovery targets, tested restores, and a team that knows what to do next.",
   date: "December 22, 2026",
   readTime: "12 min read",
+  category: "Backups & Recovery",
 }
 
 export const backupRecoverySections = [
@@ -65,6 +71,7 @@ export const hackedEmailPost = {
   excerpt: "A password reset is only the first move. Sessions, forwarding rules, connected apps, delegates, and recovery methods can keep an intruder connected.",
   date: "December 15, 2026",
   readTime: "13 min read",
+  category: "Security",
 }
 
 export const blogPosts = [officeMovePost, socialMediaPost, sharedLoginsPost, vendorBreachPost, domainOwnershipPost, hackedEmailPost, backupRecoveryPost]
