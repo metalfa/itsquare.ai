@@ -29,6 +29,7 @@ export default function Home() {
             <a href="#approach" className="transition-colors hover:text-foreground">Our approach</a>
             <a href="#about" className="transition-colors hover:text-foreground">About us</a>
             <Link href="/blog" className="transition-colors hover:text-foreground">Insights</Link>
+            <Link href="/healthcare" className="transition-colors hover:text-foreground">Healthcare</Link>
           </nav>
           <div className="flex items-center gap-3"><Link href="/blog" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:hidden">Insights</Link><a href="https://calendly.com/bensassi-faysel/discovery-call" target="_blank" rel="noopener noreferrer" className="hidden items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-4 py-2.5 text-sm font-medium text-primary transition-all hover:border-primary hover:bg-primary/20 sm:flex">
             Start a conversation <ArrowUpRight className="size-4" />
