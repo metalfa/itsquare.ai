@@ -10,8 +10,14 @@ export function BookCallLink({ children = "Book a 15-minute call", className = "
   </a>
 }
 
-export function RiskAssessmentLink({ children = "Get the HIPAA Risk Assessment", className = "" }: { children?: ReactNode; className?: string }) {
-  return <Link className={`button button--secondary ${className}`} href="/risk-assessment" data-analytics="risk-assessment">
+export function ReadinessCheckLink({ children = "Take the free Readiness Check", className = "" }: { children?: ReactNode; className?: string }) {
+  return <Link className={`button button--secondary ${className}`} href="/readiness-check" data-analytics="readiness-cta">
+    {children}<ArrowUpRight aria-hidden="true" />
+  </Link>
+}
+
+export function RiskAssessmentLink({ children = "Explore the HIPAA Risk Assessment", className = "" }: { children?: ReactNode; className?: string }) {
+  return <Link className={`button button--secondary ${className}`} href="/risk-assessment" data-analytics="risk-assessment-cta">
     {children}<ArrowUpRight aria-hidden="true" />
   </Link>
 }
@@ -19,8 +25,8 @@ export function RiskAssessmentLink({ children = "Get the HIPAA Risk Assessment",
 export function CalendlyEmbed() {
   return <div className="calendly-frame">
     <iframe
-      title="Book a 15-minute call with IT Square"
-      src={`${calendlyUrl}?background_color=f7f9f8&text_color=19343b&primary_color=087e8b`}
+      title="Book a 15-minute call with ITSquare.ai"
+      src={`${calendlyUrl}?background_color=f7f9f8&text_color=19343b&primary_color=9c482e`}
       loading="lazy"
       referrerPolicy="strict-origin-when-cross-origin"
     />
