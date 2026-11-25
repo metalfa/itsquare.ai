@@ -4,25 +4,21 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
 import { ArrowUpRight, Menu, X } from "lucide-react"
+import { Brand } from "@/components/brand"
 
 const navigation = [
   { href: "/healthcare", label: "Healthcare" },
+  { href: "/safe-ai", label: "Safe AI" },
   { href: "/risk-assessment", label: "Risk Assessment" },
-  { href: "/partners", label: "For Brokers" },
+  { href: "/partners", label: "For Partners" },
   { href: "/about", label: "About" },
   { href: "/blog", label: "Insights" },
 ]
 
-function Brand({ onClick }: { onClick?: () => void }) {
-  return (
-    <Link href="/" onClick={onClick} className="brand-link" aria-label="IT Square home">
-      <svg aria-hidden="true" className="brand-mark" viewBox="0 0 40 40" fill="none">
-        <rect x="6.5" y="6.5" width="22" height="22" rx="4" stroke="currentColor" strokeWidth="2" />
-        <rect x="12.5" y="12.5" width="22" height="22" rx="4" fill="var(--background)" stroke="currentColor" strokeWidth="2" />
-      </svg>
-      <span>IT <strong>Square</strong></span>
-    </Link>
-  )
+function CallLink({ onClick }: { onClick?: () => void }) {
+  return <a className="button button--primary header-call" href="https://calendly.com/bensassi-faysel/discovery-call" target="_blank" rel="noopener noreferrer" data-analytics="book-call" onClick={onClick}>
+    Book a 15-minute call <ArrowUpRight aria-hidden="true" />
+  </a>
 }
 
 export function SiteHeader() {
@@ -36,15 +32,13 @@ export function SiteHeader() {
         <Brand onClick={closeMenu} />
         <nav className="desktop-nav" aria-label="Main navigation">
           {navigation.map(({ href, label }) => (
-            <Link key={href} href={href} aria-current={pathname === href ? "page" : undefined}>
+            <Link key={href} href={href} aria-current={pathname === href || pathname.startsWith(`${href}/`) ? "page" : undefined}>
               {label}
             </Link>
           ))}
         </nav>
         <div className="site-header__actions">
-          <a className="button button--primary header-call" href="https://calendly.com/bensassi-faysel/discovery-call" target="_blank" rel="noopener noreferrer" data-analytics="book-call">
-            Book a 15-minute call <ArrowUpRight aria-hidden="true" />
-          </a>
+          <CallLink />
           <button
             type="button"
             className="menu-toggle"
@@ -58,15 +52,16 @@ export function SiteHeader() {
         </div>
       </div>
       <nav id="mobile-navigation" className="mobile-nav" aria-label="Mobile navigation" hidden={!menuOpen}>
-          {navigation.map(({ href, label }) => (
-            <Link key={href} href={href} aria-current={pathname === href ? "page" : undefined} onClick={closeMenu}>
-              {label}
-            </Link>
-          ))}
-          <a className="button button--primary mobile-nav__call" href="https://calendly.com/bensassi-faysel/discovery-call" target="_blank" rel="noopener noreferrer" data-analytics="book-call" onClick={closeMenu}>
-            Book a 15-minute call <ArrowUpRight aria-hidden="true" />
-          </a>
-        </nav>
+        {navigation.map(({ href, label }) => (
+          <Link key={href} href={href} aria-current={pathname === href || pathname.startsWith(`${href}/`) ? "page" : undefined} onClick={closeMenu}>
+            {label}
+          </Link>
+        ))}
+        <Link className="button button--secondary mobile-nav__check" href="/readiness-check" data-analytics="readiness-cta" onClick={closeMenu}>
+          Take the free Readiness Check
+        </Link>
+        <CallLink onClick={closeMenu} />
+      </nav>
     </header>
   )
 }
