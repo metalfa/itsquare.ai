@@ -1,9 +1,26 @@
+import type { Metadata } from "next"
 import Link from "next/link"
-import { ArrowUpRight, Clock3 } from "lucide-react"
+import { ArrowRight } from "lucide-react"
+import { BreadcrumbJsonLd } from "@/components/site-elements"
 import { blogPosts } from "@/lib/blog-posts"
 
-export const metadata = { title: "ITSquare Insights | Practical IT for growing teams", description: "Clear, practical guidance for small-business IT, security, and continuity." }
+export const metadata: Metadata = {
+  title: "Insights for Medical & Dental Practices",
+  description: "Plain-English IT and cybersecurity guides for Chicago medical and dental offices, from IT Square.",
+  alternates: { canonical: "/blog" },
+}
+
+const categories = ["Security", "Microsoft 365", "Backups & Recovery", "Office IT", "Healthcare & HIPAA"]
+const posts = [...blogPosts].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
 export default function BlogPage() {
-  return <main className="min-h-screen bg-background text-foreground"><header className="border-b border-border px-5 py-5 sm:px-8"><div className="mx-auto flex max-w-7xl items-center justify-between"><Link href="/" className="flex items-center gap-3 text-lg font-semibold tracking-tight"><img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/facebook-profile-picture-720-iBgH7aH0uxAuY29fjVX2eyZjG5oS45.png" alt="ITSquare" className="size-10 rounded-lg object-cover" />ITSquare<span className="text-primary">.AI</span></Link><Link href="/" className="text-sm text-muted-foreground hover:text-foreground">Back to home</Link></div></header><section className="mx-auto max-w-7xl px-5 pb-16 pt-20 sm:px-8"><p className="eyebrow">The ITSquare journal</p><h1 className="mt-5 max-w-3xl text-balance text-5xl font-semibold tracking-[-.07em] sm:text-7xl">Useful IT thinking for <span className="text-primary">busy teams.</span></h1><p className="mt-7 max-w-2xl text-lg leading-8 text-muted-foreground">Practical guidance on the systems, access, and decisions that keep a small business moving.</p><div className="mt-16 grid gap-5 md:grid-cols-2">{blogPosts.map((post) => <article key={post.slug} className="group rounded-3xl border border-border bg-card p-6 transition-colors hover:border-primary/50 sm:p-8"><div className="flex items-center justify-between text-xs uppercase tracking-[.16em] text-muted-foreground"><span>Business continuity</span><span className="inline-flex items-center gap-2"><Clock3 className="size-3" />{post.readTime}</span></div><h2 className="mt-12 max-w-xl text-3xl font-semibold tracking-tight sm:text-4xl">{post.title}</h2><p className="mt-4 max-w-xl leading-7 text-muted-foreground">{post.excerpt}</p><Link href={`/blog/${post.slug}`} className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-primary">Read the guide <ArrowUpRight className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" /></Link></article>)}</div></section></main>
+  return <main className="page-shell">
+    <BreadcrumbJsonLd items={[{ label: "Home", href: "/" }, { label: "Insights", href: "/blog" }]} />
+    <section className="hero"><div className="container"><p className="eyebrow">IT Square · Insights</p><h1 className="display-title">Useful IT thinking for healthcare practices.</h1><p className="lead">Plain-English guides for the security, systems, and decisions that keep independent practices moving.</p><div className="mt-8 flex flex-wrap gap-2" aria-label="Insight categories">{categories.map((category) => <a key={category} href={`#${category.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`} className="card-label">{category}</a>)}</div></div></section>
+    <section className="section section--soft"><div className="container flex flex-col gap-14">{categories.map((category) => {
+      const categoryPosts = posts.filter((post) => post.category === category)
+      const sectionId = category.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")
+      return <section key={category} id={sectionId} className="scroll-mt-28"><div className="section-intro"><div><p className="eyebrow">Topic</p><h2 className="section-title">{category}</h2></div>{categoryPosts.length === 0 && <p>New articles in this category are coming soon.</p>}</div>{categoryPosts.length > 0 && <div className="grid-3">{categoryPosts.map((post) => <article className="post-card" key={post.slug}><div className="post-meta"><span>{post.date}</span><span>{post.readTime}</span></div><h3>{post.title}</h3><p>{post.excerpt}</p><p className="mt-auto text-xs font-medium text-muted-foreground">By Faycal Ben Sassi</p><Link className="post-card__link mt-4" href={`/blog/${post.slug}`}>Read the guide <ArrowRight aria-hidden="true" /></Link></article>)}</div>}</section>
+    })}</div></section>
+  </main>
 }

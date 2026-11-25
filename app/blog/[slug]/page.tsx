@@ -1,6 +1,8 @@
+import type { Metadata } from "next"
+import type { ComponentType } from "react"
 import Link from "next/link"
-import { ArrowLeft, ArrowUpRight } from "lucide-react"
-import { backupRecoverySections, getBlogPost, domainOwnershipSections, hackedEmailSections, officeMoveSections, sharedLoginSections, socialMediaSections, vendorBreachSections } from "@/lib/blog-posts"
+import { notFound } from "next/navigation"
+import { ArrowRight } from "lucide-react"
 import { BackupRecoveryDiagrams } from "@/components/backup-recovery-diagrams"
 import { DomainOwnershipDiagrams } from "@/components/domain-ownership-diagrams"
 import { HackedEmailDiagrams } from "@/components/hacked-email-diagrams"
@@ -8,12 +10,78 @@ import { OfficeMoveDiagrams } from "@/components/office-move-diagrams"
 import { SharedLoginDiagrams } from "@/components/shared-login-diagrams"
 import { SocialMediaDiagrams } from "@/components/social-media-diagrams"
 import { VendorBreachDiagrams } from "@/components/vendor-breach-diagrams"
+import { BreadcrumbJsonLd, BookCallLink, JsonLd, RiskAssessmentLink } from "@/components/site-elements"
+import { backupRecoverySections, blogPosts, domainOwnershipSections, getBlogPost, hackedEmailSections, officeMoveSections, sharedLoginSections, socialMediaSections, vendorBreachSections } from "@/lib/blog-posts"
 
-export function generateMetadata({ params }: { params: Promise<{ slug: string }> }) { return params.then(({ slug }) => { const post = getBlogPost(slug); return { title: post ? `${post.title} | ITSquare` : "Article | ITSquare", description: post?.excerpt } }) }
+type ArticleSection = { heading: string; paragraphs: string[] }
+type ArticleContent = { sections: ArticleSection[]; Diagram: ComponentType }
+
+const articleContent: Record<string, ArticleContent> = {
+  "move-offices-without-disrupting-it": { sections: officeMoveSections, Diagram: OfficeMoveDiagrams },
+  "protect-business-social-media-accounts": { sections: socialMediaSections, Diagram: SocialMediaDiagrams },
+  "why-shared-logins-are-a-security-risk": { sections: sharedLoginSections, Diagram: SharedLoginDiagrams },
+  "what-to-ask-after-a-vendor-data-breach": { sections: vendorBreachSections, Diagram: VendorBreachDiagrams },
+  "how-to-make-sure-your-business-owns-its-domain-name": { sections: domainOwnershipSections, Diagram: DomainOwnershipDiagrams },
+  "how-hackers-keep-access-to-your-email-after-a-password-change": { sections: hackedEmailSections, Diagram: HackedEmailDiagrams },
+  "simple-backup-and-recovery-plans-for-small-business": { sections: backupRecoverySections, Diagram: BackupRecoveryDiagrams },
+}
+
+const headingId = (heading: string) => heading.toLowerCase().replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-")
+
+export function generateStaticParams() {
+  return blogPosts.map(({ slug }) => ({ slug }))
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const post = getBlogPost(slug)
+  if (!post) return { title: "Article not found", robots: { index: false, follow: true } }
+  return {
+    title: post.title,
+    description: post.excerpt,
+    alternates: { canonical: `/blog/${post.slug}` },
+    openGraph: { type: "article", title: post.title, description: post.excerpt, publishedTime: new Date(post.date).toISOString(), authors: ["Faycal Ben Sassi"], images: ["/og-image.png"] },
+    twitter: { card: "summary_large_image", title: post.title, description: post.excerpt, images: ["/og-image.png"] },
+  }
+}
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const post = getBlogPost(slug)
-  if (!post) return <main className="grid min-h-screen place-items-center bg-background px-6 text-center"><div><h1 className="text-4xl font-semibold">Article not found</h1><Link href="/blog" className="mt-6 inline-flex text-primary">Browse insights</Link></div></main>
-  return <main className="min-h-screen bg-background text-foreground"><header className="border-b border-border px-5 py-5 sm:px-8"><div className="mx-auto flex max-w-7xl items-center justify-between"><Link href="/" className="flex items-center gap-3 text-lg font-semibold tracking-tight"><img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/facebook-profile-picture-720-iBgH7aH0uxAuY29fjVX2eyZjG5oS45.png" alt="ITSquare" className="size-10 rounded-lg object-cover" />ITSquare<span className="text-primary">.AI</span></Link><Link href="/blog" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" /> All insights</Link></div></header><article className="mx-auto max-w-4xl px-5 pb-24 pt-16 sm:px-8 sm:pt-24"><div className="max-w-3xl"><p className="eyebrow">Business continuity · {post.date} · {post.readTime}</p><h1 className="mt-6 text-balance text-5xl font-semibold leading-[.98] tracking-[-.07em] sm:text-7xl">{post.title}</h1><p className="mt-8 text-xl leading-8 text-muted-foreground">{post.excerpt}</p></div>{slug === "move-offices-without-disrupting-it" ? <OfficeMoveDiagrams /> : slug === "why-shared-logins-are-a-security-risk" ? <SharedLoginDiagrams /> : slug === "what-to-ask-after-a-vendor-data-breach" ? <VendorBreachDiagrams /> : slug === "how-to-make-sure-your-business-owns-its-domain-name" ? <DomainOwnershipDiagrams /> : slug === "how-hackers-keep-access-to-your-email-after-a-password-change" ? <HackedEmailDiagrams /> : slug === "simple-backup-and-recovery-plans-for-small-business" ? <BackupRecoveryDiagrams /> : <SocialMediaDiagrams />}<div className="prose prose-invert max-w-none">{(slug === "move-offices-without-disrupting-it" ? officeMoveSections : slug === "why-shared-logins-are-a-security-risk" ? sharedLoginSections : slug === "what-to-ask-after-a-vendor-data-breach" ? vendorBreachSections : slug === "how-to-make-sure-your-business-owns-its-domain-name" ? domainOwnershipSections : slug === "how-hackers-keep-access-to-your-email-after-a-password-change" ? hackedEmailSections : slug === "simple-backup-and-recovery-plans-for-small-business" ? backupRecoverySections : socialMediaSections).map((section) => <section key={section.heading} className="border-t border-border py-10"><h2 className="text-3xl font-semibold tracking-tight">{section.heading}</h2>{section.paragraphs.map((paragraph) => <p key={paragraph} className="mt-5 text-base leading-8 text-muted-foreground">{paragraph}</p>)}</section>)}</div><div className="mt-12 rounded-3xl border border-primary/30 bg-primary/10 p-6 sm:p-8"><p className="eyebrow">{slug === "move-offices-without-disrupting-it" ? "Need a second pair of eyes?" : slug === "why-shared-logins-are-a-security-risk" ? "Make access accountable." : slug === "what-to-ask-after-a-vendor-data-breach" ? "Turn a vendor notice into a plan." : slug === "how-to-make-sure-your-business-owns-its-domain-name" ? "Keep control where it belongs." : slug === "how-hackers-keep-access-to-your-email-after-a-password-change" ? "Close every door after a compromise." : slug === "simple-backup-and-recovery-plans-for-small-business" ? "Make recovery part of the plan." : "Keep your public voice protected."}</p><h2 className="mt-3 text-2xl font-semibold">{slug === "move-offices-without-disrupting-it" ? "Plan the move before it plans you." : slug === "why-shared-logins-are-a-security-risk" ? "Replace shared passwords with named access." : slug === "what-to-ask-after-a-vendor-data-breach" ? "Ask better questions before you make changes." : slug === "how-to-make-sure-your-business-owns-its-domain-name" ? "Make domain ownership a yearly check." : slug === "how-hackers-keep-access-to-your-email-after-a-password-change" ? "Make email recovery a repeatable process." : slug === "simple-backup-and-recovery-plans-for-small-business" ? "Test the restore before you need it." : "Make account recovery a business process."}</h2><p className="mt-3 max-w-xl leading-7 text-muted-foreground">{slug === "move-offices-without-disrupting-it" ? "ITSquare can help you map dependencies, stage the new office, and test the cutover before your team arrives." : slug === "why-shared-logins-are-a-security-risk" ? "ITSquare can help you inventory shared accounts, design safer access, and move the business to named identities without disrupting work." : slug === "what-to-ask-after-a-vendor-data-breach" ? "ITSquare can help you scope the impact, protect connected systems, and turn the vendor’s answers into an owned response plan." : slug === "how-to-make-sure-your-business-owns-its-domain-name" ? "ITSquare can help you map the registrar, DNS, renewal, and recovery controls your business depends on." : slug === "how-hackers-keep-access-to-your-email-after-a-password-change" ? "ITSquare can help you contain the account, remove hidden access, and monitor the systems connected to your inbox." : slug === "simple-backup-and-recovery-plans-for-small-business" ? "ITSquare can help you map critical data, strengthen backup layers, and test recovery before downtime becomes a crisis." : "ITSquare can help you review ownership, permissions, recovery paths, and connected apps before a social account becomes an incident."}</p><a href="https://calendly.com/bensassi-faysel/discovery-call" target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground">Start a conversation <ArrowUpRight className="size-4" /></a></div></article></main>
+  const content = articleContent[slug]
+  if (!post || !content) notFound()
+
+  const relatedPosts = blogPosts.filter(({ slug: otherSlug }) => otherSlug !== slug).slice(0, 3)
+  const publishedDate = new Date(post.date).toISOString()
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: post.excerpt,
+    datePublished: publishedDate,
+    dateModified: publishedDate,
+    author: { "@type": "Person", name: "Faycal Ben Sassi" },
+    publisher: { "@type": "Organization", name: "IT Square", url: "https://itsquare.ai" },
+    mainEntityOfPage: `https://itsquare.ai/blog/${post.slug}`,
+  }
+  const Diagram = content.Diagram
+
+  return <main className="page-shell">
+    <BreadcrumbJsonLd items={[{ label: "Home", href: "/" }, { label: "Insights", href: "/blog" }, { label: post.title, href: `/blog/${post.slug}` }]} />
+    <JsonLd data={articleSchema} />
+    <article className="section container">
+      <div className="article">
+        <p className="eyebrow">{post.category}</p>
+        <h1>{post.title}</h1>
+        <p className="lead">{post.excerpt}</p>
+        <div className="post-meta mt-6"><span>{post.date}</span><span>{post.readTime}</span><span>By Faycal Ben Sassi</span></div>
+        <nav className="article-toc mt-10" aria-label="Table of contents"><h2>In this guide</h2><ul>{content.sections.map(({ heading }) => <li key={heading}><a href={`#${headingId(heading)}`}>{heading}</a></li>)}</ul></nav>
+        <div className="article-diagram"><Diagram /></div>
+        <div className="article-body">{content.sections.map(({ heading, paragraphs }) => <section key={heading} id={headingId(heading)}><h2>{heading}</h2>{paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</section>)}</div>
+        <aside className="author-box mt-12"><div className="author-box__avatar" role="img" aria-label="Founder photo to be added for Faycal Ben Sassi">FB</div><div><strong>Faycal Ben Sassi</strong><p>Founder of IT Square. Chicago-based, with 15 years of hands-on IT experience. Founder photo to be added.</p><div className="mt-3"><BookCallLink /></div></div></aside>
+      </div>
+    </article>
+    <section className="section section--soft"><div className="container"><div className="section-intro"><div><p className="eyebrow">Keep learning</p><h2 className="section-title">Related guides</h2></div><Link href="/blog" className="font-semibold text-primary">All insights <ArrowRight aria-hidden="true" className="ml-1 inline size-4" /></Link></div><div className="article-related">{relatedPosts.map((related) => <Link key={related.slug} href={`/blog/${related.slug}`}>{related.title}<span className="mt-2 block text-xs font-normal text-muted-foreground">{related.category} · {related.readTime}</span></Link>)}</div></div></section>
+    <section className="section"><div className="container cta-band"><div><p className="eyebrow">A written next step</p><h2>Get a clear view of your practice’s risks.</h2><p>Explore the HIPAA Risk Assessment for Chicago medical and dental practices.</p></div><RiskAssessmentLink /></div></section>
+  </main>
 }

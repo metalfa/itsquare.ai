@@ -1,69 +1,19 @@
-import Link from "next/link"
-import { ArrowLeft, Mail, MapPin, Calendar } from "lucide-react"
+import type { Metadata } from "next"
+import { Mail, MapPin, Phone } from "lucide-react"
+import { ContactForm } from "@/components/contact-forms"
+import { BreadcrumbJsonLd, BookCallLink, CalendlyEmbed } from "@/components/site-elements"
+
+export const metadata: Metadata = {
+  title: "Contact IT Square in Chicago",
+  description: "Contact IT Square about healthcare IT, cyber insurance readiness, or a HIPAA Risk Assessment for your medical or dental practice.",
+  alternates: { canonical: "/contact" },
+}
 
 export default function ContactPage() {
-  return (
-    <div className="min-h-screen bg-background grid-bg">
-      <div className="max-w-4xl mx-auto px-8 py-20">
-        <Link 
-          href="/" 
-          className="inline-flex items-center gap-2 text-sm text-foreground-variant hover:text-primary mb-12 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Home
-        </Link>
+  return <main className="page-shell">
+    <BreadcrumbJsonLd items={[{ label: "Home", href: "/" }, { label: "Contact", href: "/contact" }]} />
+    <section className="hero"><div className="container"><p className="eyebrow">Chicago, Illinois</p><h1 className="display-title">Let’s talk about your practice.</h1><p className="lead">Share what you need help with or choose a time for a short call. We reply within one business day.</p></div></section>
 
-        <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-6">
-          Contact Us
-        </h1>
-        <p className="text-lg text-foreground-variant mb-16 max-w-2xl">
-          Ready to automate your IT infrastructure? Get in touch with our team.
-        </p>
-
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="ghost-border bg-surface-container p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <Mail className="w-5 h-5 text-primary" />
-              <h3 className="font-bold">Email</h3>
-            </div>
-            <Link 
-              href="mailto:bensassi.faysel@itsquare.ai"
-              className="text-foreground-variant hover:text-primary transition-colors"
-            >
-              bensassi.faysel@itsquare.ai
-            </Link>
-          </div>
-
-          <div className="ghost-border bg-surface-container p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <MapPin className="w-5 h-5 text-primary" />
-              <h3 className="font-bold">Location</h3>
-            </div>
-            <p className="text-foreground-variant">
-              Chicago, IL<br />
-              United States
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-12 p-8 bg-surface-container-high ghost-border border-l-4 border-l-primary-container">
-          <div className="flex items-center gap-3 mb-6">
-            <Calendar className="w-5 h-5 text-primary" />
-            <h3 className="font-bold">Schedule a Call</h3>
-          </div>
-          <p className="text-foreground-variant mb-6">
-            The fastest way to get started. Book a 15-minute discovery call with our team.
-          </p>
-          <Link
-            href="https://calendly.com/bensassi-faysel/discovery-call"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block bg-primary-container text-white px-6 py-3 text-sm font-bold hover:scale-[0.98] transition-transform"
-          >
-            Book Discovery Call
-          </Link>
-        </div>
-      </div>
-    </div>
-  )
+    <section className="section section--soft"><div className="container grid-2 items-start gap-12"><div><p className="eyebrow">Send a note</p><h2 className="section-title">What would you like to solve?</h2><p className="body-copy mt-4">Please do not include patient health information. The form opens your email app; it does not send or store your details on this website.</p><div className="mt-8"><ContactForm /></div><div className="mt-10 flex flex-col gap-4 text-sm text-muted-foreground"><a className="inline-flex items-center gap-3" href="mailto:bensassi.faysel@itsquare.ai"><Mail aria-hidden="true" className="size-4 text-primary" />bensassi.faysel@itsquare.ai</a><a className="inline-flex items-center gap-3" href="tel:+17738373043"><Phone aria-hidden="true" className="size-4 text-primary" />(773) 837-3043</a><span className="inline-flex items-center gap-3"><MapPin aria-hidden="true" className="size-4 text-primary" />Chicago, IL and nearby suburbs</span></div></div><div><p className="eyebrow">Prefer to choose a time?</p><h2 className="section-title">Book a 15-minute call</h2><p className="body-copy mt-4">Tell us about your practice and what you are looking for. The booking form is provided by Calendly.</p><div className="mt-5"><BookCallLink /></div><div className="mt-7"><CalendlyEmbed /></div></div></div></section>
+  </main>
 }
